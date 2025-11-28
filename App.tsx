@@ -1,16 +1,22 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, Suspense, lazy } from 'react';
 import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
+// import { HelmetProvider } from 'react-helmet-async';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import Home from './pages/Home';
-import Shop from './pages/Shop';
-import OOTD from './pages/OOTD';
-import Cart from './pages/Cart';
-import Login from './pages/Login';
-import Admin from './pages/Admin';
-import ProductDetail from './pages/ProductDetail';
 import AIStylist from './components/AIStylist';
 import { CartItem, Product, User, UserRole } from './types';
+import ErrorBoundary from './components/ErrorBoundary';
+import Loading from './components/Loading';
+
+// Lazy Imports
+const Home = lazy(() => import('./pages/Home'));
+const Shop = lazy(() => import('./pages/Shop'));
+const OOTD = lazy(() => import('./pages/OOTD'));
+const Cart = lazy(() => import('./pages/Cart'));
+const Login = lazy(() => import('./pages/Login'));
+const Admin = lazy(() => import('./pages/Admin'));
+const ProductDetail = lazy(() => import('./pages/ProductDetail'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 // --- Contexts ---
 
@@ -125,15 +131,18 @@ const Layout: React.FC = () => {
       <ScrollToTop />
       {!isAdmin && <Navbar />}
       <main className="flex-grow">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/shop" element={<Shop />} />
-          <Route path="/product/:id" element={<ProductDetail />} />
-          <Route path="/ootd" element={<OOTD />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/admin" element={<Admin />} />
-        </Routes>
+        <Suspense fallback={<Loading />}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/shop" element={<Shop />} />
+            <Route path="/product/:id" element={<ProductDetail />} />
+            <Route path="/ootd" element={<OOTD />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </main>
       {!isAdmin && <AIStylist />}
       {!isAdmin && <Footer />}
@@ -144,9 +153,13 @@ const Layout: React.FC = () => {
 const App: React.FC = () => {
   return (
     <Providers>
+      {/* <HelmetProvider> */}
       <HashRouter>
-        <Layout />
+        <ErrorBoundary>
+          <Layout />
+        </ErrorBoundary>
       </HashRouter>
+      {/* </HelmetProvider> */}
     </Providers>
   );
 };

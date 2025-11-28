@@ -1,56 +1,56 @@
-# LUMINA - Project Requirements Document (PRD)
+# LUMINA - 프로젝트 요구사항 문서 (PRD)
 
-## 1. Project Overview
-**Project Name:** LUMINA (루미나)
-**Description:** A premium women's accessory shopping mall focusing on timeless elegance. The platform features AI-driven personal styling, an Instagram-style OOTD community, and a sophisticated Admin dashboard for store management.
-**Brand Identity:** Derived from Latin "Luminósus" (Bright/Clear). Keywords: Elegant, Modern, Clarified, Shining.
+## 1. 프로젝트 개요 (Project Overview)
+**프로젝트명:** LUMINA (루미나)
+**설명:** 시대를 초월한 우아함(Timeless Elegance)에 중점을 둔 프리미엄 여성 액세서리 쇼핑몰입니다. AI 기반 개인 스타일링, 인스타그램 스타일의 OOTD 커뮤니티, 그리고 정교한 관리자 대시보드를 특징으로 합니다.
+**브랜드 아이덴티티:** 라틴어 "Luminósus" (밝은/선명한)에서 유래. 키워드: 우아함, 모던함, 명료함, 빛나는.
 
-## 2. Key Features
+## 2. 주요 기능 (Key Features)
 
-### User Side (Front Office)
-*   **Home:** 
-    *   Hero banner with emotional branding.
-    *   "New Arrivals" horizontal scroll slider (Mobile peeking effect).
-    *   Brand philosophy section.
-*   **Shop (Collection):**
-    *   Product grid with filtering (Earrings, Necklaces, Rings, Bracelets).
-    *   Sorting by "New" status.
-*   **Product Detail:**
-    *   High-quality image gallery.
-    *   Detailed description, shipping/AS info.
-    *   **Tabs:** Details, Customer Reviews, OOTD Styling (User styling examples).
-    *   Quantity selection & "Add to Cart".
-*   **Cart & Checkout:**
-    *   Item management (Quantity update, Remove).
-    *   Checkout form with validation.
-    *   **Payment Method:** Bank Transfer (Deposit) only.
+### 사용자 사이드 (Front Office)
+*   **홈 (Home):**
+    *   감성적인 브랜딩이 담긴 히어로 배너.
+    *   "New Arrivals" 가로 스크롤 슬라이더 (모바일 피킹 효과).
+    *   브랜드 철학 섹션.
+*   **쇼핑 (Shop - Collection):**
+    *   필터링 기능이 있는 상품 그리드 (귀걸이, 목걸이, 반지, 팔찌).
+    *   "신상품" 순 정렬.
+*   **상품 상세 (Product Detail):**
+    *   고화질 이미지 갤러리.
+    *   상세 설명, 배송/AS 정보.
+    *   **탭:** 상세 정보, 고객 리뷰, OOTD 스타일링 (사용자 스타일링 예시).
+    *   수량 선택 및 "장바구니 담기".
+*   **장바구니 및 결제 (Cart & Checkout):**
+    *   아이템 관리 (수량 변경, 삭제).
+    *   유효성 검사가 포함된 결제 폼.
+    *   **결제 수단:** 무통장 입금 전용.
 *   **OOTD (Outfit Of The Day):**
-    *   Community feed showing products in real life.
-    *   Hover effects showing likes and user info.
-    *   Tagged products linking to detail pages.
-*   **AI Stylist (Lumi):**
-    *   Floating chat widget powered by Google Gemini.
-    *   Context-aware product recommendations.
+    *   실제 착용 모습을 보여주는 커뮤니티 피드.
+    *   좋아요 및 사용자 정보를 보여주는 호버 효과.
+    *   태그된 상품을 상세 페이지로 연결.
+*   **AI 스타일리스트 (Lumi):**
+    *   Google Gemini 기반의 플로팅 채팅 위젯.
+    *   문맥을 인식하는 상품 추천.
 
-### Admin Side (Back Office)
-*   **Dashboard:**
-    *   "Today's To-Do" status board (Orders/Claims).
-    *   Real-time visitor analytics (PC vs Mobile).
-    *   Daily sales visualization (Charts & Tables).
-*   **Product Management:**
-    *   CRUD operations (Create, Read, Update, Delete).
-    *   Modal-based editing form.
-*   **Order Management:**
-    *   List view with status updates (Deposit Wait -> Completed).
-    *   Filtering and search.
-*   **Customer Management:**
-    *   User list, total spend tracking, and membership grading (Bronze to VIP).
+### 관리자 사이드 (Back Office)
+*   **대시보드 (Dashboard):**
+    *   "오늘의 할 일" 현황판 (주문/클레임).
+    *   실시간 방문자 분석 (PC vs 모바일).
+    *   일일 매출 시각화 (차트 & 테이블).
+*   **상품 관리 (Product Management):**
+    *   CRUD 작업 (생성, 조회, 수정, 삭제).
+    *   모달 기반 편집 폼.
+*   **주문 관리 (Order Management):**
+    *   상태 업데이트가 가능한 리스트 뷰 (입금 대기 -> 완료).
+    *   필터링 및 검색.
+*   **고객 관리 (Customer Management):**
+    *   사용자 목록, 총 구매액 추적 및 멤버십 등급 (Bronze ~ VIP).
 
-## 3. User Roles
-*   **Guest/Customer:** Browse, Shop, View OOTD, Chat with AI.
-*   **Admin:** Manage Products, Orders, Customers, and view Analytics.
+## 3. 사용자 역할 (User Roles)
+*   **게스트/고객:** 탐색, 쇼핑, OOTD 보기, AI와 채팅.
+*   **관리자:** 상품, 주문, 고객 관리 및 분석 보기.
 
-## 4. Technical Constraints
-*   **Platform:** Web Application (Responsive).
-*   **Language:** Korean (Primary).
-*   **Data:** Currently using mock data (`constants.ts`) for prototype.
+## 4. 기술적 제약 사항 (Technical Constraints)
+*   **플랫폼:** 웹 애플리케이션 (반응형).
+*   **언어:** 한국어 (기본).
+*   **데이터:** 현재 프로토타입용 모의 데이터(`constants.ts`) 사용.

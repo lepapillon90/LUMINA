@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { PRODUCTS } from '../constants';
 import RecommendedSection from '../components/RecommendedSection';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import SEO from '../components/SEO';
 
 const Home: React.FC = () => {
   // Assuming all products are new based on previous request for the slider
@@ -19,6 +20,7 @@ const Home: React.FC = () => {
 
   return (
     <div className="bg-white">
+      <SEO />
       {/* Hero Section */}
       <section className="relative h-screen w-full flex items-center justify-center overflow-hidden">
         {/* Background Image - Updated to match the user request (Woman in white knit, cafe vibe) */}
@@ -32,7 +34,7 @@ const Home: React.FC = () => {
 
         {/* Content */}
         <div className="relative z-10 text-center text-white px-4">
-          <p className="text-sm md:text-base tracking-[0.3em] mb-4 uppercase text-accent font-medium shadow-sm">
+          <p className="text-sm md:text-base tracking-[0.3em] mb-4 uppercase text-[#FFD700] font-bold drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
             Timeless Elegance
           </p>
           <h1
@@ -92,6 +94,9 @@ const Home: React.FC = () => {
                     <img
                       src={product.image}
                       alt={product.name}
+                      onError={(e) => {
+                        e.currentTarget.src = "https://via.placeholder.com/400x500?text=No+Image";
+                      }}
                       className="absolute top-0 left-0 w-full h-full object-cover transition duration-700 group-hover:scale-110"
                     />
                     {/* Overlay Text */}

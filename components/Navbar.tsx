@@ -22,17 +22,16 @@ const Navbar: React.FC = () => {
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   // Determine navbar style based on scroll and page
-  const navClass = `fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
-    isScrolled || !isHome 
-      ? 'bg-white text-primary shadow-sm py-4' 
+  const navClass = `fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled || !isHome
+      ? 'bg-white text-primary shadow-sm py-4'
       : 'bg-transparent text-white py-6'
-  }`;
+    }`;
 
   return (
     <nav className={navClass}>
       <div className="container mx-auto px-6 flex justify-between items-center">
         {/* Logo */}
-        <Link to="/" className="text-2xl font-serif font-bold tracking-widest">
+        <Link to="/" className="text-2xl font-serif font-bold tracking-widest" aria-label="LUMINA 홈으로 이동">
           LUMINA
         </Link>
 
@@ -45,20 +44,22 @@ const Navbar: React.FC = () => {
 
         {/* Icons */}
         <div className="flex items-center space-x-6">
-          <Link to="/login" className="hover:text-accent transition" title="로그인">
+          <Link to="/login" className="hover:text-accent transition" aria-label="로그인">
             <UserIcon size={20} />
           </Link>
-          <Link to="/cart" className="relative hover:text-accent transition" title="장바구니">
+          <Link to="/cart" className="relative hover:text-accent transition" aria-label={`장바구니, ${cartCount}개 항목`}>
             <ShoppingBag size={20} />
             {cartCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-accent text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
+              <span className="absolute -top-2 -right-2 bg-accent text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full" aria-hidden="true">
                 {cartCount}
               </span>
             )}
           </Link>
-          <button 
+          <button
             className="md:hidden focus:outline-none"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label={isMenuOpen ? "메뉴 닫기" : "메뉴 열기"}
+            aria-expanded={isMenuOpen}
           >
             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>

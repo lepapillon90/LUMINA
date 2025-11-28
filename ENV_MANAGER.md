@@ -1,17 +1,17 @@
-# Environmental Variables Manager
+# 환경 변수 관리자 (Environmental Variables Manager)
 
-## 1. Required Variables
-The application requires the following environment variables to function correctly, specifically for the AI features.
+## 1. 필수 변수 (Required Variables)
+애플리케이션이 올바르게 작동하기 위해, 특히 AI 기능을 위해 다음 환경 변수가 필요합니다.
 
-| Variable Name | Description | Required | Usage |
+| 변수명 (Variable Name) | 설명 (Description) | 필수 여부 (Required) | 용도 (Usage) |
 | :--- | :--- | :--- | :--- |
-| `API_KEY` | Google Gemini API Key | Yes | Used in `services/geminiService.ts` to authenticate with Google GenAI. |
+| `API_KEY` | Google Gemini API 키 | 예 (Yes) | `services/geminiService.ts`에서 Google GenAI 인증에 사용됩니다. |
 
-## 2. Injection Method
-*   In this environment, `process.env.API_KEY` is injected automatically by the execution context.
-*   **Security Note:** The API key is exposed in the frontend code. In a production environment, this should be proxied through a backend server.
+## 2. 주입 방법 (Injection Method)
+*   이 환경에서는 `process.env.API_KEY`가 실행 컨텍스트에 의해 자동으로 주입됩니다.
+*   **보안 참고:** API 키가 프론트엔드 코드에 노출됩니다. 프로덕션 환경에서는 백엔드 서버를 통해 프록시 처리해야 합니다.
 
-## 3. Usage Code
+## 3. 사용 코드 (Usage Code)
 ```typescript
 const apiKey = process.env.API_KEY || '';
 const ai = new GoogleGenAI({ apiKey });

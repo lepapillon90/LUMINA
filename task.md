@@ -1,70 +1,76 @@
+# LUMINA 프로젝트 작업 목록 (Project Task List)
 
-# LUMINA Project Task List
+## 1단계: 기초 및 설정 (Phase 1: Foundation & Setup)
+- [x] **프로젝트 구조:** CDN/Importmap을 통한 React, TypeScript, Tailwind 설정.
+- [x] **디자인 시스템:** 폰트 (Cinzel/Noto), 색상, Tailwind 설정 정의.
+- [x] **라우팅:** `HashRouter` 및 기본 라우트 구성 (Home, Shop, Cart, Login).
+- [x] **컨텍스트:** `CartContext` 및 `AuthContext` 구현.
+- [x] **모의 데이터:** 상품, 주문, OOTD 게시물을 위한 `constants.ts` 생성.
 
-## Phase 1: Foundation & Setup
-- [x] **Project Structure:** Set up React, TypeScript, and Tailwind via CDN/Importmap.
-- [x] **Design System:** Define Fonts (Cinzel/Noto), Colors, and Tailwind config.
-- [x] **Routing:** Configure `HashRouter` and basic routes (Home, Shop, Cart, Login).
-- [x] **Context:** Implement `CartContext` and `AuthContext`.
-- [x] **Mock Data:** Create `constants.ts` for Products, Orders, and OOTD posts.
+## 2단계: 사용자 인터페이스 및 기능 (Phase 2: User Interface & Features)
 
-## Phase 2: User Interface & Features
+### 홈 페이지 (Home Page)
+- [x] **히어로 배너:** 감성적인 문구가 포함된 전체 너비 배너 구현.
+- [x] **신상품 (New Arrivals):** 모바일 피킹(peeking) 효과가 있는 가로 슬라이더(Carousel) 생성.
+- [x] **브랜드 스토리:** "Lumina Philosophy" 섹션 추가.
 
-### Home Page
-- [x] **Hero Banner:** Implement full-width banner with emotional copy.
-- [x] **New Arrivals:** Create horizontal slider (Carousel) with mobile peeking effect.
-- [x] **Brand Story:** Add "Lumina Philosophy" section.
+### 쇼핑 및 상품 상세 (Shop & Product Detail)
+- [x] **상품 목록:** 카테고리 필터링이 있는 그리드 뷰.
+- [x] **정렬:** "최신순" 정렬 로직 구현.
+- [x] **상세 뷰:** 좌측(갤러리) / 우측(정보) 레이아웃.
+- [x] **갤러리:** 메인 이미지 + 썸네일.
+- [x] **탭:** "상세 정보", "리뷰", "OOTD" 탭 구현.
+- [x] **기능:** 수량 선택기 및 특정 수량 "장바구니 담기".
+- [x] **줌:** 줌 기능 제거 (요청 사항).
 
-### Shop & Product Detail
-- [x] **Product Listing:** Grid view with category filtering.
-- [x] **Sorting:** Implement "Newest" sort logic.
-- [x] **Detail View:** Left (Gallery) / Right (Info) layout.
-- [x] **Gallery:** Main image + thumbnails.
-- [x] **Tabs:** Implement "Details", "Reviews", and "OOTD" tabs.
-- [x] **Functionality:** Quantity selector and "Add to Cart" with specific quantity.
-- [x] **Zoom:** Remove zoom functionality (as requested).
+### 장바구니 및 결제 (Cart & Checkout)
+- [x] **장바구니 관리:** 아이템 목록, 수량 조절 (+/-), 아이템 삭제.
+- [x] **결제 폼:** 이름, 이메일, 주소 유효성 검사.
+- [x] **결제:** 성공 시 무통장 입금 정보 표시 구현.
 
-### Cart & Checkout
-- [x] **Cart Management:** List items, adjust quantities (+/-), remove items.
-- [x] **Checkout Form:** Validate Name, Email, Address.
-- [x] **Payment:** Implement Bank Transfer info display upon success.
+### OOTD (커뮤니티)
+- [x] **피드:** 사용자 스타일 그리드 레이아웃.
+- [x] **상호작용:** 좋아요 및 사용자 ID가 있는 호버 오버레이.
+- [x] **태그:** "착용 상품"을 상품 상세 페이지로 연결.
 
-### OOTD (Community)
-- [x] **Feed:** Grid layout of user styles.
-- [x] **Interactivity:** Hover overlay with Likes and User ID.
-- [x] **Tagging:** Link "Used Products" to Product Detail pages.
+### AI 스타일리스트 (AI Stylist)
+- [x] **통합:** Google Gemini API 연결.
+- [x] **UI:** 토글 가능한 플로팅 채팅 위젯.
+- [x] **페르소나:** 문맥 인식 프롬프팅으로 "Lumi" 페르소나 설정.
 
-### AI Stylist
-- [x] **Integration:** Connect Google Gemini API.
-- [x] **UI:** Floating chat widget with toggle.
-- [x] **Persona:** Configure "Lumi" persona with context-aware prompting.
+## 3단계: 관리자 대시보드 (Phase 3: Admin Dashboard)
 
-## Phase 3: Admin Dashboard (Back Office)
+### 레이아웃 및 내비게이션
+- [x] **사이드바:** 포괄적인 메뉴가 있는 다크 네이비 테마 (`#1e293b`).
+- [x] **헤더:** 사용자 정보 및 브레드크럼.
 
-### Layout & Navigation
-- [x] **Sidebar:** Dark navy theme (`#1e293b`) with comprehensive menu.
-- [x] **Header:** User info and Breadcrumbs.
+### 대시보드 위젯
+- [x] **할 일 보드:** 주문(파랑) 및 클레임(분홍) 상태 카운터.
+- [x] **차트:**
+    - [x] 실시간 방문자 차트 (혼합 막대/선 SVG).
+    - [x] 일일 방문자 차트 (막대 SVG).
+    - [x] 일일 매출 현황 (선 차트 + 테이블).
+- [x] **탭:** 서브 탭 구현 (일별 매출, 실시간, 주문 처리, 회원, 게시물).
 
-### Dashboard Widgets
-- [x] **To-Do Board:** Status counters for Orders (Blue) and Claims (Pink).
-- [x] **Charts:**
-    - [x] Real-time Visitor Chart (Mixed Bar/Line SVG).
-    - [x] Daily Visitor Chart (Bar SVG).
-    - [x] Daily Sales Status (Line Chart + Table).
-- [x] **Tabs:** Implement sub-tabs (Daily Sales, Real-time, Order Proc, Member, Posts).
+### 관리 모듈
+- [x] **상품:** 편집/삭제/추가 모달이 있는 리스트 뷰.
+- [x] **주문:** 상태 업데이트 드롭다운.
+- [x] **고객:** 멤버십 등급이 있는 리스트 뷰.
+- [x] **게시물 상태:** 통계 테이블 구현.
 
-### Management Modules
-- [x] **Products:** List view with Edit/Delete/Add Modal.
-- [x] **Orders:** status update dropdowns.
-- [x] **Customers:** List view with membership grades.
-- [x] **Post Status:** Stats table implementation.
+## 4단계: 개선 및 검증 (Phase 4: Refinement & Validation)
+- [x] **예외 처리:** 이미지 `onError` 대체 처리.
+- [x] **유효성 검사:** 폼 입력 확인 (관리자 상품 추가, 장바구니 결제).
+- [x] **UI 다듬기:**
+    - [x] 내비게이션 모바일 메뉴.
+    - [x] 홈 슬라이더 리사이징 (모바일에서 80% 너비).
+    - [x] 홈 슬라이더 이미지 일관성 (엄격한 4:5 비율).
+    - [x] 관리자 테이블 스크롤.
+- [ ] **배포 준비:** 최종 코드 리뷰.
 
-## Phase 4: Refinement & Validation (Current Focus)
-- [x] **Exception Handling:** Image `onError` fallbacks.
-- [x] **Validation:** Form input checks (Admin Product Add, Cart Checkout).
-- [x] **UI Polishing:**
-    - [x] Navbar mobile menu.
-    - [x] Home slider resizing (80% width on mobile).
-    - [x] Home slider image consistency (Strict 4:5 ratio).
-    - [x] Admin table scrolling.
-- [ ] **Deployment Preparation:** Final code review.
+## 5단계: 최적화 및 출시 준비 (Phase 5: Optimization & Launch Prep)
+- [ ] **SEO 최적화:** 메타 태그 (Title, Description, OG Tags) 추가.
+- [ ] **성능 최적화:** Lighthouse 점수 점검, 이미지 최적화, 코드 스플리팅 (Lazy Loading).
+- [ ] **접근성 (a11y):** 키보드 내비게이션, ARIA 레이블 점검.
+- [ ] **코드 리팩토링:** 사용하지 않는 코드 제거, TypeScript 타입 강화 (`any` 제거).
+- [ ] **최종 테스트:** 주요 사용자 흐름 (쇼핑 -> 장바구니 -> 결제) 수동 테스트.
