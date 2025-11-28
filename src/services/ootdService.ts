@@ -11,6 +11,29 @@ export const getOOTDPosts = async (): Promise<OOTDPost[]> => {
     return posts as unknown as OOTDPost[];
 };
 
+export const getUserOOTDPosts = async (username: string): Promise<OOTDPost[]> => {
+    try {
+        // In a real app, we should query by userId, but for now we filter by username
+        // Note: This requires an index if we use 'where' and 'orderBy' together
+
+        // We can't use getDocs on a QueryConstraint[] directly with our helper, 
+        // but 'getAll' doesn't support filtering.
+        // Let's use the raw firebase functions here for specific query
+
+        // Actually, let's just fetch all and filter in memory for this MVP phase 
+        // to avoid index creation blocking the user immediately again.
+        // TODO: Optimize with Firestore query and index
+        const allPosts = await getAll(COLLECTION);
+        const userPosts = (allPosts as unknown as OOTDPost[]).filter(post => post.user === username);
+
+        // Sort by ID desc (newest first)
+        return userPosts.sort((a, b) => b.id - a.id);
+    } catch (error) {
+        console.error("Error fetching user OOTD posts:", error);
+        return [];
+    }
+};
+
 export const createOOTDPost = async (post: Omit<OOTDPost, 'id'>) => {
     // We need to generate a numeric ID to match our type, or switch type to string.
     // For simplicity in migration, let's generate a timestamp-based numeric ID.

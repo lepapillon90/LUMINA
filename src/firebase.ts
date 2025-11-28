@@ -11,7 +11,10 @@ const firebaseConfig = {
     appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:763187775928:web:c2321754eb753062d5274d"
 };
 
+import { getStorage } from 'firebase/storage';
+
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app, 'lumina');
+export const storage = getStorage(app);
 export default app;

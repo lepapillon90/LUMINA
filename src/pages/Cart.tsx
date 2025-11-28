@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { useCart } from '../contexts';
+import { useCart, useAuth } from '../contexts';
+import { createOrder } from '../services/orderService';
 import { BANK_INFO } from '../constants';
 import { Trash2, ArrowRight, Minus, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Cart: React.FC = () => {
   const { cart, removeFromCart, updateQuantity, clearCart } = useCart();
+  const { user } = useAuth();
   const [step, setStep] = useState<'cart' | 'payment' | 'success'>('cart');
   const [formData, setFormData] = useState({ name: '', email: '', address: '' });
   const [error, setError] = useState('');
@@ -31,9 +33,30 @@ const Cart: React.FC = () => {
       return;
     }
 
-    setStep('success');
-    clearCart();
-    window.scrollTo(0, 0);
+    const processCheckout = async () => {
+      if (user) {
+        try {
+          await createOrder(user.uid, {
+            userId: user.uid,
+            items: cart,
+            customerName: formData.name,
+            total: finalTotal,
+            status: '결제완료',
+            date: new Date().toISOString().split('T')[0]
+          });
+        } catch (err) {
+          console.error("Failed to save order:", err);
+          alert(`주문 저장 실패: ${err}`);
+          return; // Stop if order creation fails
+        }
+      }
+
+      setStep('success');
+      clearCart();
+      window.scrollTo(0, 0);
+    };
+
+    processCheckout();
   };
 
   if (step === 'success') {

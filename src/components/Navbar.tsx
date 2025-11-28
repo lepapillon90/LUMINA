@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingBag, Menu, X, User as UserIcon } from 'lucide-react';
+import { ShoppingBag, Menu, X, User as UserIcon, LogOut } from 'lucide-react';
 import { useCart, useAuth } from '../contexts';
 import { UserRole } from '../types';
 
@@ -51,8 +51,11 @@ const Navbar: React.FC = () => {
               <span className="text-sm font-medium hidden md:block cursor-default">
                 {user.username}
               </span>
-              <button onClick={logout} className="hover:text-accent transition" aria-label="로그아웃">
+              <Link to="/mypage" className="hover:text-accent transition" aria-label="마이페이지">
                 <UserIcon size={20} />
+              </Link>
+              <button onClick={logout} className="hover:text-accent transition" aria-label="로그아웃">
+                <LogOut size={20} />
               </button>
             </div>
           ) : (
