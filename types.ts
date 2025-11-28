@@ -7,6 +7,7 @@ export interface Product {
   image: string;
   description: string;
   isNew?: boolean;
+  tags?: string[];
 }
 
 export interface OOTDPost {

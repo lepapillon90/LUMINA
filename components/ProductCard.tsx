@@ -17,20 +17,20 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   return (
     <div className="group relative flex flex-col">
-      <Link to={`/product/${product.id}`} className="block relative aspect-[4/5] overflow-hidden bg-gray-100 mb-4 cursor-pointer">
-        <img 
-          src={product.image} 
+      <Link to={`/product/${product.id}`} className="block relative w-full pt-[125%] bg-gray-100 mb-4 overflow-hidden cursor-pointer">
+        <img
+          src={product.image}
           alt={product.name}
           onError={handleImageError}
-          className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+          className="absolute top-0 left-0 w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
         />
         {product.isNew && (
-          <span className="absolute top-2 left-2 bg-white/90 text-xs font-bold px-2 py-1 uppercase tracking-widest">
+          <span className="absolute top-2 left-2 bg-white/90 text-xs font-bold px-2 py-1 uppercase tracking-widest z-10">
             New
           </span>
         )}
       </Link>
-      
+
       <div className="flex justify-between items-start mb-3">
         <Link to={`/product/${product.id}`} className="block">
           <h3 className="text-sm text-gray-900 font-medium hover:text-gray-600 transition">
@@ -43,7 +43,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         </p>
       </div>
 
-      <button 
+      <button
         onClick={() => addToCart(product)}
         className="w-full bg-primary text-white py-3 text-sm font-medium hover:bg-accent transition-colors flex items-center justify-center gap-2 mt-auto"
       >
