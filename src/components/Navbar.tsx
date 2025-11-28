@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ShoppingBag, Menu, X, User as UserIcon } from 'lucide-react';
-import { useCart } from '../contexts';
+import { useCart, useAuth } from '../contexts';
+import { UserRole } from '../types';
 
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const { cart } = useCart();
+  const { user, logout } = useAuth();
   const isHome = location.pathname === '/';
 
   useEffect(() => {
@@ -44,9 +46,21 @@ const Navbar: React.FC = () => {
 
         {/* Icons */}
         <div className="flex items-center space-x-6">
-          <Link to="/login" className="hover:text-accent transition" aria-label="로그인">
-            <UserIcon size={20} />
-          </Link>
+          {user ? (
+            <div className="flex items-center space-x-3 group relative">
+              <span className="text-sm font-medium hidden md:block cursor-default">
+                {user.username}
+              </span>
+              <button onClick={logout} className="hover:text-accent transition" aria-label="로그아웃">
+                <UserIcon size={20} />
+              </button>
+            </div>
+          ) : (
+            <Link to="/login" className="hover:text-accent transition" aria-label="로그인">
+              <UserIcon size={20} />
+            </Link>
+          )}
+
           <Link to="/cart" className="relative hover:text-accent transition" aria-label={`장바구니, ${cartCount}개 항목`}>
             <ShoppingBag size={20} />
             {cartCount > 0 && (

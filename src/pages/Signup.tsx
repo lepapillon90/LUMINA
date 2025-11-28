@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { auth } from '../firebase';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { getQuery, set } from '../services/db';
+import { where } from 'firebase/firestore';
 
 const Signup: React.FC = () => {
     const navigate = useNavigate();
@@ -11,19 +15,29 @@ const Signup: React.FC = () => {
         email: ''
     });
     const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+        setIsLoading(true);
 
         // Basic validation
         if (!formData.username || !formData.password || !formData.name || !formData.email) {
             setError('모든 필드를 입력해주세요.');
+            setIsLoading(false);
+            return;
+        }
+
+        // Username validation
+        if (formData.username.length < 3) {
+            setError('아이디는 3자 이상이어야 합니다.');
+            setIsLoading(false);
             return;
         }
 
@@ -31,23 +45,67 @@ const Signup: React.FC = () => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(formData.email)) {
             setError('유효한 이메일 주소를 입력해주세요.');
+            setIsLoading(false);
             return;
         }
 
         // Password length validation
         if (formData.password.length < 6) {
             setError('비밀번호는 6자 이상이어야 합니다.');
+            setIsLoading(false);
             return;
         }
 
         if (formData.password !== formData.confirmPassword) {
             setError('비밀번호가 일치하지 않습니다.');
+            setIsLoading(false);
             return;
         }
 
-        // Mock signup success
-        alert('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.');
-        navigate('/login');
+        try {
+            // Check if username exists
+            const existingUsers = await getQuery('users', where('username', '==', formData.username));
+            if (existingUsers.length > 0) {
+                setError('이미 사용 중인 아이디입니다.');
+                setIsLoading(false);
+                return;
+            }
+
+            // Create user in Firebase Auth
+            const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+
+            // Update profile with name
+            await updateProfile(userCredential.user, {
+                displayName: formData.name
+            });
+
+            // Save user data to Firestore
+            await set('users', userCredential.user.uid, {
+                username: formData.username,
+                email: formData.email,
+                displayName: formData.name,
+                role: 'GUEST',
+                grade: 'Bronze',
+                totalSpent: 0,
+                createdAt: new Date().toISOString()
+            });
+
+            // alert('회원가입이 완료되었습니다! 자동으로 로그인됩니다.'); // Removed blocking alert
+            navigate('/');
+        } catch (err: any) {
+            console.error("Signup error:", err);
+            if (err.code === 'auth/email-already-in-use') {
+                setError('이미 사용 중인 이메일입니다.');
+            } else if (err.code === 'auth/invalid-email') {
+                setError('유효하지 않은 이메일 형식입니다.');
+            } else if (err.code === 'auth/weak-password') {
+                setError('비밀번호가 너무 약합니다.');
+            } else {
+                setError(`회원가입 오류: ${err.code || err.message}`);
+            }
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -57,6 +115,16 @@ const Signup: React.FC = () => {
                 {error && <div className="mb-4 text-red-500 text-sm text-center">{error}</div>}
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
+                        <label className="block text-xs uppercase text-gray-500 mb-1">이름 (실명/닉네임)</label>
+                        <input
+                            type="text"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleChange}
+                            className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition"
+                        />
+                    </div>
+                    <div>
                         <label className="block text-xs uppercase text-gray-500 mb-1">아이디</label>
                         <input
                             type="text"
@@ -64,16 +132,7 @@ const Signup: React.FC = () => {
                             value={formData.username}
                             onChange={handleChange}
                             className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-xs uppercase text-gray-500 mb-1">이름</label>
-                        <input
-                            type="text"
-                            name="name"
-                            value={formData.name}
-                            onChange={handleChange}
-                            className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition"
+                            placeholder="영문, 숫자 3자 이상"
                         />
                     </div>
                     <div>
@@ -87,7 +146,7 @@ const Signup: React.FC = () => {
                         />
                     </div>
                     <div>
-                        <label className="block text-xs uppercase text-gray-500 mb-1">비밀번호</label>
+                        <label className="block text-xs uppercase text-gray-500 mb-1">비밀번호 (6자 이상)</label>
                         <input
                             type="password"
                             name="password"
@@ -108,9 +167,10 @@ const Signup: React.FC = () => {
                     </div>
                     <button
                         type="submit"
-                        className="w-full bg-primary text-white py-4 uppercase tracking-widest text-sm hover:bg-black transition mt-4"
+                        disabled={isLoading}
+                        className="w-full bg-primary text-white py-4 uppercase tracking-widest text-sm hover:bg-black transition mt-4 disabled:opacity-50"
                     >
-                        가입하기
+                        {isLoading ? '가입 처리 중...' : '가입하기'}
                     </button>
                 </form>
                 <div className="mt-6 text-center text-xs text-gray-400">

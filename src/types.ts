@@ -49,6 +49,7 @@ export enum UserRole {
 }
 
 export interface User {
+  uid: string;
   username: string;
   role: UserRole;
 }

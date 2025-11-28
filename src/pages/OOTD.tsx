@@ -1,46 +1,90 @@
-import React, { useState } from 'react';
-import { OOTD_POSTS, PRODUCTS } from '../constants';
-import { Heart, MessageCircle, Plus, Send, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { PRODUCTS } from '../constants';
+import { Heart, MessageCircle, Plus, Send } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
 import CreatePostModal from '../components/CreatePostModal';
 import { OOTDPost } from '../types';
+import { getOOTDPosts, createOOTDPost, toggleLikeOOTDPost, addCommentToOOTDPost } from '../services/ootdService';
+import { useAuth } from '../contexts';
+import Loading from '../components/Loading';
 
 const OOTD: React.FC = () => {
-  const [posts, setPosts] = useState<OOTDPost[]>(
-    OOTD_POSTS.map(post => ({ ...post, comments: [], isLiked: false }))
-  );
+  const [posts, setPosts] = useState<OOTDPost[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeCommentId, setActiveCommentId] = useState<number | null>(null);
   const [commentText, setCommentText] = useState('');
+  const { user } = useAuth();
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  const fetchPosts = async () => {
+    try {
+      const data = await getOOTDPosts();
+      // Sort by ID desc (newest first)
+      const sorted = data.sort((a, b) => b.id - a.id);
+      setPosts(sorted);
+    } catch (error) {
+      console.error("Failed to fetch OOTD posts:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     e.currentTarget.src = 'https://via.placeholder.com/400x500?text=No+Image';
   };
 
-  const handleCreatePost = (newPostData: Omit<OOTDPost, 'id' | 'likes' | 'user'>) => {
-    const newPost: OOTDPost = {
-      ...newPostData,
-      id: Date.now(),
-      user: '@guest_user', // Default user for now
-      likes: 0,
-      comments: [],
-      isLiked: false
-    };
-    setPosts([newPost, ...posts]);
+  const handleCreatePost = async (newPostData: Omit<OOTDPost, 'id' | 'likes' | 'user'>) => {
+    if (!user) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
+    try {
+      const postToCreate = {
+        ...newPostData,
+        user: user.username,
+        likes: 0,
+        comments: [],
+        isLiked: false,
+        productsUsed: newPostData.productsUsed || []
+      };
+      await createOOTDPost(postToCreate);
+      await fetchPosts(); // Refresh list
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Failed to create post:", error);
+      alert("게시물 작성에 실패했습니다.");
+    }
   };
 
-  const handleLike = (postId: number) => {
-    setPosts(posts.map(post => {
-      if (post.id === postId) {
-        return {
-          ...post,
-          likes: post.isLiked ? post.likes - 1 : post.likes + 1,
-          isLiked: !post.isLiked
-        };
-      }
-      return post;
-    }));
+  const handleLike = async (post: OOTDPost) => {
+    // Optimistic update
+    const newLikes = post.isLiked ? post.likes - 1 : post.likes + 1;
+    const newIsLiked = !post.isLiked;
+
+    setPosts(posts.map(p => p.id === post.id ? { ...p, likes: newLikes, isLiked: newIsLiked } : p));
+
+    try {
+      // We need the Firestore ID (string), but our type has number ID.
+      // In migration, we might have mixed types or need to find the doc ID.
+      // For this implementation, we assume getOOTDPosts returns objects that include the Firestore document ID if we modified the type.
+      // However, our type 'OOTDPost' has 'id: number'.
+      // The 'getAll' service returns '{ id: doc.id, ...data }'.
+      // If we cast it to OOTDPost, 'id' becomes the string doc ID, but TS thinks it is number.
+      // This is a type mismatch issue we need to solve.
+      // For now, let's assume we can cast 'post.id' to string for the service call if it was fetched from DB.
+
+      await toggleLikeOOTDPost(String(post.id), post.likes, post.isLiked);
+    } catch (error) {
+      console.error("Failed to like post:", error);
+      // Revert on error
+      setPosts(posts.map(p => p.id === post.id ? post : p));
+    }
   };
 
   const toggleCommentSection = (postId: number) => {
@@ -52,20 +96,36 @@ const OOTD: React.FC = () => {
     }
   };
 
-  const handleAddComment = (postId: number) => {
+  const handleAddComment = async (postId: number) => {
     if (!commentText.trim()) return;
+    if (!user) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
 
+    const newComment = { user: user.username, text: commentText };
+
+    // Optimistic update
     setPosts(posts.map(post => {
       if (post.id === postId) {
         return {
           ...post,
-          comments: [...(post.comments || []), { user: '@guest_user', text: commentText }]
+          comments: [...(post.comments || []), newComment]
         };
       }
       return post;
     }));
     setCommentText('');
+
+    try {
+      await addCommentToOOTDPost(String(postId), newComment);
+    } catch (error) {
+      console.error("Failed to add comment:", error);
+      // We might want to revert here, but for comments it's less critical visually
+    }
   };
+
+  if (loading) return <Loading />;
 
   return (
     <div className="pt-24 pb-20 bg-white min-h-screen">
@@ -102,7 +162,7 @@ const OOTD: React.FC = () => {
                 {/* Header */}
                 <div className="p-4 flex items-center space-x-3">
                   <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-500">
-                    {post.user.substring(1, 3).toUpperCase()}
+                    {post.user.substring(0, 2).toUpperCase()}
                   </div>
                   <span className="text-sm font-medium">{post.user}</span>
                 </div>
@@ -115,14 +175,13 @@ const OOTD: React.FC = () => {
                     onError={handleImageError}
                     className="w-full h-full object-cover"
                   />
-                  {/* Quick Like Overlay (Double tap simulation could go here) */}
                 </div>
 
                 {/* Actions */}
                 <div className="p-4 flex-grow flex flex-col">
                   <div className="flex items-center space-x-4 mb-3">
                     <button
-                      onClick={() => handleLike(post.id)}
+                      onClick={() => handleLike(post)}
                       className="transition-transform active:scale-90"
                     >
                       <Heart

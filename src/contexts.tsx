@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { CartItem, Product, User, UserRole } from './types';
+import { auth } from './firebase';
+import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
 
 // --- Contexts ---
 
@@ -16,8 +18,8 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 // Auth Context
 interface AuthContextType {
     user: User | null;
-    login: (u: string, p: string) => boolean;
-    logout: () => void;
+    loading: boolean;
+    logout: () => Promise<void>;
 }
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -56,26 +58,134 @@ export const Providers: React.FC<{ children: ReactNode }> = ({ children }) => {
 
     // Auth State
     const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
 
-    const login = (u: string, p: string) => {
-        if (u === 'admin' && p === 'admin') {
-            setUser({ username: 'admin', role: UserRole.ADMIN });
-            return true;
-        }
-        // Generic user login mock
-        if (u && p) {
-            setUser({ username: u, role: UserRole.GUEST });
-            return true;
-        }
-        return false;
+    // Cart Sync State
+    const isCartSynced = React.useRef(false);
+
+    // 1. Handle Auth Changes
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+            if (firebaseUser) {
+                let role = UserRole.GUEST;
+                let username = firebaseUser.displayName || firebaseUser.email || 'User';
+
+                // Fetch user details from Firestore
+                try {
+                    const { getById } = await import('./services/db');
+                    const userDoc = await getById('users', firebaseUser.uid);
+
+                    if (userDoc) {
+                        role = (userDoc as any).role === 'ADMIN' ? UserRole.ADMIN : UserRole.GUEST;
+                        username = (userDoc as any).username || username;
+                    } else {
+                        // Fallback for admin demo
+                        if (firebaseUser.email === 'admin@lumina.com') {
+                            role = UserRole.ADMIN;
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error fetching user details:", error);
+                }
+
+                setUser({
+                    uid: firebaseUser.uid,
+                    username: username,
+                    role: role
+                });
+
+            } else {
+                setUser(null);
+                setCart([]); // Clear cart on logout
+                isCartSynced.current = false;
+            }
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, []);
+
+    // 2. Cart Sync Logic: Fetch & Merge (Runs when user changes)
+    useEffect(() => {
+        const syncCart = async () => {
+            if (user && !isCartSynced.current) {
+                try {
+                    const { getById, set } = await import('./services/db');
+                    const savedCartDoc = await getById('carts', user.uid);
+
+                    let mergedCart = [...cart]; // Start with current local cart (guest items)
+
+                    if (savedCartDoc && (savedCartDoc as any).items) {
+                        const remoteItems = (savedCartDoc as any).items as CartItem[];
+
+                        // Merge strategy:
+                        const remoteMap = new Map(remoteItems.map(item => [item.id, item]));
+
+                        mergedCart.forEach(localItem => {
+                            if (remoteMap.has(localItem.id)) {
+                                const remoteItem = remoteMap.get(localItem.id)!;
+                                remoteItem.quantity += localItem.quantity;
+                                remoteMap.set(localItem.id, remoteItem);
+                            } else {
+                                remoteMap.set(localItem.id, localItem);
+                            }
+                        });
+
+                        mergedCart = Array.from(remoteMap.values());
+                    }
+
+                    // Update local state
+                    setCart(mergedCart);
+
+                    // Mark as synced
+                    isCartSynced.current = true;
+
+                    // If we merged guest items, save immediately
+                    if (cart.length > 0) {
+                        await set('carts', user.uid, {
+                            items: mergedCart,
+                            lastUpdated: new Date().toISOString()
+                        });
+                    }
+
+                } catch (error) {
+                    console.error("Error syncing cart:", error);
+                    isCartSynced.current = true;
+                }
+            }
+        };
+
+        syncCart();
+    }, [user, cart]);
+
+    // 3. Save Cart on Change (if logged in and synced)
+    useEffect(() => {
+        const saveCart = async () => {
+            if (user && isCartSynced.current && !loading) {
+                try {
+                    const { set } = await import('./services/db');
+                    await set('carts', user.uid, {
+                        items: cart,
+                        lastUpdated: new Date().toISOString()
+                    });
+                } catch (error) {
+                    console.error("Error saving cart:", error);
+                }
+            }
+        };
+
+        const timeoutId = setTimeout(saveCart, 500);
+        return () => clearTimeout(timeoutId);
+    }, [cart, user, loading]);
+
+    const logout = async () => {
+        await signOut(auth);
     };
 
-    const logout = () => setUser(null);
-
     return (
-        <AuthContext.Provider value={{ user, login, logout }}>
+        <AuthContext.Provider value={{ user, loading, logout }}>
             <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, clearCart }}>
-                {children}
+                {!loading && children}
             </CartContext.Provider>
         </AuthContext.Provider>
     );

@@ -8,15 +8,21 @@ import ErrorBoundary from './components/ErrorBoundary';
 import Loading from './components/Loading';
 import { Providers } from './contexts';
 
+// Static Import for Login to debug
+import Login from './pages/Login';
+// Static Import for Signup to debug
+import Signup from './pages/Signup';
+
 // Lazy Imports
 const Home = lazy(() => import('./pages/Home'));
 const Shop = lazy(() => import('./pages/Shop'));
 const OOTD = lazy(() => import('./pages/OOTD'));
 const Cart = lazy(() => import('./pages/Cart'));
-const Login = lazy(() => import('./pages/Login'));
-const Signup = lazy(() => import('./pages/Signup'));
+// const Login = lazy(() => import('./pages/Login'));
+// const Signup = lazy(() => import('./pages/Signup'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const Admin = lazy(() => import('./pages/Admin'));
+const DataMigration = lazy(() => import('./components/Admin/DataMigration'));
 const ProductDetail = lazy(() => import('./pages/ProductDetail'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
@@ -50,6 +56,7 @@ const Layout: React.FC = () => {
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/admin/migrate" element={<DataMigration />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
