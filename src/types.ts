@@ -31,4 +31,17 @@ export interface OOTDPost {
     likes: number;
     caption: string;
     productsUsed: number[];
+    comments?: { user: string; text: string }[];
+    isLiked?: boolean;
+}
+
+export interface Order {
+    id: string;
+    userId: string;
+    items: CartItem[];
+    customerName: string;
+    total: number;
+    status: string;
+    date: string;
+    createdAt?: any;
 }

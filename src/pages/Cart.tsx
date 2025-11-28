@@ -11,6 +11,7 @@ const Cart: React.FC = () => {
   const [step, setStep] = useState<'cart' | 'payment' | 'success'>('cart');
   const [formData, setFormData] = useState({ name: '', email: '', address: '' });
   const [error, setError] = useState('');
+  const [orderTotal, setOrderTotal] = useState(0);
 
   const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const shipping = total > 50000 ? 0 : 3000;
@@ -51,6 +52,7 @@ const Cart: React.FC = () => {
         }
       }
 
+      setOrderTotal(finalTotal);
       setStep('success');
       clearCart();
       window.scrollTo(0, 0);
@@ -80,7 +82,7 @@ const Cart: React.FC = () => {
             <p className="text-sm text-gray-500 mb-1">예금주</p>
             <p className="font-medium mb-3">{BANK_INFO.holder}</p>
             <p className="text-sm text-gray-500 mb-1">입금하실 금액</p>
-            <p className="font-bold text-lg text-primary">₩{finalTotal.toLocaleString()}</p>
+            <p className="font-bold text-lg text-primary">₩{orderTotal.toLocaleString()}</p>
           </div>
 
           <Link to="/" className="inline-block px-8 py-3 bg-primary text-white hover:bg-black transition">

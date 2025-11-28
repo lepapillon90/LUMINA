@@ -9,20 +9,9 @@ import SEO from '../components/SEO';
 import { User, Package, Heart, Camera, Clock, LogOut, Settings } from 'lucide-react';
 import { Order, Product, OOTDPost } from '../types';
 
-// Mock Data Services (Replace with actual API calls later)
-const mockOrders: Order[] = [
-    {
-        id: "20231128-001",
-        date: "2023.11.28",
-        status: "배송중",
-        total: 125000,
-        items: [
-            { id: 1, name: "루미나 펄 드롭 이어링", price: 45000, quantity: 1, image: "https://picsum.photos/400/500?random=1", category: "earring", description: "", tags: [] },
-            { id: 3, name: "실버 미스트 목걸이", price: 58000, quantity: 1, image: "https://picsum.photos/400/500?random=3", category: "necklace", description: "", tags: [] }
-        ]
-    }
-];
+import { getOrders } from '../services/orderService';
 
+// Mock Data Services (Replace with actual API calls later)
 const mockWishlist: Product[] = [
     { id: 2, name: "셀레스티얼 골드 링", price: 32000, category: "ring", image: "https://picsum.photos/400/500?random=2", description: "", tags: [] },
     { id: 6, name: "골든 리프 커프", price: 40000, category: "bracelet", image: "https://picsum.photos/400/500?random=6", description: "", tags: [] }
@@ -37,6 +26,27 @@ const MyPage: React.FC = () => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<'orders' | 'wishlist' | 'ootd' | 'recent'>('orders');
     const [loading, setLoading] = useState(false);
+    const [orders, setOrders] = useState<Order[]>([]);
+
+    useEffect(() => {
+        const fetchOrders = async () => {
+            if (user) {
+                setLoading(true);
+                try {
+                    const userOrders = await getOrders(user.uid);
+                    setOrders(userOrders);
+                } catch (error) {
+                    console.error("Failed to fetch orders:", error);
+                } finally {
+                    setLoading(false);
+                }
+            }
+        };
+
+        if (activeTab === 'orders') {
+            fetchOrders();
+        }
+    }, [user, activeTab]);
 
     // Redirect if not logged in
     useEffect(() => {
@@ -126,7 +136,7 @@ const MyPage: React.FC = () => {
                                 {activeTab === 'recent' && '최근 본 상품'}
                             </h2>
 
-                            {activeTab === 'orders' && <OrderHistory orders={mockOrders} loading={loading} />}
+                            {activeTab === 'orders' && <OrderHistory orders={orders} loading={loading} />}
                             {activeTab === 'wishlist' && <Wishlist items={mockWishlist} loading={loading} />}
                             {activeTab === 'ootd' && <MyOOTD posts={mockMyOOTD} loading={loading} />}
                             {activeTab === 'recent' && <RecentlyViewed />}

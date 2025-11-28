@@ -33,11 +33,11 @@ import {
 
 // --- Mock Data ---
 const INITIAL_ORDERS: Order[] = [
-  { id: 'ORD-2023-001', customerName: '김민지', date: '2023-10-24', total: 77000, status: '결제완료' },
-  { id: 'ORD-2023-002', customerName: '이수진', date: '2023-10-25', total: 45000, status: '입금대기' },
-  { id: 'ORD-2023-003', customerName: '박지훈', date: '2023-10-25', total: 120000, status: '배송중' },
-  { id: 'ORD-2023-004', customerName: '최유나', date: '2023-10-26', total: 32000, status: '배송완료' },
-  { id: 'ORD-2023-005', customerName: '정우성', date: '2023-10-26', total: 89000, status: '결제완료' },
+  { id: 'ORD-2023-001', userId: 'mock-user-1', items: [], customerName: '김민지', date: '2023-10-24', total: 77000, status: '결제완료' },
+  { id: 'ORD-2023-002', userId: 'mock-user-2', items: [], customerName: '이수진', date: '2023-10-25', total: 45000, status: '입금대기' },
+  { id: 'ORD-2023-003', userId: 'mock-user-3', items: [], customerName: '박지훈', date: '2023-10-25', total: 120000, status: '배송중' },
+  { id: 'ORD-2023-004', userId: 'mock-user-4', items: [], customerName: '최유나', date: '2023-10-26', total: 32000, status: '배송완료' },
+  { id: 'ORD-2023-005', userId: 'mock-user-5', items: [], customerName: '정우성', date: '2023-10-26', total: 89000, status: '결제완료' },
 ];
 
 const INITIAL_CUSTOMERS: Customer[] = [
