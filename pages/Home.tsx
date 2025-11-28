@@ -5,6 +5,8 @@ import RecommendedSection from '../components/RecommendedSection';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import SEO from '../components/SEO';
 
+import TrendingOOTDSection from '../components/TrendingOOTDSection';
+
 const Home: React.FC = () => {
   // Assuming all products are new based on previous request for the slider
   const newArrivals = PRODUCTS.filter(p => p.isNew);
@@ -130,6 +132,9 @@ const Home: React.FC = () => {
 
       {/* Recommended Section */}
       <RecommendedSection />
+
+      {/* Trending OOTD Section */}
+      <TrendingOOTDSection />
 
       {/* Brand Story Snippet */}
       <section className="bg-secondary py-20">
