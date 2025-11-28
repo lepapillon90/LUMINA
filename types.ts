@@ -17,6 +17,8 @@ export interface OOTDPost {
   likes: number;
   caption: string;
   productsUsed: number[]; // Product IDs
+  comments?: { user: string; text: string }[];
+  isLiked?: boolean;
 }
 
 export interface CartItem extends Product {
