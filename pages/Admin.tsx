@@ -1,27 +1,27 @@
 
 import React, { useState, useMemo } from 'react';
-import { useAuth } from '../App';
+import { useAuth } from '../contexts';
 import { Navigate } from 'react-router-dom';
 import { UserRole, Product, Order, Customer } from '../types';
 import { PRODUCTS } from '../constants';
-import { 
-  Home, 
-  ShoppingCart, 
-  Package, 
-  Users, 
-  MessageCircle, 
-  FileText, 
-  Palette, 
-  Percent, 
-  LineChart, 
+import {
+  Home,
+  ShoppingCart,
+  Package,
+  Users,
+  MessageCircle,
+  FileText,
+  Palette,
+  Percent,
+  LineChart,
   BarChart2,
   Grid,
   Settings,
-  LogOut, 
-  Plus, 
-  Edit3, 
-  Trash2, 
-  Search, 
+  LogOut,
+  Plus,
+  Edit3,
+  Trash2,
+  Search,
   MoreHorizontal,
   RefreshCw,
   ExternalLink,
@@ -77,30 +77,30 @@ const DailySalesStats = () => {
           <span>단위/만원</span>
           <span>2025-11-28 07:00 기준</span>
         </div>
-        
+
         {/* Chart Area */}
         <div className="relative h-64 w-full mb-4">
           {/* Grid Lines */}
           <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
-             {[0, 1].map((_, i) => (
-               <div key={i} className={`w-full border-b ${i===1 ? 'border-gray-300' : 'border-gray-100'} h-0 flex items-center`}>
-                 <span className="absolute -left-6 text-xs text-gray-400">{i===1 ? 0 : ''}</span>
-               </div>
-             ))}
+            {[0, 1].map((_, i) => (
+              <div key={i} className={`w-full border-b ${i === 1 ? 'border-gray-300' : 'border-gray-100'} h-0 flex items-center`}>
+                <span className="absolute -left-6 text-xs text-gray-400">{i === 1 ? 0 : ''}</span>
+              </div>
+            ))}
           </div>
 
           {/* Lines (Simulated Flat Lines at 0) */}
           <div className="absolute bottom-0 left-0 w-full h-full flex items-end">
-             <div className="w-full h-[1px] bg-gray-300 relative">
-               {/* Markers */}
-               {dates.map((d, i) => (
-                 <div key={i} className="absolute transform -translate-x-1/2 flex flex-col items-center" style={{ left: `${(i / (dates.length - 1)) * 100}%`, bottom: '-6px' }}>
-                    <div className="w-2 h-2 rounded-full border-2 border-purple-400 bg-white z-20 mb-[-6px]"></div>
-                    <div className="w-2 h-2 rounded-full border-2 border-pink-400 bg-white z-20 mb-[-6px]"></div>
-                    <div className="w-2 h-2 rounded-full border-2 border-blue-400 bg-white z-20"></div>
-                 </div>
-               ))}
-             </div>
+            <div className="w-full h-[1px] bg-gray-300 relative">
+              {/* Markers */}
+              {dates.map((d, i) => (
+                <div key={i} className="absolute transform -translate-x-1/2 flex flex-col items-center" style={{ left: `${(i / (dates.length - 1)) * 100}%`, bottom: '-6px' }}>
+                  <div className="w-2 h-2 rounded-full border-2 border-purple-400 bg-white z-20 mb-[-6px]"></div>
+                  <div className="w-2 h-2 rounded-full border-2 border-pink-400 bg-white z-20 mb-[-6px]"></div>
+                  <div className="w-2 h-2 rounded-full border-2 border-blue-400 bg-white z-20"></div>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* X Axis Labels */}
@@ -111,19 +111,19 @@ const DailySalesStats = () => {
 
         {/* Custom Range Slider UI */}
         <div className="mt-12 bg-blue-50 h-10 rounded-sm relative border border-blue-100 flex items-center px-2">
-           <div className="absolute left-0 top-0 bottom-0 bg-blue-400 w-2 rounded-l-sm"></div>
-           <div className="absolute right-0 top-0 bottom-0 bg-blue-400 w-2 rounded-r-sm"></div>
-           <div className="absolute left-0 right-0 h-full border-t-2 border-b-2 border-blue-200 mx-2"></div>
-           <div className="w-full flex justify-between px-1 z-10">
-              <div className="w-6 h-6 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm cursor-pointer">
-                <Pause size={12} fill="white" />
-              </div>
-              <div className="w-6 h-6 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm cursor-pointer">
-                <Pause size={12} fill="white" />
-              </div>
-           </div>
+          <div className="absolute left-0 top-0 bottom-0 bg-blue-400 w-2 rounded-l-sm"></div>
+          <div className="absolute right-0 top-0 bottom-0 bg-blue-400 w-2 rounded-r-sm"></div>
+          <div className="absolute left-0 right-0 h-full border-t-2 border-b-2 border-blue-200 mx-2"></div>
+          <div className="w-full flex justify-between px-1 z-10">
+            <div className="w-6 h-6 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm cursor-pointer">
+              <Pause size={12} fill="white" />
+            </div>
+            <div className="w-6 h-6 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm cursor-pointer">
+              <Pause size={12} fill="white" />
+            </div>
+          </div>
         </div>
-        
+
         {/* Legend */}
         <div className="flex justify-center space-x-6 mt-4 text-xs font-medium text-gray-600">
           <div className="flex items-center"><span className="w-2 h-2 bg-blue-400 mr-2 rounded-sm"></span>주문</div>
@@ -136,12 +136,12 @@ const DailySalesStats = () => {
       <div className="flex-1 min-w-[300px] border-l border-gray-100 pl-0 xl:pl-8">
         <table className="w-full text-sm">
           <thead className="border-b border-gray-200">
-             <tr>
-               <th className="font-normal text-gray-500 py-2 text-left w-1/4">기간별 매출</th>
-               <th className="font-normal text-blue-500 py-2 text-right w-1/4 flex items-center justify-end gap-1"><span className="w-1.5 h-1.5 bg-blue-500 rounded-sm"></span> 주문</th>
-               <th className="font-normal text-pink-500 py-2 text-right w-1/4 flex items-center justify-end gap-1"><span className="w-1.5 h-1.5 border border-pink-500 rounded-full"></span> 결제</th>
-               <th className="font-normal text-purple-500 py-2 text-right w-1/4 flex items-center justify-end gap-1"><span className="w-1.5 h-1.5 border border-purple-500 rounded-full"></span> 환불</th>
-             </tr>
+            <tr>
+              <th className="font-normal text-gray-500 py-2 text-left w-1/4">기간별 매출</th>
+              <th className="font-normal text-blue-500 py-2 text-right w-1/4 flex items-center justify-end gap-1"><span className="w-1.5 h-1.5 bg-blue-500 rounded-sm"></span> 주문</th>
+              <th className="font-normal text-pink-500 py-2 text-right w-1/4 flex items-center justify-end gap-1"><span className="w-1.5 h-1.5 border border-pink-500 rounded-full"></span> 결제</th>
+              <th className="font-normal text-purple-500 py-2 text-right w-1/4 flex items-center justify-end gap-1"><span className="w-1.5 h-1.5 border border-purple-500 rounded-full"></span> 환불</th>
+            </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {/* Daily Rows */}
@@ -167,15 +167,15 @@ const DailySalesStats = () => {
                 </td>
               </tr>
             ))}
-            
+
             {/* Separator Row */}
             <tr><td colSpan={4} className="py-2 border-b border-gray-100"></td></tr>
 
             {/* Stats Rows */}
             {statsData.map((row, idx) => (
               <tr key={`stat-${idx}`} className={`group hover:bg-gray-50 ${idx % 2 === 1 ? 'bg-blue-50/30' : ''}`}>
-                 <td className="py-4 align-top font-medium text-gray-700">{row.label}</td>
-                 <td className="py-4 text-right align-top">
+                <td className="py-4 align-top font-medium text-gray-700">{row.label}</td>
+                <td className="py-4 text-right align-top">
                   <div className="text-gray-800 font-medium">{row.orderPrice}원</div>
                   <div className="text-gray-400 text-xs mt-1">{row.orderCount}건</div>
                 </td>
@@ -207,7 +207,7 @@ const MemberPointsStats = () => {
     { label: '11월 23일', short: '11-23' },
     { label: '11월 22일', short: '11-22' },
   ];
-  
+
   // Reverse for chart (oldest to newest)
   const chartDates = [...dates].reverse();
 
@@ -216,100 +216,100 @@ const MemberPointsStats = () => {
       {/* Top Cards */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-[#f8faff] p-5 rounded-lg border border-blue-50">
-           <h4 className="text-gray-500 text-xs mb-2">총 신규 회원 가입 현황</h4>
-           <p className="text-2xl font-bold text-gray-800">0 <span className="text-base font-normal text-gray-500">명</span></p>
+          <h4 className="text-gray-500 text-xs mb-2">총 신규 회원 가입 현황</h4>
+          <p className="text-2xl font-bold text-gray-800">0 <span className="text-base font-normal text-gray-500">명</span></p>
         </div>
         <div className="bg-[#f8faff] p-5 rounded-lg border border-blue-50">
-           <h4 className="text-gray-500 text-xs mb-2">총 적립금 적용 현황</h4>
-           <p className="text-2xl font-bold text-gray-800">0 <span className="text-base font-normal text-gray-500">원</span></p>
+          <h4 className="text-gray-500 text-xs mb-2">총 적립금 적용 현황</h4>
+          <p className="text-2xl font-bold text-gray-800">0 <span className="text-base font-normal text-gray-500">원</span></p>
         </div>
       </div>
 
       <div className="flex flex-col xl:flex-row gap-8">
         {/* Chart Section */}
         <div className="flex-1 min-w-[300px]">
-           <div className="flex justify-between items-center mb-6 text-xs text-gray-500">
-             <span>단위/명</span>
-           </div>
-           
-           <div className="relative h-64 w-full mb-4">
-              {/* Grid Lines */}
-              <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
-                 {[0, 1].map((_, i) => (
-                   <div key={i} className={`w-full border-b ${i===1 ? 'border-gray-300' : 'border-gray-100'} h-0 flex items-center`}>
-                     <span className="absolute -left-6 text-xs text-gray-400">{i===1 ? 0 : ''}</span>
-                   </div>
-                 ))}
-              </div>
+          <div className="flex justify-between items-center mb-6 text-xs text-gray-500">
+            <span>단위/명</span>
+          </div>
 
-              {/* Line Chart */}
-              <div className="absolute bottom-0 left-0 w-full h-full flex items-end">
-                 <div className="w-full h-[1px] bg-orange-400 relative">
-                   {/* Points */}
-                   {chartDates.map((d, i) => (
-                     <div key={i} className="absolute transform -translate-x-1/2 flex flex-col items-center" 
-                          style={{ left: `${(i / (chartDates.length - 1)) * 100}%`, bottom: '-1px' }}>
-                     </div>
-                   ))}
-                 </div>
-              </div>
-
-              {/* X Axis Labels */}
-              <div className="absolute top-full w-full flex justify-between mt-2 text-xs text-gray-500">
-                {chartDates.map((d, i) => <span key={i}>{d.short}</span>)}
-              </div>
-           </div>
-
-           {/* Slider UI */}
-            <div className="mt-12 bg-red-50 h-10 rounded-sm relative border border-red-100 flex items-center px-2">
-               <div className="absolute left-0 top-0 bottom-0 bg-red-300 w-2 rounded-l-sm"></div>
-               <div className="absolute right-0 top-0 bottom-0 bg-red-300 w-2 rounded-r-sm"></div>
-               <div className="absolute left-0 right-0 h-full border-t-2 border-b-2 border-red-100 mx-2"></div>
-               <div className="w-full flex justify-between px-1 z-10">
-                  <div className="w-6 h-6 bg-red-400 rounded flex items-center justify-center text-white shadow-sm cursor-pointer">
-                    <Pause size={12} fill="white" />
-                  </div>
-                  <div className="w-6 h-6 bg-red-400 rounded flex items-center justify-center text-white shadow-sm cursor-pointer">
-                    <Pause size={12} fill="white" />
-                  </div>
-               </div>
+          <div className="relative h-64 w-full mb-4">
+            {/* Grid Lines */}
+            <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+              {[0, 1].map((_, i) => (
+                <div key={i} className={`w-full border-b ${i === 1 ? 'border-gray-300' : 'border-gray-100'} h-0 flex items-center`}>
+                  <span className="absolute -left-6 text-xs text-gray-400">{i === 1 ? 0 : ''}</span>
+                </div>
+              ))}
             </div>
 
-            {/* Legend */}
-            <div className="flex justify-center mt-4 text-xs font-medium text-gray-600">
-               <div className="flex items-center"><span className="w-2 h-2 border-2 border-orange-400 rounded-full mr-2"></span>신규 회원 가입 현황</div>
+            {/* Line Chart */}
+            <div className="absolute bottom-0 left-0 w-full h-full flex items-end">
+              <div className="w-full h-[1px] bg-orange-400 relative">
+                {/* Points */}
+                {chartDates.map((d, i) => (
+                  <div key={i} className="absolute transform -translate-x-1/2 flex flex-col items-center"
+                    style={{ left: `${(i / (chartDates.length - 1)) * 100}%`, bottom: '-1px' }}>
+                  </div>
+                ))}
+              </div>
             </div>
+
+            {/* X Axis Labels */}
+            <div className="absolute top-full w-full flex justify-between mt-2 text-xs text-gray-500">
+              {chartDates.map((d, i) => <span key={i}>{d.short}</span>)}
+            </div>
+          </div>
+
+          {/* Slider UI */}
+          <div className="mt-12 bg-red-50 h-10 rounded-sm relative border border-red-100 flex items-center px-2">
+            <div className="absolute left-0 top-0 bottom-0 bg-red-300 w-2 rounded-l-sm"></div>
+            <div className="absolute right-0 top-0 bottom-0 bg-red-300 w-2 rounded-r-sm"></div>
+            <div className="absolute left-0 right-0 h-full border-t-2 border-b-2 border-red-100 mx-2"></div>
+            <div className="w-full flex justify-between px-1 z-10">
+              <div className="w-6 h-6 bg-red-400 rounded flex items-center justify-center text-white shadow-sm cursor-pointer">
+                <Pause size={12} fill="white" />
+              </div>
+              <div className="w-6 h-6 bg-red-400 rounded flex items-center justify-center text-white shadow-sm cursor-pointer">
+                <Pause size={12} fill="white" />
+              </div>
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div className="flex justify-center mt-4 text-xs font-medium text-gray-600">
+            <div className="flex items-center"><span className="w-2 h-2 border-2 border-orange-400 rounded-full mr-2"></span>신규 회원 가입 현황</div>
+          </div>
         </div>
 
         {/* Table Section */}
         <div className="flex-1 min-w-[300px] border-l border-gray-100 pl-0 xl:pl-8">
-           <table className="w-full text-sm">
-             <thead className="border-b border-gray-200">
-               <tr>
-                 <th className="font-normal text-gray-500 py-2 text-left flex items-center gap-1">날짜 <ArrowDown size={12}/></th>
-                 <th className="font-normal text-gray-500 py-2 text-right">
-                    <span className="flex items-center justify-end gap-1">
-                      <span className="w-1.5 h-1.5 border border-orange-500 rounded-full"></span> 신규 회원 가입 현황
-                    </span>
-                 </th>
-                 <th className="font-normal text-gray-500 py-2 text-right">적립금 적용 현황</th>
-               </tr>
-             </thead>
-             <tbody className="divide-y divide-gray-100">
-               {dates.map((row, idx) => (
-                 <tr key={idx} className="group hover:bg-gray-50">
-                   <td className="py-4 align-top">
-                     <div className="flex items-center">
-                       <span className={`font-medium ${row.isToday ? 'text-gray-900' : 'text-gray-600'}`}>{row.label}</span>
-                       {row.isToday && <span className="ml-2 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded-sm font-light">오늘</span>}
-                     </div>
-                   </td>
-                   <td className="py-4 text-right align-top text-gray-800 font-medium">0명</td>
-                   <td className="py-4 text-right align-top text-gray-800 font-medium">0원</td>
-                 </tr>
-               ))}
-             </tbody>
-           </table>
+          <table className="w-full text-sm">
+            <thead className="border-b border-gray-200">
+              <tr>
+                <th className="font-normal text-gray-500 py-2 text-left flex items-center gap-1">날짜 <ArrowDown size={12} /></th>
+                <th className="font-normal text-gray-500 py-2 text-right">
+                  <span className="flex items-center justify-end gap-1">
+                    <span className="w-1.5 h-1.5 border border-orange-500 rounded-full"></span> 신규 회원 가입 현황
+                  </span>
+                </th>
+                <th className="font-normal text-gray-500 py-2 text-right">적립금 적용 현황</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {dates.map((row, idx) => (
+                <tr key={idx} className="group hover:bg-gray-50">
+                  <td className="py-4 align-top">
+                    <div className="flex items-center">
+                      <span className={`font-medium ${row.isToday ? 'text-gray-900' : 'text-gray-600'}`}>{row.label}</span>
+                      {row.isToday && <span className="ml-2 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded-sm font-light">오늘</span>}
+                    </div>
+                  </td>
+                  <td className="py-4 text-right align-top text-gray-800 font-medium">0명</td>
+                  <td className="py-4 text-right align-top text-gray-800 font-medium">0원</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -408,22 +408,22 @@ const OrderProcessingStats = () => {
 // Post Status Component
 const PostStats = () => {
   const categories = [
-    '공지사항', '상품 사용후기', '상품 Q&A', '자유게시판', 
+    '공지사항', '상품 사용후기', '상품 Q&A', '자유게시판',
     '갤러리', '뉴스/이벤트', '이용안내 FAQ', '자료실'
   ];
 
   const dates = [
-    { label: '11월 28일', isToday: true, values: [0,0,0,0,0,0,0,0] },
-    { label: '11월 27일', values: [0,0,0,0,0,0,0,0] },
-    { label: '11월 26일', values: [0,0,0,0,0,0,0,0] },
-    { label: '11월 25일', values: [0,0,0,0,0,0,0,0] },
-    { label: '11월 24일', values: [0,0,0,0,0,0,0,0] },
-    { label: '11월 23일', values: [0,0,0,0,0,0,0,0] },
-    { label: '11월 22일', values: [1,0,0,0,0,0,0,0] },
+    { label: '11월 28일', isToday: true, values: [0, 0, 0, 0, 0, 0, 0, 0] },
+    { label: '11월 27일', values: [0, 0, 0, 0, 0, 0, 0, 0] },
+    { label: '11월 26일', values: [0, 0, 0, 0, 0, 0, 0, 0] },
+    { label: '11월 25일', values: [0, 0, 0, 0, 0, 0, 0, 0] },
+    { label: '11월 24일', values: [0, 0, 0, 0, 0, 0, 0, 0] },
+    { label: '11월 23일', values: [0, 0, 0, 0, 0, 0, 0, 0] },
+    { label: '11월 22일', values: [1, 0, 0, 0, 0, 0, 0, 0] },
   ];
 
   // Calculate totals
-  const totals = categories.map((_, idx) => 
+  const totals = categories.map((_, idx) =>
     dates.reduce((acc, curr) => acc + curr.values[idx], 0)
   );
 
@@ -437,37 +437,37 @@ const PostStats = () => {
                 날짜 <ArrowDown size={12} />
               </th>
               {categories.map((cat, idx) => (
-                 <th key={idx} className="py-3 font-normal whitespace-nowrap px-2">{cat}</th>
+                <th key={idx} className="py-3 font-normal whitespace-nowrap px-2">{cat}</th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {/* Summary Row */}
-             <tr className="bg-[#f0f9ff]/50 font-bold text-gray-800">
-               <td className="py-4 text-left pl-4">합계</td>
-               {totals.map((t, idx) => (
-                 <td key={idx}>{t}</td>
-               ))}
-             </tr>
+            <tr className="bg-[#f0f9ff]/50 font-bold text-gray-800">
+              <td className="py-4 text-left pl-4">합계</td>
+              {totals.map((t, idx) => (
+                <td key={idx}>{t}</td>
+              ))}
+            </tr>
 
-             {/* Date Rows */}
-             {dates.map((row, idx) => (
-               <tr key={idx} className="hover:bg-gray-50 transition group">
-                 <td className="py-4 text-left pl-4 font-medium text-gray-600 flex items-center whitespace-nowrap">
-                   {row.label}
-                   {row.isToday && <span className="ml-2 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded-sm font-light">오늘</span>}
-                 </td>
-                 {row.values.map((val, vIdx) => (
-                   <td key={vIdx} className={val > 0 ? "font-bold text-gray-800" : "text-gray-400"}>
-                     {val}
-                   </td>
-                 ))}
-               </tr>
-             ))}
+            {/* Date Rows */}
+            {dates.map((row, idx) => (
+              <tr key={idx} className="hover:bg-gray-50 transition group">
+                <td className="py-4 text-left pl-4 font-medium text-gray-600 flex items-center whitespace-nowrap">
+                  {row.label}
+                  {row.isToday && <span className="ml-2 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded-sm font-light">오늘</span>}
+                </td>
+                {row.values.map((val, vIdx) => (
+                  <td key={vIdx} className={val > 0 ? "font-bold text-gray-800" : "text-gray-400"}>
+                    {val}
+                  </td>
+                ))}
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
-      
+
       <div className="flex justify-end mt-4">
         <button className="flex items-center gap-1 px-3 py-1.5 border border-gray-300 rounded bg-white text-xs font-medium hover:bg-gray-50 text-gray-700">
           <Settings size={12} />
@@ -498,7 +498,7 @@ const RealTimeChart = () => {
       <div className="absolute inset-0 flex flex-col justify-between text-xs text-gray-300 pointer-events-none z-0">
         {[...Array(5)].map((_, i) => (
           <div key={i} className="w-full border-b border-gray-100 h-0 flex items-center">
-            <span className="ml-[-20px] absolute">{maxVal - (i * (maxVal/4))}</span>
+            <span className="ml-[-20px] absolute">{maxVal - (i * (maxVal / 4))}</span>
           </div>
         ))}
         <div className="w-full border-b border-gray-200 h-0">
@@ -515,17 +515,17 @@ const RealTimeChart = () => {
             </div>
 
             {/* Total Bar */}
-            <div 
+            <div
               className="w-4 bg-sky-400 rounded-t-sm opacity-80 hover:opacity-100 transition-all relative"
               style={{ height: `${(item.total / maxVal) * 100}%` }}
             >
               {/* PC Line Point (Simulated) */}
-              <div 
+              <div
                 className="absolute w-2 h-2 bg-purple-500 rounded-full border-2 border-white -ml-3"
                 style={{ bottom: `${(item.pc / item.total) * 100}%`, left: '50%' }}
               />
-               {/* Mobile Line Point (Simulated) */}
-               <div 
+              {/* Mobile Line Point (Simulated) */}
+              <div
                 className="absolute w-2 h-2 bg-pink-500 rounded-full border-2 border-white ml-1"
                 style={{ bottom: `${(item.mobile / item.total) * 100}%`, left: '50%' }}
               />
@@ -534,7 +534,7 @@ const RealTimeChart = () => {
           </div>
         ))}
       </div>
-      
+
       {/* Legend */}
       <div className="absolute -bottom-8 left-0 right-0 flex justify-center space-x-4 text-xs">
         <div className="flex items-center"><span className="w-2 h-2 bg-sky-400 mr-1"></span>전체</div>
@@ -553,7 +553,7 @@ const DailyVisitorChart = () => {
 
   return (
     <div className="w-full h-64 relative mt-4">
-       <div className="absolute inset-0 flex flex-col justify-between text-xs text-gray-300 pointer-events-none">
+      <div className="absolute inset-0 flex flex-col justify-between text-xs text-gray-300 pointer-events-none">
         {[...Array(5)].map((_, i) => (
           <div key={i} className="w-full border-b border-gray-100 h-0 flex items-center">
             <span className="ml-[-25px] absolute">{maxVal - (i * 100)}</span>
@@ -567,21 +567,21 @@ const DailyVisitorChart = () => {
       <div className="absolute inset-0 flex items-end justify-around pl-4 z-10">
         {data.map((val, idx) => (
           <div key={idx} className="flex flex-col items-center w-full group">
-            <div 
+            <div
               className="w-6 bg-[#6cdad8] rounded-t-sm hover:bg-[#5bcac8] transition-all relative group"
               style={{ height: `${(val / maxVal) * 100}%` }}
             >
-               <div className="opacity-0 group-hover:opacity-100 absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-[#6cdad8]">
-                 {val}
-               </div>
+              <div className="opacity-0 group-hover:opacity-100 absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-[#6cdad8]">
+                {val}
+              </div>
             </div>
             <span className="text-[10px] text-gray-500 mt-2">{dates[idx]}</span>
           </div>
         ))}
       </div>
-      
-       {/* Legend */}
-       <div className="absolute -bottom-8 left-0 right-0 flex justify-center text-xs">
+
+      {/* Legend */}
+      <div className="absolute -bottom-8 left-0 right-0 flex justify-center text-xs">
         <div className="flex items-center"><span className="w-2 h-2 bg-[#6cdad8] mr-1"></span>방문자 수</div>
       </div>
     </div>
@@ -611,12 +611,12 @@ const Admin: React.FC = () => {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [dashboardSubTab, setDashboardSubTab] = useState('daily'); // Default to daily sales as requested
-  
+
   // Data State
   const [products, setProducts] = useState<Product[]>(PRODUCTS);
   const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
   const [customers, setCustomers] = useState<Customer[]>(INITIAL_CUSTOMERS);
-  
+
   // Modal State
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -626,19 +626,19 @@ const Admin: React.FC = () => {
   }
 
   // --- Handlers ---
-  
+
   const handleSaveProduct = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    
+
     // Validation
     const name = formData.get('name') as string;
     const price = Number(formData.get('price'));
     const image = formData.get('image') as string;
-    
+
     if (!name || price === 0 || !image) {
-       alert('필수 정보를 모두 입력해주세요.');
-       return;
+      alert('필수 정보를 모두 입력해주세요.');
+      return;
     }
 
     if (price < 0) {
@@ -680,7 +680,7 @@ const Admin: React.FC = () => {
   const renderHome = () => {
     // Current date logic
     const today = new Date();
-    const dateString = `${today.getMonth() + 1}월 ${today.getDate()}일 ${['일','월','화','수','목','금','토'][today.getDay()]}요일`;
+    const dateString = `${today.getMonth() + 1}월 ${today.getDate()}일 ${['일', '월', '화', '수', '목', '금', '토'][today.getDay()]}요일`;
 
     // Counts logic
     const getCount = (status: string) => orders.filter(o => o.status === status).length;
@@ -697,13 +697,13 @@ const Admin: React.FC = () => {
         </div>
       </div>
     );
-    
+
     const tabs = [
-       { id: 'daily', label: '일별 매출 현황' },
-       { id: 'realtime', label: '실시간 접속 현황' },
-       { id: 'order_proc', label: '주문처리 현황' },
-       { id: 'member', label: '회원/적립금 현황' },
-       { id: 'posts', label: '게시물 현황' }
+      { id: 'daily', label: '일별 매출 현황' },
+      { id: 'realtime', label: '실시간 접속 현황' },
+      { id: 'order_proc', label: '주문처리 현황' },
+      { id: 'member', label: '회원/적립금 현황' },
+      { id: 'posts', label: '게시물 현황' }
     ];
 
     return (
@@ -715,46 +715,46 @@ const Admin: React.FC = () => {
             <span className="text-xs text-gray-400">{dateString}</span>
             <HelpCircle size={14} className="text-gray-300 cursor-pointer" />
           </div>
-          
+
           <div className="grid grid-cols-2 md:grid-cols-5 divide-x divide-gray-100 text-sm">
-             {/* Order Flow - Blue Tones */}
-             <StatusBox title="입금전" count={getCount('입금전')} type="order" />
-             <StatusBox title="배송준비중" count={getCount('입금대기')} type="order" />
-             <StatusBox title="배송보류중" count={0} type="order" />
-             <StatusBox title="배송대기" count={0} type="order" />
-             <StatusBox title="배송중" count={getCount('배송중')} type="order" />
+            {/* Order Flow - Blue Tones */}
+            <StatusBox title="입금전" count={getCount('입금전')} type="order" />
+            <StatusBox title="배송준비중" count={getCount('입금대기')} type="order" />
+            <StatusBox title="배송보류중" count={0} type="order" />
+            <StatusBox title="배송대기" count={0} type="order" />
+            <StatusBox title="배송중" count={getCount('배송중')} type="order" />
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 divide-x divide-gray-100 border-t border-gray-100 text-sm">
-             {/* Claim Flow - Pink Tones */}
-             <StatusBox title="취소신청" count={0} type="claim" />
-             <StatusBox title="교환신청" count={0} type="claim" />
-             <StatusBox title="반품신청" count={0} type="claim" />
-             <StatusBox title="환불전" count={0} type="normal" />
-             <div className="flex flex-col justify-center p-4 h-24 bg-white">
-                <span className="text-xs text-gray-500 mb-1">게시물관리</span>
-                <span className="text-lg font-bold text-gray-800">2</span>
-             </div>
+            {/* Claim Flow - Pink Tones */}
+            <StatusBox title="취소신청" count={0} type="claim" />
+            <StatusBox title="교환신청" count={0} type="claim" />
+            <StatusBox title="반품신청" count={0} type="claim" />
+            <StatusBox title="환불전" count={0} type="normal" />
+            <div className="flex flex-col justify-center p-4 h-24 bg-white">
+              <span className="text-xs text-gray-500 mb-1">게시물관리</span>
+              <span className="text-lg font-bold text-gray-800">2</span>
+            </div>
           </div>
         </div>
 
         {/* Middle Section: Dashboard Tabs */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 min-h-[400px]">
           <div className="flex border-b border-gray-200 overflow-x-auto no-scrollbar">
-             {tabs.map((tab) => (
-               <button 
+            {tabs.map((tab) => (
+              <button
                 key={tab.id}
                 onClick={() => setDashboardSubTab(tab.id)}
                 className={`flex-1 py-4 text-sm font-medium transition-colors relative whitespace-nowrap px-4
                   ${dashboardSubTab === tab.id
-                    ? 'text-blue-600 font-bold' 
+                    ? 'text-blue-600 font-bold'
                     : 'text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100'}`}
-               >
-                 {tab.label}
-                 {dashboardSubTab === tab.id && 
-                   <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600"></div>
-                 }
-               </button>
-             ))}
+              >
+                {tab.label}
+                {dashboardSubTab === tab.id &&
+                  <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600"></div>
+                }
+              </button>
+            ))}
           </div>
 
           <div className="p-6">
@@ -762,33 +762,33 @@ const Admin: React.FC = () => {
             {dashboardSubTab === 'order_proc' && <OrderProcessingStats />}
             {dashboardSubTab === 'member' && <MemberPointsStats />}
             {dashboardSubTab === 'posts' && <PostStats />}
-            
+
             {dashboardSubTab === 'realtime' && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                 {/* Left Chart */}
                 <div>
-                   <div className="flex items-center space-x-2 mb-2">
-                     <h4 className="text-sm font-bold text-gray-800">실시간 접속자</h4>
-                     <HelpCircle size={14} className="text-gray-400" />
-                     <span className="text-xs text-blue-500 flex items-center cursor-pointer ml-auto">
-                       자세히 보기 <ExternalLink size={10} className="ml-1" />
-                     </span>
-                   </div>
-                   <div className="text-[10px] text-gray-400 mb-2">단위/명</div>
-                   <RealTimeChart />
+                  <div className="flex items-center space-x-2 mb-2">
+                    <h4 className="text-sm font-bold text-gray-800">실시간 접속자</h4>
+                    <HelpCircle size={14} className="text-gray-400" />
+                    <span className="text-xs text-blue-500 flex items-center cursor-pointer ml-auto">
+                      자세히 보기 <ExternalLink size={10} className="ml-1" />
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-gray-400 mb-2">단위/명</div>
+                  <RealTimeChart />
                 </div>
 
                 {/* Right Chart */}
                 <div>
-                   <div className="flex items-center space-x-2 mb-2">
-                     <h4 className="text-sm font-bold text-gray-800">일별 방문자 수</h4>
-                     <HelpCircle size={14} className="text-gray-400" />
-                     <span className="text-xs text-blue-500 flex items-center cursor-pointer ml-auto">
-                       자세히 보기 <ExternalLink size={10} className="ml-1" />
-                     </span>
-                   </div>
-                   <div className="text-[10px] text-gray-400 mb-2">단위/명</div>
-                   <DailyVisitorChart />
+                  <div className="flex items-center space-x-2 mb-2">
+                    <h4 className="text-sm font-bold text-gray-800">일별 방문자 수</h4>
+                    <HelpCircle size={14} className="text-gray-400" />
+                    <span className="text-xs text-blue-500 flex items-center cursor-pointer ml-auto">
+                      자세히 보기 <ExternalLink size={10} className="ml-1" />
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-gray-400 mb-2">단위/명</div>
+                  <DailyVisitorChart />
                 </div>
               </div>
             )}
@@ -804,7 +804,7 @@ const Admin: React.FC = () => {
         <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
           <Package size={20} /> 상품 관리
         </h2>
-        <button 
+        <button
           onClick={() => { setEditingProduct(null); setIsProductModalOpen(true); }}
           className="flex items-center space-x-2 bg-slate-700 text-white px-4 py-2 rounded-sm text-sm hover:bg-slate-800 transition"
         >
@@ -841,13 +841,13 @@ const Admin: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 font-medium text-slate-700">₩{product.price.toLocaleString()}</td>
                   <td className="px-6 py-4 text-right space-x-2">
-                    <button 
+                    <button
                       onClick={() => { setEditingProduct(product); setIsProductModalOpen(true); }}
                       className="p-1.5 border border-gray-200 rounded text-gray-500 hover:text-blue-600 hover:border-blue-300 transition"
                     >
                       <Edit3 size={16} />
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleDeleteProduct(product.id)}
                       className="p-1.5 border border-gray-200 rounded text-gray-500 hover:text-red-600 hover:border-red-300 transition"
                     >
@@ -876,16 +876,16 @@ const Admin: React.FC = () => {
         <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
           <ShoppingCart size={20} /> 주문 관리
         </h2>
-        
+
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="p-4 border-b border-gray-200 flex items-center bg-gray-50 justify-between">
             <div className="flex items-center bg-white border border-gray-300 px-3 py-1.5 rounded-sm w-80">
-               <Search size={16} className="text-gray-400 mr-2" />
-               <input 
-                 type="text" 
-                 placeholder="주문자명, 주문번호 검색" 
-                 className="bg-transparent border-none focus:outline-none text-sm w-full"
-               />
+              <Search size={16} className="text-gray-400 mr-2" />
+              <input
+                type="text"
+                placeholder="주문자명, 주문번호 검색"
+                className="bg-transparent border-none focus:outline-none text-sm w-full"
+              />
             </div>
             <div className="space-x-2">
               <button className="px-3 py-1.5 bg-white border border-gray-300 text-xs rounded-sm hover:bg-gray-50">엑셀 다운로드</button>
@@ -911,7 +911,7 @@ const Admin: React.FC = () => {
                     <td className="px-6 py-4 font-medium">{order.customerName}</td>
                     <td className="px-6 py-4 font-medium">₩{order.total.toLocaleString()}</td>
                     <td className="px-6 py-4">
-                      <select 
+                      <select
                         value={order.status}
                         onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
                         className={`px-3 py-1 rounded-sm text-xs font-medium focus:ring-0 cursor-pointer outline-none ${statusColors[order.status]}`}
@@ -942,7 +942,7 @@ const Admin: React.FC = () => {
       <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
         <Users size={20} /> 고객 관리
       </h2>
-      
+
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
           <div className="flex items-center flex-1 max-w-sm bg-white border border-gray-300 rounded-sm px-3 py-1.5">
@@ -973,9 +973,9 @@ const Admin: React.FC = () => {
                   <td className="px-6 py-4 text-slate-700">₩{customer.totalSpent.toLocaleString()}</td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-0.5 rounded-sm text-xs font-medium border
-                      ${customer.grade === 'VIP' ? 'bg-purple-50 text-purple-700 border-purple-100' : 
+                      ${customer.grade === 'VIP' ? 'bg-purple-50 text-purple-700 border-purple-100' :
                         customer.grade === 'Gold' ? 'bg-yellow-50 text-yellow-700 border-yellow-100' :
-                        customer.grade === 'Silver' ? 'bg-gray-50 text-gray-700 border-gray-200' : 'bg-orange-50 text-orange-700 border-orange-100'}`}>
+                          customer.grade === 'Silver' ? 'bg-gray-50 text-gray-700 border-gray-200' : 'bg-orange-50 text-orange-700 border-orange-100'}`}>
                       {customer.grade}
                     </span>
                   </td>
@@ -1002,12 +1002,12 @@ const Admin: React.FC = () => {
       <aside className="w-60 bg-[#1e293b] text-slate-300 flex flex-col shrink-0">
         <div className="p-5 border-b border-slate-700/50">
           <h1 className="text-lg font-bold text-white tracking-wider flex items-center gap-2">
-             <div className="w-5 h-5 bg-blue-500 rounded-sm"></div>
-             LUMINA
+            <div className="w-5 h-5 bg-blue-500 rounded-sm"></div>
+            LUMINA
           </h1>
           <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-widest">Administrator</p>
         </div>
-        
+
         <nav className="flex-1 overflow-y-auto py-2">
           <ul className="space-y-0.5">
             {MENU_ITEMS.map((item) => {
@@ -1018,10 +1018,10 @@ const Admin: React.FC = () => {
                   <button
                     onClick={() => setActiveTab(item.id as Tab)}
                     className={`w-full flex items-center space-x-3 px-5 py-3 text-sm transition-all duration-200 group relative
-                      ${isActive 
-                        ? 'bg-[#0f172a] text-white' 
+                      ${isActive
+                        ? 'bg-[#0f172a] text-white'
                         : 'hover:bg-[#334155] hover:text-white'
-                    }`}
+                      }`}
                   >
                     {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>}
                     <Icon size={18} className={isActive ? 'text-blue-400' : 'text-slate-400 group-hover:text-white'} />
@@ -1034,7 +1034,7 @@ const Admin: React.FC = () => {
         </nav>
 
         <div className="p-4 border-t border-slate-700/50 bg-[#1e293b]">
-          <button 
+          <button
             onClick={logout}
             className="flex items-center justify-center w-full space-x-2 text-slate-400 hover:text-white transition text-xs py-2 border border-slate-600 rounded hover:border-slate-500"
           >
@@ -1048,18 +1048,18 @@ const Admin: React.FC = () => {
       <main className="flex-1 overflow-y-auto">
         {/* Header Bar */}
         <header className="bg-white h-14 shadow-sm flex items-center justify-between px-6 sticky top-0 z-20 border-b border-gray-200">
-           <h2 className="font-bold text-gray-700 text-sm">
-             {MENU_ITEMS.find(m => m.id === activeTab)?.label}
-           </h2>
-           <div className="flex items-center space-x-4">
-              <div className="text-right hidden sm:block">
-                 <p className="text-sm font-bold text-gray-700">관리자님</p>
-                 <p className="text-[10px] text-gray-400">최근접속: 2023-11-28 10:42:12</p>
-              </div>
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center border border-blue-200 text-blue-600 font-bold text-xs">
-                 A
-              </div>
-           </div>
+          <h2 className="font-bold text-gray-700 text-sm">
+            {MENU_ITEMS.find(m => m.id === activeTab)?.label}
+          </h2>
+          <div className="flex items-center space-x-4">
+            <div className="text-right hidden sm:block">
+              <p className="text-sm font-bold text-gray-700">관리자님</p>
+              <p className="text-[10px] text-gray-400">최근접속: 2023-11-28 10:42:12</p>
+            </div>
+            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center border border-blue-200 text-blue-600 font-bold text-xs">
+              A
+            </div>
+          </div>
         </header>
 
         <div className="p-6 max-w-[1600px] mx-auto">
@@ -1068,7 +1068,7 @@ const Admin: React.FC = () => {
           {activeTab === 'orders' && renderOrders()}
           {activeTab === 'customers' && renderCustomers()}
           {activeTab === 'analytics' && renderHome()} {/* Reusing Home dashboard for analytics preview */}
-          {activeTab === 'stats' && renderHome()} 
+          {activeTab === 'stats' && renderHome()}
           {['messages', 'board', 'design', 'promotion', 'excel'].includes(activeTab) && renderPlaceholder(MENU_ITEMS.find(m => m.id === activeTab)?.label || '')}
         </div>
       </main>
@@ -1096,8 +1096,8 @@ const Admin: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                   <label className="block text-xs font-bold text-gray-600 mb-1">판매가 <span className="text-red-500">*</span></label>
-                   <input name="price" type="number" defaultValue={editingProduct?.price} required className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" />
+                  <label className="block text-xs font-bold text-gray-600 mb-1">판매가 <span className="text-red-500">*</span></label>
+                  <input name="price" type="number" defaultValue={editingProduct?.price} required className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" />
                 </div>
               </div>
               <div>
@@ -1112,7 +1112,7 @@ const Admin: React.FC = () => {
                 <input type="checkbox" name="isNew" id="isNew" defaultChecked={editingProduct?.isNew} className="rounded text-blue-500 focus:ring-blue-500" />
                 <label htmlFor="isNew" className="text-sm text-gray-700">신상품 (NEW) 뱃지 노출</label>
               </div>
-              
+
               <div className="flex space-x-2 pt-4">
                 <button type="button" onClick={() => setIsProductModalOpen(false)} className="flex-1 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 transition rounded-sm">취소</button>
                 <button type="submit" className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition rounded-sm shadow-sm">

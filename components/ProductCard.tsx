@@ -1,7 +1,7 @@
 import React from 'react';
 import { Product } from '../types';
 import { ShoppingBag } from 'lucide-react';
-import { useCart } from '../App';
+import { useCart } from '../contexts';
 import { Link } from 'react-router-dom';
 
 interface ProductCardProps {

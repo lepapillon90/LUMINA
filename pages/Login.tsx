@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../App';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../contexts';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -11,6 +11,13 @@ const Login: React.FC = () => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+
+    if (!username || !password) {
+      setError('아이디와 비밀번호를 모두 입력해주세요.');
+      return;
+    }
+
     const success = login(username, password);
     if (success) {
       if (username === 'admin') {
@@ -31,8 +38,8 @@ const Login: React.FC = () => {
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
             <label className="block text-xs uppercase text-gray-500 mb-1">아이디</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition"
@@ -40,21 +47,25 @@ const Login: React.FC = () => {
           </div>
           <div>
             <label className="block text-xs uppercase text-gray-500 mb-1">비밀번호</label>
-            <input 
-              type="password" 
+            <input
+              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition"
             />
           </div>
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="w-full bg-primary text-white py-4 uppercase tracking-widest text-sm hover:bg-black transition mt-4"
           >
             로그인
           </button>
         </form>
-        <div className="mt-6 text-center text-xs text-gray-400">
+        <div className="mt-6 flex justify-between text-xs text-gray-500">
+          <Link to="/forgot-password" className="hover:text-primary hover:underline">비밀번호 찾기</Link>
+          <Link to="/signup" className="hover:text-primary hover:underline">회원가입</Link>
+        </div>
+        <div className="mt-8 text-center text-xs text-gray-400 border-t pt-4">
           관리자 데모 계정: admin / admin
         </div>
       </div>

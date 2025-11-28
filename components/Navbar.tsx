@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ShoppingBag, Menu, X, User as UserIcon } from 'lucide-react';
-import { useCart } from '../App';
+import { useCart } from '../contexts';
 
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -23,8 +23,8 @@ const Navbar: React.FC = () => {
 
   // Determine navbar style based on scroll and page
   const navClass = `fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled || !isHome
-      ? 'bg-white text-primary shadow-sm py-4'
-      : 'bg-transparent text-white py-6'
+    ? 'bg-white text-primary shadow-sm py-4'
+    : 'bg-transparent text-white py-6'
     }`;
 
   return (

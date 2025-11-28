@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useCart } from '../App';
+import { useCart } from '../contexts';
 import { BANK_INFO } from '../constants';
 import { Trash2, ArrowRight, Minus, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -45,10 +45,10 @@ const Cart: React.FC = () => {
           </div>
           <h2 className="text-2xl font-serif mb-4">주문이 완료되었습니다!</h2>
           <p className="text-gray-600 mb-8">
-            감사합니다, {formData.name}님. <br/>
+            감사합니다, {formData.name}님. <br />
             24시간 이내에 아래 계좌로 입금해주시면 주문이 확정됩니다.
           </p>
-          
+
           <div className="bg-gray-50 p-6 rounded border border-gray-200 text-left mb-8">
             <p className="text-sm text-gray-500 mb-1">은행명</p>
             <p className="font-medium mb-3">{BANK_INFO.bankName}</p>
@@ -97,11 +97,11 @@ const Cart: React.FC = () => {
                       </div>
                       <p className="text-sm text-gray-500 capitalize">{item.category === 'earring' ? '귀걸이' : item.category === 'necklace' ? '목걸이' : item.category === 'ring' ? '반지' : '팔찌'}</p>
                     </div>
-                    
+
                     <div className="flex justify-between items-end mt-4">
                       {/* Quantity Control */}
                       <div className="flex items-center space-x-3">
-                        <button 
+                        <button
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
                           disabled={item.quantity <= 1}
                           className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent transition"
@@ -109,15 +109,15 @@ const Cart: React.FC = () => {
                           <Minus size={14} />
                         </button>
                         <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
-                        <button 
-                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                           className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-100 transition"
+                        <button
+                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-100 transition"
                         >
                           <Plus size={14} />
                         </button>
                       </div>
 
-                      <button 
+                      <button
                         onClick={() => removeFromCart(item.id)}
                         className="text-gray-400 hover:text-red-500 transition flex items-center text-xs space-x-1"
                       >
@@ -149,7 +149,7 @@ const Cart: React.FC = () => {
                     <span>총 결제금액</span>
                     <span>₩{finalTotal.toLocaleString()}</span>
                   </div>
-                  <button 
+                  <button
                     onClick={() => setStep('payment')}
                     className="w-full bg-primary text-white py-4 uppercase tracking-wider text-sm hover:bg-black transition flex justify-center items-center gap-2"
                   >
@@ -167,47 +167,47 @@ const Cart: React.FC = () => {
                   <div className="space-y-4 mb-6">
                     <div>
                       <label className="block text-xs uppercase text-gray-500 mb-1">받으시는 분</label>
-                      <input 
+                      <input
                         required
-                        type="text" 
+                        type="text"
                         value={formData.name}
-                        onChange={(e) => setFormData({...formData, name: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         className="w-full border border-gray-300 p-3 text-sm focus:outline-none focus:border-black"
                       />
                     </div>
                     <div>
                       <label className="block text-xs uppercase text-gray-500 mb-1">이메일</label>
-                      <input 
+                      <input
                         required
-                        type="email" 
+                        type="email"
                         value={formData.email}
-                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         className="w-full border border-gray-300 p-3 text-sm focus:outline-none focus:border-black"
                       />
                     </div>
                     <div>
                       <label className="block text-xs uppercase text-gray-500 mb-1">주소</label>
-                      <textarea 
+                      <textarea
                         required
                         value={formData.address}
-                        onChange={(e) => setFormData({...formData, address: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                         className="w-full border border-gray-300 p-3 text-sm focus:outline-none focus:border-black h-24 resize-none"
                       />
                     </div>
                   </div>
-                  
+
                   <div className="mb-6 bg-yellow-50 p-4 text-xs text-yellow-800 border border-yellow-200">
-                    결제 수단: <strong>무통장 입금</strong><br/>
+                    결제 수단: <strong>무통장 입금</strong><br />
                     입금 계좌 정보는 주문 완료 후 확인 가능합니다.
                   </div>
 
-                  <button 
+                  <button
                     type="submit"
                     className="w-full bg-primary text-white py-4 uppercase tracking-wider text-sm hover:bg-black transition"
                   >
                     결제하기 - ₩{finalTotal.toLocaleString()}
                   </button>
-                  <button 
+                  <button
                     type="button"
                     onClick={() => setStep('cart')}
                     className="w-full mt-3 text-gray-500 text-xs hover:text-black"

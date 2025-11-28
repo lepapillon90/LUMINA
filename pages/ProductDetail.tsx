@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { PRODUCTS, OOTD_POSTS } from '../constants';
-import { useCart } from '../App';
+import { useCart } from '../contexts';
 import { Star, ShoppingBag, Truck, ShieldCheck, Heart, Minus, Plus } from 'lucide-react';
 import SEO from '../components/SEO';
 
