@@ -3,10 +3,25 @@ export enum UserRole {
     GUEST = 'GUEST'
 }
 
+export interface UserPermissions {
+    orders: boolean;
+    products: boolean;
+    customers: boolean;
+    analytics: boolean;
+    system: boolean;
+}
+
 export interface User {
     uid: string;
+    email: string;
     username: string;
+    displayId?: string;
+    phoneNumber?: string;
+    jobTitle?: string;
+    isActive?: boolean;
     role: UserRole;
+    permissions?: UserPermissions;
+    createdAt: any;
 }
 
 export interface Product {
@@ -44,4 +59,14 @@ export interface Order {
     status: string;
     date: string;
     createdAt?: any;
+}
+
+export interface Customer {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    joinDate: string;
+    totalSpent: number;
+    grade: string;
 }

@@ -70,19 +70,24 @@ export const Providers: React.FC<{ children: ReactNode }> = ({ children }) => {
                 let role = UserRole.GUEST;
                 let username = firebaseUser.displayName || firebaseUser.email || 'User';
 
+                let userDoc: any = null;
+
                 // Fetch user details from Firestore
                 try {
                     const { getById } = await import('./services/db');
-                    const userDoc = await getById('users', firebaseUser.uid);
+                    userDoc = await getById('users', firebaseUser.uid);
+
+                    // Force Admin role for demo account
+                    if (firebaseUser.email === 'admin@lumina.com') {
+                        role = UserRole.ADMIN;
+                    }
 
                     if (userDoc) {
-                        role = (userDoc as any).role === 'ADMIN' ? UserRole.ADMIN : UserRole.GUEST;
-                        username = (userDoc as any).username || username;
-                    } else {
-                        // Fallback for admin demo
-                        if (firebaseUser.email === 'admin@lumina.com') {
-                            role = UserRole.ADMIN;
+                        // Only overwrite if not already set to ADMIN by the email check above
+                        if (role !== UserRole.ADMIN) {
+                            role = (userDoc as any).role === 'ADMIN' ? UserRole.ADMIN : UserRole.GUEST;
                         }
+                        username = (userDoc as any).username || username;
                     }
                 } catch (error) {
                     console.error("Error fetching user details:", error);
@@ -90,8 +95,11 @@ export const Providers: React.FC<{ children: ReactNode }> = ({ children }) => {
 
                 setUser({
                     uid: firebaseUser.uid,
+                    email: firebaseUser.email || '',
                     username: username,
-                    role: role
+                    role: role,
+                    createdAt: (userDoc as any)?.createdAt || new Date(),
+                    permissions: (userDoc as any)?.permissions
                 });
 
             } else {

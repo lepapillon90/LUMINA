@@ -6,7 +6,7 @@ import Wishlist from '../components/MyPage/Wishlist';
 import MyOOTD from '../components/MyPage/MyOOTD';
 import RecentlyViewed from '../components/MyPage/RecentlyViewed';
 import SEO from '../components/SEO';
-import { User, Package, Heart, Camera, Clock, LogOut, Settings } from 'lucide-react';
+import { User, Package, Heart, Camera, Clock, LogOut, Settings, LayoutDashboard } from 'lucide-react';
 import { Order, Product, OOTDPost } from '../types';
 
 import { getOrders } from '../services/orderService';
@@ -80,6 +80,15 @@ const MyPage: React.FC = () => {
                             </div>
 
                             <nav className="space-y-1">
+                                {user?.role === 'ADMIN' && (
+                                    <button
+                                        onClick={() => navigate('/admin')}
+                                        className="w-full flex items-center space-x-3 px-4 py-3 rounded-md transition-colors text-blue-600 hover:bg-blue-50 mb-2 border border-blue-100"
+                                    >
+                                        <LayoutDashboard size={18} />
+                                        <span className="font-bold">관리자 대시보드</span>
+                                    </button>
+                                )}
                                 <button
                                     onClick={() => setActiveTab('orders')}
                                     className={`w-full flex items-center space-x-3 px-4 py-3 rounded-md transition-colors ${activeTab === 'orders' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-50'}`}

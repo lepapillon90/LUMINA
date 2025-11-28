@@ -9,7 +9,7 @@ const Cart: React.FC = () => {
   const { cart, removeFromCart, updateQuantity, clearCart } = useCart();
   const { user } = useAuth();
   const [step, setStep] = useState<'cart' | 'payment' | 'success'>('cart');
-  const [formData, setFormData] = useState({ name: '', email: '', address: '' });
+  const [formData, setFormData] = useState({ name: 'Test User', email: 'test@example.com', address: 'Test Address' });
   const [error, setError] = useState('');
   const [orderTotal, setOrderTotal] = useState(0);
 

@@ -1,9 +1,11 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../contexts';
 import { Navigate } from 'react-router-dom';
-import { UserRole, Product, Order, Customer } from '../types';
+import { InvoiceModal } from '../components/Admin/InvoiceModal';
+import { UserRole, Product, Order, Customer, User, UserPermissions } from '../types';
 import { PRODUCTS } from '../constants';
+import { getAdminUsers, promoteToAdmin, updateAdminUser, deleteAdminUser, createAdminUser, sendAdminPasswordReset, changeOwnPassword, toggleAdminStatus } from '../services/adminService';
 import {
   Home,
   ShoppingCart,
@@ -28,12 +30,15 @@ import {
   HelpCircle,
   Pause,
   Maximize2,
-  ArrowDown
+  ArrowDown,
+  Printer,
+  Shield,
+  Power
 } from 'lucide-react';
+import ConfirmModal from '../components/ConfirmModal';
 
-// --- Mock Data ---
 const INITIAL_ORDERS: Order[] = [
-  { id: 'ORD-2023-001', userId: 'mock-user-1', items: [], customerName: '김민지', date: '2023-10-24', total: 77000, status: '결제완료' },
+  { id: 'ORD-2023-001', userId: 'mock-user-1', items: [], customerName: '김민지', date: '2023-10-24', total: 150000, status: '배송준비중' },
   { id: 'ORD-2023-002', userId: 'mock-user-2', items: [], customerName: '이수진', date: '2023-10-25', total: 45000, status: '입금대기' },
   { id: 'ORD-2023-003', userId: 'mock-user-3', items: [], customerName: '박지훈', date: '2023-10-25', total: 120000, status: '배송중' },
   { id: 'ORD-2023-004', userId: 'mock-user-4', items: [], customerName: '최유나', date: '2023-10-26', total: 32000, status: '배송완료' },
@@ -591,41 +596,218 @@ const DailyVisitorChart = () => {
 
 // --- Main Admin Component ---
 
-type Tab = 'home' | 'orders' | 'products' | 'customers' | 'messages' | 'board' | 'design' | 'promotion' | 'analytics' | 'stats' | 'excel';
+type Tab = 'home' | 'orders' | 'products' | 'customers' | 'messages' | 'board' | 'design' | 'promotion' | 'analytics' | 'stats' | 'excel' | 'system';
 
 const MENU_ITEMS = [
-  { id: 'home', label: '홈', icon: Home },
-  { id: 'orders', label: '주문', icon: ShoppingCart },
-  { id: 'products', label: '상품', icon: Package },
-  { id: 'customers', label: '고객', icon: Users },
-  { id: 'messages', label: '메시지', icon: MessageCircle },
-  { id: 'board', label: '게시판', icon: FileText },
-  { id: 'design', label: '디자인 (PC/모바일)', icon: Palette },
-  { id: 'promotion', label: '프로모션', icon: Percent },
-  { id: 'analytics', label: '애널리틱스', icon: LineChart },
-  { id: 'stats', label: '통계', icon: BarChart2 },
-  { id: 'excel', label: '통합엑셀', icon: Grid },
+  { id: 'home', label: '홈', icon: Home, permission: null },
+  { id: 'orders', label: '주문', icon: ShoppingCart, permission: 'orders' },
+  { id: 'products', label: '상품', icon: Package, permission: 'products' },
+  { id: 'customers', label: '고객', icon: Users, permission: 'customers' },
+  { id: 'messages', label: '메시지', icon: MessageCircle, permission: null },
+  { id: 'board', label: '게시판', icon: FileText, permission: null },
+  { id: 'design', label: '디자인', icon: Palette, permission: null },
+  { id: 'promotion', label: '프로모션', icon: Percent, permission: null },
+  { id: 'analytics', label: '애널리틱스', icon: LineChart, permission: 'analytics' },
+  { id: 'stats', label: '통계', icon: BarChart2, permission: 'analytics' },
+  { id: 'excel', label: '통합엑셀', icon: Grid, permission: null },
+  { id: 'system', label: '시스템 관리', icon: Shield, permission: 'system' },
 ];
 
 const Admin: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('home');
-  const [dashboardSubTab, setDashboardSubTab] = useState('daily'); // Default to daily sales as requested
+  const [dashboardSubTab, setDashboardSubTab] = useState('daily');
+
+  // System Tab State
+  const [adminUsers, setAdminUsers] = useState<User[]>([]);
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
 
   // Data State
   const [products, setProducts] = useState<Product[]>(PRODUCTS);
   const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
   const [customers, setCustomers] = useState<Customer[]>(INITIAL_CUSTOMERS);
 
+  // Access Control for Inactive Admins
+  if (user && user.role === UserRole.ADMIN && user.isActive === false) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-100">
+        <div className="bg-white p-8 rounded-lg shadow-md text-center">
+          <Shield size={48} className="mx-auto text-red-500 mb-4" />
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">계정 비활성화</h1>
+          <p className="text-gray-600 mb-6">관리자 계정이 비활성화되었습니다. 관리자에게 문의하세요.</p>
+          <button onClick={logout} className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700">
+            로그아웃
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Modal State
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+  // Batch Selection State
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+
+  // Confirm Modal State
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    isDestructive?: boolean;
+    confirmLabel?: string;
+    cancelLabel?: string;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => { },
+    isDestructive: false,
+    confirmLabel: '확인',
+    cancelLabel: '취소',
+  });
+
+  const closeConfirmModal = () => {
+    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+  };
+
+  useEffect(() => {
+    fetchAdminUsers();
+  }, [activeTab]);
+
+  const fetchAdminUsers = async () => {
+    if (activeTab === 'system') {
+      const users = await getAdminUsers();
+      setAdminUsers(users);
+    }
+  };
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div></div>;
+  }
 
   if (!user || user.role !== UserRole.ADMIN) {
     return <Navigate to="/login" replace />;
   }
 
   // --- Handlers ---
+
+  const handleSaveUser = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+    const username = formData.get('username') as string;
+    const password = formData.get('password') as string;
+    const displayId = formData.get('displayId') as string;
+    const phoneNumber = formData.get('phoneNumber') as string;
+    const jobTitle = formData.get('jobTitle') as string;
+
+    const permissions: UserPermissions = {
+      orders: formData.get('perm_orders') === 'on',
+      products: formData.get('perm_products') === 'on',
+      customers: formData.get('perm_customers') === 'on',
+      analytics: formData.get('perm_analytics') === 'on',
+      system: formData.get('perm_system') === 'on',
+    };
+
+    try {
+      if (editingUser) {
+        await updateAdminUser(editingUser.uid, permissions, displayId, phoneNumber, jobTitle);
+        alert('관리자 정보가 수정되었습니다.');
+      } else {
+        if (password) {
+          await createAdminUser(email, password, username, permissions, displayId, phoneNumber, jobTitle);
+          alert('새로운 관리자 계정이 생성되었습니다.');
+        } else {
+          await promoteToAdmin(email, username, permissions, displayId, phoneNumber, jobTitle);
+          alert('기존 사용자가 관리자로 승격되었습니다.');
+        }
+      }
+      setIsUserModalOpen(false);
+      fetchAdminUsers();
+    } catch (error: any) {
+      alert(error.message);
+    }
+  };
+
+  const handleToggleStatus = (uid: string, currentStatus: boolean) => {
+    setConfirmModal({
+      isOpen: true,
+      title: '관리자 상태 변경',
+      message: `이 관리자 계정을 ${currentStatus ? '비활성화' : '활성화'} 하시겠습니까?`,
+      onConfirm: async () => {
+        try {
+          await toggleAdminStatus(uid, !currentStatus);
+          await fetchAdminUsers();
+        } catch (error) {
+          console.error(error);
+          alert('상태 변경 중 오류가 발생했습니다.');
+        }
+      },
+      isDestructive: currentStatus // Deactivating is considered destructive/warning
+    });
+  };
+
+  const handleChangePassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const newPassword = formData.get('newPassword') as string;
+
+    if (newPassword.length < 6) {
+      alert('비밀번호는 6자 이상이어야 합니다.');
+      return;
+    }
+
+    try {
+      await changeOwnPassword(newPassword);
+      alert('비밀번호가 변경되었습니다.');
+      setIsUserModalOpen(false);
+    } catch (error: any) {
+      alert('비밀번호 변경 실패: ' + error.message);
+    }
+  };
+
+  const handleSendResetEmail = (email: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: '비밀번호 재설정',
+      message: `${email} 주소로 비밀번호 재설정 이메일을 발송하시겠습니까?`,
+      onConfirm: async () => {
+        try {
+          await sendAdminPasswordReset(email);
+          alert('비밀번호 재설정 이메일이 발송되었습니다.');
+        } catch (error: any) {
+          alert('이메일 발송 실패: ' + error.message);
+        }
+      },
+    });
+  };
+
+  const handleRemoveAdmin = (uid: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: '관리자 삭제',
+      message: '정말로 이 관리자를 삭제하시겠습니까? 이 작업은 되돌릴 수 없으며, 해당 사용자의 모든 데이터가 영구적으로 삭제됩니다.',
+      confirmLabel: '삭제',
+      cancelLabel: '취소',
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          await deleteAdminUser(uid);
+          setAdminUsers(prev => prev.filter(user => user.uid !== uid));
+          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+          alert('관리자가 삭제되었습니다.');
+        } catch (error) {
+          console.error('Error deleting admin:', error);
+          alert('관리자 삭제 중 오류가 발생했습니다.');
+        }
+      },
+    });
+  };
 
   const handleSaveProduct = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -673,6 +855,34 @@ const Admin: React.FC = () => {
 
   const handleUpdateOrderStatus = (id: string, newStatus: string) => {
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
+  };
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedOrderIds(orders.map(o => o.id));
+    } else {
+      setSelectedOrderIds([]);
+    }
+  };
+
+  const handleSelectOrder = (id: string) => {
+    setSelectedOrderIds(prev =>
+      prev.includes(id) ? prev.filter(oid => oid !== id) : [...prev, id]
+    );
+  };
+
+  const handleBatchStatusChange = (newStatus: string) => {
+    if (selectedOrderIds.length === 0) return;
+    if (window.confirm(`선택한 ${selectedOrderIds.length}개의 주문 상태를 '${newStatus}'(으)로 변경하시겠습니까?`)) {
+      setOrders(prev => prev.map(o => selectedOrderIds.includes(o.id) ? { ...o, status: newStatus } : o));
+      setSelectedOrderIds([]); // Clear selection after update
+      // TODO: Call API/Service here
+    }
+  };
+
+  const handlePrintInvoice = () => {
+    if (selectedOrderIds.length === 0) return;
+    setIsInvoiceModalOpen(true);
   };
 
   // --- Render Sections ---
@@ -879,13 +1089,39 @@ const Admin: React.FC = () => {
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="p-4 border-b border-gray-200 flex items-center bg-gray-50 justify-between">
-            <div className="flex items-center bg-white border border-gray-300 px-3 py-1.5 rounded-sm w-80">
-              <Search size={16} className="text-gray-400 mr-2" />
-              <input
-                type="text"
-                placeholder="주문자명, 주문번호 검색"
-                className="bg-transparent border-none focus:outline-none text-sm w-full"
-              />
+            <div className="flex items-center gap-4">
+              <div className="flex items-center bg-white border border-gray-300 px-3 py-1.5 rounded-sm w-80">
+                <Search size={16} className="text-gray-400 mr-2" />
+                <input
+                  type="text"
+                  placeholder="주문자명, 주문번호 검색"
+                  className="bg-transparent border-none focus:outline-none text-sm w-full"
+                />
+              </div>
+              {selectedOrderIds.length > 0 && (
+                <div className="flex items-center gap-2 animate-fadeIn">
+                  <span className="text-sm text-blue-600 font-bold">{selectedOrderIds.length}개 선택됨</span>
+                  <div className="h-4 w-px bg-gray-300 mx-2"></div>
+                  <select
+                    onChange={(e) => handleBatchStatusChange(e.target.value)}
+                    className="px-3 py-1.5 border border-blue-200 rounded-sm text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 cursor-pointer outline-none"
+                    value=""
+                  >
+                    <option value="" disabled>상태 일괄 변경</option>
+                    <option value="입금대기">입금대기</option>
+                    <option value="결제완료">결제완료</option>
+                    <option value="배송중">배송중</option>
+                    <option value="배송완료">배송완료</option>
+                  </select>
+                  <button
+                    onClick={handlePrintInvoice}
+                    className="flex items-center gap-1 px-3 py-1.5 border border-gray-300 rounded-sm text-xs font-medium hover:bg-white text-gray-700"
+                  >
+                    <Printer size={14} />
+                    <span>송장 출력</span>
+                  </button>
+                </div>
+              )}
             </div>
             <div className="space-x-2">
               <button className="px-3 py-1.5 bg-white border border-gray-300 text-xs rounded-sm hover:bg-gray-50">엑셀 다운로드</button>
@@ -895,6 +1131,14 @@ const Admin: React.FC = () => {
             <table className="w-full text-left text-sm">
               <thead className="bg-white text-gray-600 border-b border-gray-200">
                 <tr>
+                  <th className="px-6 py-3 font-medium w-10">
+                    <input
+                      type="checkbox"
+                      onChange={handleSelectAll}
+                      checked={orders.length > 0 && selectedOrderIds.length === orders.length}
+                      className="rounded text-blue-500 focus:ring-blue-500"
+                    />
+                  </th>
                   <th className="px-6 py-3 font-medium">주문번호</th>
                   <th className="px-6 py-3 font-medium">주문일자</th>
                   <th className="px-6 py-3 font-medium">고객명</th>
@@ -905,7 +1149,15 @@ const Admin: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {orders.map(order => (
-                  <tr key={order.id} className="hover:bg-gray-50 transition">
+                  <tr key={order.id} className={`hover:bg-gray-50 transition ${selectedOrderIds.includes(order.id) ? 'bg-blue-50/30' : ''}`}>
+                    <td className="px-6 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedOrderIds.includes(order.id)}
+                        onChange={() => handleSelectOrder(order.id)}
+                        className="rounded text-blue-500 focus:ring-blue-500"
+                      />
+                    </td>
                     <td className="px-6 py-4 font-mono text-xs text-gray-500">{order.id}</td>
                     <td className="px-6 py-4 text-gray-600">{order.date}</td>
                     <td className="px-6 py-4 font-medium">{order.customerName}</td>
@@ -988,6 +1240,222 @@ const Admin: React.FC = () => {
     </div>
   );
 
+  const renderSystem = () => {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+            <Shield size={20} /> 시스템 관리
+          </h2>
+          <button
+            onClick={() => { setEditingUser(null); setIsUserModalOpen(true); }}
+            className="bg-primary text-white px-4 py-2 rounded-sm text-sm hover:bg-black transition flex items-center gap-2"
+          >
+            <Plus size={16} /> 관리자 추가
+          </button>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-white text-gray-600 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-3 font-medium">이름</th>
+                <th className="px-6 py-3 font-medium">아이디</th>
+                <th className="px-6 py-3 font-medium">직급</th>
+                <th className="px-6 py-3 font-medium">이메일</th>
+                <th className="px-6 py-3 font-medium">연락처</th>
+                <th className="px-6 py-3 font-medium">상태</th>
+                <th className="px-6 py-3 font-medium">권한</th>
+                <th className="px-6 py-3 font-medium text-right">관리</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {adminUsers.map(admin => (
+                <tr key={admin.uid} className="hover:bg-gray-50 transition">
+                  <td className="px-6 py-4 font-medium">{admin.username}</td>
+                  <td className="px-6 py-4 text-gray-600">{admin.displayId || '-'}</td>
+                  <td className="px-6 py-4 text-gray-600">{admin.jobTitle || '-'}</td>
+                  <td className="px-6 py-4 text-gray-500">{admin.email}</td>
+                  <td className="px-6 py-4 text-gray-600">{admin.phoneNumber || '-'}</td>
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => handleToggleStatus(admin.uid, !!admin.isActive)}
+                      className={`px-2 py-1 text-xs rounded-full transition hover:opacity-80 ${admin.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}
+                      title={admin.isActive ? '클릭하여 비활성화' : '클릭하여 활성화'}
+                    >
+                      {admin.isActive ? '활성' : '비활성'}
+                    </button>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex gap-2 flex-wrap">
+                      {admin.permissions?.orders && <span className="px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded-full">주문</span>}
+                      {admin.permissions?.products && <span className="px-2 py-1 bg-green-50 text-green-600 text-xs rounded-full">상품</span>}
+                      {admin.permissions?.customers && <span className="px-2 py-1 bg-purple-50 text-purple-600 text-xs rounded-full">고객</span>}
+                      {admin.permissions?.system && <span className="px-2 py-1 bg-red-50 text-red-600 text-xs rounded-full">시스템</span>}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <button
+                      onClick={() => { setEditingUser(admin); setIsUserModalOpen(true); }}
+                      className="text-gray-400 hover:text-slate-700 mr-2"
+                      title="수정"
+                    >
+                      <Settings size={18} />
+                    </button>
+                    {admin.uid !== user?.uid && (
+                      <button
+                        onClick={() => handleRemoveAdmin(admin.uid)}
+                        className="text-red-400 hover:text-red-600"
+                        title="삭제"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* User Modal */}
+        {isUserModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg w-full max-w-md">
+              <h3 className="text-lg font-bold mb-4">{editingUser ? '관리자 수정' : '관리자 추가'}</h3>
+              <form onSubmit={handleSaveUser} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">이메일</label>
+                  <input
+                    type="email"
+                    name="email"
+                    defaultValue={editingUser?.email}
+                    disabled={!!editingUser}
+                    className="w-full border p-2 rounded-sm disabled:bg-gray-100"
+                    placeholder="email@lumina.com"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">이름</label>
+                  <input
+                    type="text"
+                    name="username"
+                    defaultValue={editingUser?.username}
+                    className="w-full border p-2 rounded-sm"
+                    placeholder="이름"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">아이디</label>
+                  <input
+                    type="text"
+                    name="displayId"
+                    defaultValue={editingUser?.displayId}
+                    className="w-full border p-2 rounded-sm"
+                    placeholder="관리자 아이디"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">직급</label>
+                  <input
+                    type="text"
+                    name="jobTitle"
+                    defaultValue={editingUser?.jobTitle}
+                    className="w-full border p-2 rounded-sm"
+                    placeholder="예: 매니저, 팀장"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">연락처</label>
+                  <input
+                    type="tel"
+                    name="phoneNumber"
+                    defaultValue={editingUser?.phoneNumber}
+                    className="w-full border p-2 rounded-sm"
+                    placeholder="010-0000-0000"
+                  />
+                </div>
+
+                {!editingUser && (
+                  <div>
+                    <label className="block text-sm font-medium mb-1">비밀번호 (신규 생성 시)</label>
+                    <input
+                      type="password"
+                      name="password"
+                      className="w-full border p-2 rounded-sm"
+                      placeholder="비밀번호 (입력 시 신규 계정 생성)"
+                      minLength={6}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">* 비워두면 기존 가입자를 이메일로 찾아 관리자로 승격합니다.</p>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">권한 설정</label>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2">
+                      <input type="checkbox" name="perm_orders" defaultChecked={editingUser?.permissions?.orders} /> 주문 관리
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input type="checkbox" name="perm_products" defaultChecked={editingUser?.permissions?.products} /> 상품 관리
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input type="checkbox" name="perm_customers" defaultChecked={editingUser?.permissions?.customers} /> 고객 관리
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input type="checkbox" name="perm_analytics" defaultChecked={editingUser?.permissions?.analytics} /> 애널리틱스
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input type="checkbox" name="perm_system" defaultChecked={editingUser?.permissions?.system} /> 시스템 관리
+                    </label>
+                  </div>
+                </div>
+
+                {editingUser && editingUser.uid !== user?.uid && (
+                  <div className="pt-4 border-t">
+                    <button
+                      type="button"
+                      onClick={() => handleSendResetEmail(editingUser.email)}
+                      className="text-sm text-blue-600 hover:underline"
+                    >
+                      비밀번호 재설정 이메일 발송
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2 mt-6">
+                  <button type="button" onClick={() => setIsUserModalOpen(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-sm">취소</button>
+                  <button type="submit" className="px-4 py-2 bg-primary text-white rounded-sm hover:bg-black">저장</button>
+                </div>
+              </form>
+
+              {editingUser && editingUser.uid === user?.uid && (
+                <div className="mt-8 pt-6 border-t">
+                  <h4 className="font-bold mb-4">내 비밀번호 변경</h4>
+                  <form onSubmit={handleChangePassword} className="space-y-3">
+                    <input
+                      type="password"
+                      name="newPassword"
+                      className="w-full border p-2 rounded-sm"
+                      placeholder="새 비밀번호 (6자 이상)"
+                      minLength={6}
+                      required
+                    />
+                    <button type="submit" className="w-full px-4 py-2 bg-gray-800 text-white rounded-sm hover:bg-black text-sm">
+                      비밀번호 변경
+                    </button>
+                  </form>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderPlaceholder = (title: string) => (
     <div className="h-[60vh] flex flex-col items-center justify-center text-gray-400">
       <Settings size={48} className="mb-4 text-gray-300" />
@@ -995,6 +1463,14 @@ const Admin: React.FC = () => {
       <p>해당 기능은 현재 준비 중입니다.</p>
     </div>
   );
+
+  // Filter menu items based on permissions
+  const filteredMenuItems = MENU_ITEMS.filter(item => {
+    if (!item.permission) return true;
+    // For demo, allow everything if permissions are undefined (super admin fallback)
+    if (!user?.permissions) return true;
+    return user.permissions[item.permission as keyof UserPermissions];
+  });
 
   return (
     <div className="flex h-screen bg-[#f1f5f9] font-sans">
@@ -1010,7 +1486,7 @@ const Admin: React.FC = () => {
 
         <nav className="flex-1 overflow-y-auto py-2">
           <ul className="space-y-0.5">
-            {MENU_ITEMS.map((item) => {
+            {filteredMenuItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
               return (
@@ -1053,11 +1529,11 @@ const Admin: React.FC = () => {
           </h2>
           <div className="flex items-center space-x-4">
             <div className="text-right hidden sm:block">
-              <p className="text-sm font-bold text-gray-700">관리자님</p>
-              <p className="text-[10px] text-gray-400">최근접속: 2023-11-28 10:42:12</p>
+              <p className="text-sm font-bold text-gray-700">{user?.username || 'Admin'}</p>
+              <p className="text-[10px] text-gray-400">{user?.email}</p>
             </div>
             <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center border border-blue-200 text-blue-600 font-bold text-xs">
-              A
+              {user?.username?.[0] || 'A'}
             </div>
           </div>
         </header>
@@ -1067,7 +1543,8 @@ const Admin: React.FC = () => {
           {activeTab === 'products' && renderProducts()}
           {activeTab === 'orders' && renderOrders()}
           {activeTab === 'customers' && renderCustomers()}
-          {activeTab === 'analytics' && renderHome()} {/* Reusing Home dashboard for analytics preview */}
+          {activeTab === 'system' && renderSystem()}
+          {activeTab === 'analytics' && renderHome()}
           {activeTab === 'stats' && renderHome()}
           {['messages', 'board', 'design', 'promotion', 'excel'].includes(activeTab) && renderPlaceholder(MENU_ITEMS.find(m => m.id === activeTab)?.label || '')}
         </div>
@@ -1123,6 +1600,26 @@ const Admin: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Invoice Modal */}
+      {isInvoiceModalOpen && (
+        <InvoiceModal
+          orders={orders.filter(o => selectedOrderIds.includes(o.id))}
+          onClose={() => setIsInvoiceModalOpen(false)}
+        />
+      )}
+
+      {/* Confirm Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={closeConfirmModal}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        isDestructive={confirmModal.isDestructive}
+        confirmLabel={confirmModal.confirmLabel}
+        cancelLabel={confirmModal.cancelLabel}
+      />
     </div>
   );
 };
