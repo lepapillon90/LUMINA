@@ -20,6 +20,7 @@ interface AuthContextType {
     user: User | null;
     loading: boolean;
     logout: () => Promise<void>;
+    toggleWishlist: (productId: number) => Promise<void>;
 }
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -99,7 +100,9 @@ export const Providers: React.FC<{ children: ReactNode }> = ({ children }) => {
                     username: username,
                     role: role,
                     createdAt: (userDoc as any)?.createdAt || new Date(),
-                    permissions: (userDoc as any)?.permissions
+                    permissions: (userDoc as any)?.permissions,
+                    profileImage: (userDoc as any)?.profileImage || firebaseUser.photoURL || undefined,
+                    wishlist: (userDoc as any)?.wishlist || []
                 });
 
             } else {
@@ -188,10 +191,34 @@ export const Providers: React.FC<{ children: ReactNode }> = ({ children }) => {
 
     const logout = async () => {
         await signOut(auth);
+        setUser(null);
+        setCart([]);
+        isCartSynced.current = false;
+    };
+
+    const toggleWishlist = async (productId: number) => {
+        if (!user) return;
+
+        const currentWishlist = user.wishlist || [];
+        const newWishlist = currentWishlist.includes(productId)
+            ? currentWishlist.filter(id => id !== productId)
+            : [...currentWishlist, productId];
+
+        // Optimistic update
+        setUser({ ...user, wishlist: newWishlist });
+
+        try {
+            const { update } = await import('./services/db');
+            await update('users', user.uid, { wishlist: newWishlist });
+        } catch (error) {
+            console.error("Failed to update wishlist:", error);
+            // Revert on error
+            setUser(user);
+        }
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, logout }}>
+        <AuthContext.Provider value={{ user, loading, logout, toggleWishlist }}>
             <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, clearCart }}>
                 {loading ? <div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div></div> : children}
             </CartContext.Provider>

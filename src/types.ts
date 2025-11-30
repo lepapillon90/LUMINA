@@ -22,6 +22,8 @@ export interface User {
     role: UserRole;
     permissions?: UserPermissions;
     createdAt: any;
+    profileImage?: string;
+    wishlist?: number[];
 }
 
 export interface Product {
@@ -33,6 +35,13 @@ export interface Product {
     description: string;
     isNew?: boolean;
     tags: string[];
+    material?: string;
+    colors?: string[];
+    sizes?: string[];
+    sales?: number;
+    reviewCount?: number;
+    discount?: number;
+    stock?: number;
 }
 
 export interface CartItem extends Product {
@@ -42,6 +51,7 @@ export interface CartItem extends Product {
 export interface OOTDPost {
     id: number;
     user: string;
+    userId?: string;
     image: string;
     likes: number;
     caption: string;
@@ -69,4 +79,29 @@ export interface Customer {
     joinDate: string;
     totalSpent: number;
     grade: string;
+    lastLoginDate?: string;
+    status?: 'active' | 'inactive' | 'banned';
+    memo?: string;
+}
+
+export interface Banner {
+    id: number;
+    imageUrl: string;
+    link: string;
+    startDate: string;
+    endDate: string;
+    isActive: boolean;
+    position: 'main_hero' | 'popup' | 'middle_banner';
+    title?: string;
+}
+
+export interface Promotion {
+    id: number;
+    title: string;
+    description: string;
+    bannerImage: string;
+    productIds: number[];
+    startDate: string;
+    endDate: string;
+    isActive: boolean;
 }

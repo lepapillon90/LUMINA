@@ -212,8 +212,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onSubmit }) 
                                     type="button"
                                     onClick={() => setActiveTab('all')}
                                     className={`flex-1 py-2 text-xs font-medium rounded-lg flex items-center justify-center gap-1 transition ${activeTab === 'all'
-                                            ? 'bg-gray-900 text-white'
-                                            : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                        ? 'bg-gray-900 text-white'
+                                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                                         }`}
                                 >
                                     <Globe size={12} /> 전체 상품
@@ -222,8 +222,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onSubmit }) 
                                     type="button"
                                     onClick={() => setActiveTab('purchased')}
                                     className={`flex-1 py-2 text-xs font-medium rounded-lg flex items-center justify-center gap-1 transition ${activeTab === 'purchased'
-                                            ? 'bg-gray-900 text-white'
-                                            : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                        ? 'bg-gray-900 text-white'
+                                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                                         }`}
                                 >
                                     <ShoppingBag size={12} /> 내 구매 내역
@@ -265,8 +265,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onSubmit }) 
                                                     type="button"
                                                     onClick={() => toggleProduct(product.id)}
                                                     className={`text-xs px-3 py-1.5 rounded-full border transition-all duration-200 flex items-center gap-1 ${selectedProducts.includes(product.id)
-                                                            ? 'bg-primary text-white border-primary shadow-sm transform scale-105'
-                                                            : 'bg-white text-gray-600 border-gray-200 hover:border-primary hover:text-primary'
+                                                        ? 'bg-primary text-white border-primary shadow-sm transform scale-105'
+                                                        : 'bg-white text-gray-600 border-gray-200 hover:border-primary hover:text-primary'
                                                         }`}
                                                 >
                                                     {product.name}

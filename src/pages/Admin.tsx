@@ -1,416 +1,169 @@
-
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import {
+  Home, ShoppingCart, Package, Users, MessageCircle, FileText, Palette,
+  Percent, LineChart, BarChart2, Grid, Shield, Settings, LogOut,
+  Plus, Edit3, Trash2, Search, MoreHorizontal, Printer,
+  ExternalLink, HelpCircle, ImageIcon, Link as LinkIcon, Calendar,
+  GripVertical, Maximize2, ArrowDown
+} from 'lucide-react';
 import { useAuth } from '../contexts';
 import { Navigate } from 'react-router-dom';
-import { InvoiceModal } from '../components/Admin/InvoiceModal';
-import { UserRole, Product, Order, Customer, User, UserPermissions } from '../types';
-import { PRODUCTS } from '../constants';
-import { getAdminUsers, promoteToAdmin, updateAdminUser, deleteAdminUser, createAdminUser, sendAdminPasswordReset, changeOwnPassword, toggleAdminStatus } from '../services/adminService';
 import {
-  Home,
-  ShoppingCart,
-  Package,
-  Users,
-  MessageCircle,
-  FileText,
-  Palette,
-  Percent,
-  LineChart,
-  BarChart2,
-  Grid,
-  Settings,
-  LogOut,
-  Plus,
-  Edit3,
-  Trash2,
-  Search,
-  MoreHorizontal,
-  RefreshCw,
-  ExternalLink,
-  HelpCircle,
-  Pause,
-  Maximize2,
-  ArrowDown,
-  Printer,
-  Shield,
-  Power
-} from 'lucide-react';
-import ConfirmModal from '../components/ConfirmModal';
+  User, UserRole, Product, Order, Customer, Banner, Promotion, UserPermissions
+} from '../types';
+import {
+  getAdminUsers, toggleAdminStatus, deleteAdminUser,
+  updateAdminUser, createAdminUser, promoteToAdmin, sendAdminPasswordReset, changeOwnPassword
+} from '../services/adminService';
+
+// --- Mock Data ---
+const PRODUCTS: Product[] = [
+  { id: 1, name: 'Premium Silk Blouse', price: 120000, category: 'clothing', image: 'https://picsum.photos/200/300?random=1', description: 'Soft silk blouse', tags: ['silk', 'blouse'], stock: 50 },
+  { id: 2, name: 'Leather Crossbody Bag', price: 250000, category: 'bags', image: 'https://picsum.photos/200/300?random=2', description: 'Genuine leather bag', tags: ['leather', 'bag'], stock: 20 },
+  { id: 3, name: 'Gold Plated Earrings', price: 45000, category: 'jewelry', image: 'https://picsum.photos/200/300?random=3', description: 'Elegant earrings', tags: ['gold', 'earrings'], stock: 100 },
+  { id: 4, name: 'Summer Floral Dress', price: 89000, category: 'clothing', image: 'https://picsum.photos/200/300?random=4', description: 'Light summer dress', tags: ['summer', 'dress'], stock: 5 },
+  { id: 5, name: 'Classic Denim Jacket', price: 110000, category: 'clothing', image: 'https://picsum.photos/200/300?random=5', description: 'Vintage style jacket', tags: ['denim', 'jacket'], stock: 30 },
+];
 
 const INITIAL_ORDERS: Order[] = [
-  { id: 'ORD-2023-001', userId: 'mock-user-1', items: [], customerName: '김민지', date: '2023-10-24', total: 150000, status: '배송준비중' },
-  { id: 'ORD-2023-002', userId: 'mock-user-2', items: [], customerName: '이수진', date: '2023-10-25', total: 45000, status: '입금대기' },
-  { id: 'ORD-2023-003', userId: 'mock-user-3', items: [], customerName: '박지훈', date: '2023-10-25', total: 120000, status: '배송중' },
-  { id: 'ORD-2023-004', userId: 'mock-user-4', items: [], customerName: '최유나', date: '2023-10-26', total: 32000, status: '배송완료' },
-  { id: 'ORD-2023-005', userId: 'mock-user-5', items: [], customerName: '정우성', date: '2023-10-26', total: 89000, status: '결제완료' },
+  { id: 'ORD-2023-001', userId: 'user1', customerName: '김지수', total: 120000, status: '배송중', date: '2023-11-28', items: [] },
+  { id: 'ORD-2023-002', userId: 'user2', customerName: '이민호', total: 45000, status: '결제완료', date: '2023-11-28', items: [] },
+  { id: 'ORD-2023-003', userId: 'user3', customerName: '박서준', total: 250000, status: '입금대기', date: '2023-11-27', items: [] },
+  { id: 'ORD-2023-004', userId: 'user4', customerName: '최유리', total: 89000, status: '배송완료', date: '2023-11-26', items: [] },
+  { id: 'ORD-2023-005', userId: 'user5', customerName: '정우성', total: 110000, status: '결제완료', date: '2023-11-28', items: [] },
 ];
 
 const INITIAL_CUSTOMERS: Customer[] = [
-  { id: 'CUST-001', name: '김민지', email: 'minji@example.com', phone: '010-1234-5678', joinDate: '2023-01-15', totalSpent: 450000, grade: 'Gold' },
-  { id: 'CUST-002', name: '이수진', email: 'sujin@example.com', phone: '010-2345-6789', joinDate: '2023-02-20', totalSpent: 120000, grade: 'Silver' },
-  { id: 'CUST-003', name: '박지훈', email: 'jihoon@example.com', phone: '010-3456-7890', joinDate: '2023-03-10', totalSpent: 890000, grade: 'VIP' },
-  { id: 'CUST-004', name: '최유나', email: 'yuna@example.com', phone: '010-4567-8901', joinDate: '2023-05-05', totalSpent: 50000, grade: 'Bronze' },
-  { id: 'CUST-005', name: '정우성', email: 'woosung@example.com', phone: '010-5678-9012', joinDate: '2023-06-12', totalSpent: 230000, grade: 'Silver' },
+  { id: 'cust_1', name: '김지수', email: 'jisoo@example.com', phone: '010-1234-5678', joinDate: '2023-01-15', totalSpent: 1200000, grade: 'VIP', lastLoginDate: '2023-11-28', status: 'active' },
+  { id: 'cust_2', name: '이민호', email: 'minho@example.com', phone: '010-2345-6789', joinDate: '2023-03-20', totalSpent: 450000, grade: 'Gold', lastLoginDate: '2023-11-25', status: 'active' },
+  { id: 'cust_3', name: '박서준', email: 'seojun@example.com', phone: '010-3456-7890', joinDate: '2023-05-10', totalSpent: 150000, grade: 'Silver', lastLoginDate: '2023-10-15', status: 'inactive' },
+  { id: 'cust_4', name: '최유리', email: 'yuri@example.com', phone: '010-4567-8901', joinDate: '2023-07-01', totalSpent: 89000, grade: 'Bronze', lastLoginDate: '2023-11-20', status: 'active' },
+  { id: 'cust_5', name: '정우성', email: 'woosung@example.com', phone: '010-5678-9012', joinDate: '2023-09-15', totalSpent: 0, grade: 'Bronze', lastLoginDate: '2023-11-28', status: 'active' },
 ];
 
-// --- Complex Chart Components (Custom SVG) ---
+// --- Sub-Components ---
 
-// Daily Sales Status Component
-const DailySalesStats = () => {
-  const dates = ['11-22', '11-23', '11-24', '11-25', '11-26', '11-27', '11-28'];
-  // Mocking 0 values as per the requested image design
-  const data = dates.map(() => ({ order: 0, payment: 0, refund: 0 }));
+const DailySalesStats = () => (
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+      <p className="text-xs text-gray-500 mb-1">오늘 매출</p>
+      <p className="text-2xl font-bold text-gray-900">₩1,250,000</p>
+      <p className="text-xs text-green-500 mt-1">▲ 12% (어제 대비)</p>
+    </div>
+    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+      <p className="text-xs text-gray-500 mb-1">이번 주 매출</p>
+      <p className="text-2xl font-bold text-gray-900">₩8,450,000</p>
+      <p className="text-xs text-green-500 mt-1">▲ 5% (지난주 대비)</p>
+    </div>
+    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+      <p className="text-xs text-gray-500 mb-1">이번 달 매출</p>
+      <p className="text-2xl font-bold text-gray-900">₩32,150,000</p>
+      <p className="text-xs text-red-500 mt-1">▼ 2% (지난달 대비)</p>
+    </div>
+  </div>
+);
 
-  const tableData = [
-    { date: '11월 26일', orderPrice: 0, orderCount: 0, payPrice: 0, payCount: 0, refundPrice: 0, refundCount: 0 },
-    { date: '11월 27일', orderPrice: 0, orderCount: 0, payPrice: 0, payCount: 0, refundPrice: 0, refundCount: 0 },
-    { date: '11월 28일', isToday: true, orderPrice: 0, orderCount: 0, payPrice: 0, payCount: 0, refundPrice: 0, refundCount: 0 },
-  ];
-
-  const statsData = [
-    { label: '최근 7일 평균', orderPrice: 0, orderCount: 0, payPrice: 0, payCount: 0, refundPrice: 0, refundCount: 0 },
-    { label: '최근 7일 합계', orderPrice: 0, orderCount: 0, payPrice: 0, payCount: 0, refundPrice: 0, refundCount: 0 },
-    { label: '최근 30일 평균', orderPrice: 0, orderCount: 0, payPrice: 0, payCount: 0, refundPrice: 0, refundCount: 0 },
-    { label: '최근 30일 합계', orderPrice: 0, orderCount: 0, payPrice: 0, payCount: 0, refundPrice: 0, refundCount: 0 },
-  ];
-
-  return (
-    <div className="flex flex-col xl:flex-row gap-8 mt-2">
-      {/* Chart Section */}
-      <div className="flex-1 min-w-[300px]">
-        <div className="flex justify-between items-center mb-6 text-xs text-gray-500">
-          <span>단위/만원</span>
-          <span>2025-11-28 07:00 기준</span>
-        </div>
-
-        {/* Chart Area */}
-        <div className="relative h-64 w-full mb-4">
-          {/* Grid Lines */}
-          <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
-            {[0, 1].map((_, i) => (
-              <div key={i} className={`w-full border-b ${i === 1 ? 'border-gray-300' : 'border-gray-100'} h-0 flex items-center`}>
-                <span className="absolute -left-6 text-xs text-gray-400">{i === 1 ? 0 : ''}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Lines (Simulated Flat Lines at 0) */}
-          <div className="absolute bottom-0 left-0 w-full h-full flex items-end">
-            <div className="w-full h-[1px] bg-gray-300 relative">
-              {/* Markers */}
-              {dates.map((d, i) => (
-                <div key={i} className="absolute transform -translate-x-1/2 flex flex-col items-center" style={{ left: `${(i / (dates.length - 1)) * 100}%`, bottom: '-6px' }}>
-                  <div className="w-2 h-2 rounded-full border-2 border-purple-400 bg-white z-20 mb-[-6px]"></div>
-                  <div className="w-2 h-2 rounded-full border-2 border-pink-400 bg-white z-20 mb-[-6px]"></div>
-                  <div className="w-2 h-2 rounded-full border-2 border-blue-400 bg-white z-20"></div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* X Axis Labels */}
-          <div className="absolute top-full w-full flex justify-between mt-2 text-xs text-gray-500">
-            {dates.map((d, i) => <span key={i}>{d}</span>)}
-          </div>
-        </div>
-
-        {/* Custom Range Slider UI */}
-        <div className="mt-12 bg-blue-50 h-10 rounded-sm relative border border-blue-100 flex items-center px-2">
-          <div className="absolute left-0 top-0 bottom-0 bg-blue-400 w-2 rounded-l-sm"></div>
-          <div className="absolute right-0 top-0 bottom-0 bg-blue-400 w-2 rounded-r-sm"></div>
-          <div className="absolute left-0 right-0 h-full border-t-2 border-b-2 border-blue-200 mx-2"></div>
-          <div className="w-full flex justify-between px-1 z-10">
-            <div className="w-6 h-6 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm cursor-pointer">
-              <Pause size={12} fill="white" />
-            </div>
-            <div className="w-6 h-6 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm cursor-pointer">
-              <Pause size={12} fill="white" />
-            </div>
-          </div>
-        </div>
-
-        {/* Legend */}
-        <div className="flex justify-center space-x-6 mt-4 text-xs font-medium text-gray-600">
-          <div className="flex items-center"><span className="w-2 h-2 bg-blue-400 mr-2 rounded-sm"></span>주문</div>
-          <div className="flex items-center"><span className="w-2 h-2 border-2 border-pink-400 rounded-full mr-2"></span>결제</div>
-          <div className="flex items-center"><span className="w-2 h-2 border-2 border-purple-400 rounded-full mr-2"></span>환불(취소/반품)</div>
-        </div>
+const OrderProcessingStats = () => (
+  <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mb-6">
+    <h3 className="font-bold text-gray-800 mb-4">주문 처리 현황</h3>
+    <div className="grid grid-cols-5 gap-4 text-center">
+      <div>
+        <p className="text-gray-500 text-xs mb-1">입금대기</p>
+        <p className="text-xl font-bold text-gray-900">5</p>
       </div>
-
-      {/* Table Section */}
-      <div className="flex-1 min-w-[300px] border-l border-gray-100 pl-0 xl:pl-8">
-        <table className="w-full text-sm">
-          <thead className="border-b border-gray-200">
-            <tr>
-              <th className="font-normal text-gray-500 py-2 text-left w-1/4">기간별 매출</th>
-              <th className="font-normal text-blue-500 py-2 text-right w-1/4 flex items-center justify-end gap-1"><span className="w-1.5 h-1.5 bg-blue-500 rounded-sm"></span> 주문</th>
-              <th className="font-normal text-pink-500 py-2 text-right w-1/4 flex items-center justify-end gap-1"><span className="w-1.5 h-1.5 border border-pink-500 rounded-full"></span> 결제</th>
-              <th className="font-normal text-purple-500 py-2 text-right w-1/4 flex items-center justify-end gap-1"><span className="w-1.5 h-1.5 border border-purple-500 rounded-full"></span> 환불</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {/* Daily Rows */}
-            {tableData.map((row, idx) => (
-              <tr key={idx} className="group hover:bg-gray-50">
-                <td className="py-4 align-top">
-                  <div className="flex items-center">
-                    <span className={`font-medium ${row.isToday ? 'text-gray-900' : 'text-gray-600'}`}>{row.date}</span>
-                    {row.isToday && <span className="ml-2 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded-sm font-light">오늘</span>}
-                  </div>
-                </td>
-                <td className="py-4 text-right align-top">
-                  <div className="text-gray-800 font-medium">{row.orderPrice}원</div>
-                  <div className="text-gray-400 text-xs mt-1">{row.orderCount}건</div>
-                </td>
-                <td className="py-4 text-right align-top">
-                  <div className="text-gray-800 font-medium">{row.payPrice}원</div>
-                  <div className="text-gray-400 text-xs mt-1">{row.payCount}건</div>
-                </td>
-                <td className="py-4 text-right align-top">
-                  <div className="text-gray-800 font-medium">{row.refundPrice}원</div>
-                  <div className="text-gray-400 text-xs mt-1">{row.refundCount}건</div>
-                </td>
-              </tr>
-            ))}
-
-            {/* Separator Row */}
-            <tr><td colSpan={4} className="py-2 border-b border-gray-100"></td></tr>
-
-            {/* Stats Rows */}
-            {statsData.map((row, idx) => (
-              <tr key={`stat-${idx}`} className={`group hover:bg-gray-50 ${idx % 2 === 1 ? 'bg-blue-50/30' : ''}`}>
-                <td className="py-4 align-top font-medium text-gray-700">{row.label}</td>
-                <td className="py-4 text-right align-top">
-                  <div className="text-gray-800 font-medium">{row.orderPrice}원</div>
-                  <div className="text-gray-400 text-xs mt-1">{row.orderCount}건</div>
-                </td>
-                <td className="py-4 text-right align-top">
-                  <div className="text-gray-800 font-medium">{row.payPrice}원</div>
-                  <div className="text-gray-400 text-xs mt-1">{row.payCount}건</div>
-                </td>
-                <td className="py-4 text-right align-top">
-                  <div className="text-gray-800 font-medium">{row.refundPrice}원</div>
-                  <div className="text-gray-400 text-xs mt-1">{row.refundCount}건</div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div>
+        <p className="text-gray-500 text-xs mb-1">결제완료</p>
+        <p className="text-xl font-bold text-gray-900">12</p>
+      </div>
+      <div>
+        <p className="text-gray-500 text-xs mb-1">배송준비</p>
+        <p className="text-xl font-bold text-gray-900">8</p>
+      </div>
+      <div>
+        <p className="text-gray-500 text-xs mb-1">배송중</p>
+        <p className="text-xl font-bold text-gray-900">15</p>
+      </div>
+      <div>
+        <p className="text-gray-500 text-xs mb-1">배송완료</p>
+        <p className="text-xl font-bold text-gray-900">42</p>
       </div>
     </div>
-  );
-};
+  </div>
+);
 
-// Member/Points Status Component
-const MemberPointsStats = () => {
-  const dates = [
-    { label: '11월 28일', isToday: true, short: '11-28' },
-    { label: '11월 27일', short: '11-27' },
-    { label: '11월 26일', short: '11-26' },
-    { label: '11월 25일', short: '11-25' },
-    { label: '11월 24일', short: '11-24' },
-    { label: '11월 23일', short: '11-23' },
-    { label: '11월 22일', short: '11-22' },
-  ];
-
-  // Reverse for chart (oldest to newest)
-  const chartDates = [...dates].reverse();
-
-  return (
-    <div className="space-y-6 mt-4">
-      {/* Top Cards */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-[#f8faff] p-5 rounded-lg border border-blue-50">
-          <h4 className="text-gray-500 text-xs mb-2">총 신규 회원 가입 현황</h4>
-          <p className="text-2xl font-bold text-gray-800">0 <span className="text-base font-normal text-gray-500">명</span></p>
-        </div>
-        <div className="bg-[#f8faff] p-5 rounded-lg border border-blue-50">
-          <h4 className="text-gray-500 text-xs mb-2">총 적립금 적용 현황</h4>
-          <p className="text-2xl font-bold text-gray-800">0 <span className="text-base font-normal text-gray-500">원</span></p>
-        </div>
+const MemberPointsStats = () => (
+  <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mb-6">
+    <h3 className="font-bold text-gray-800 mb-4">회원 적립금 현황</h3>
+    <div className="flex justify-between items-center">
+      <div>
+        <p className="text-gray-500 text-xs mb-1">총 지급 적립금</p>
+        <p className="text-xl font-bold text-blue-600">5,240,000 P</p>
       </div>
+      <div>
+        <p className="text-gray-500 text-xs mb-1">사용된 적립금</p>
+        <p className="text-xl font-bold text-red-600">1,120,000 P</p>
+      </div>
+      <div>
+        <p className="text-gray-500 text-xs mb-1">잔여 적립금</p>
+        <p className="text-xl font-bold text-gray-900">4,120,000 P</p>
+      </div>
+    </div>
+  </div>
+);
 
-      <div className="flex flex-col xl:flex-row gap-8">
-        {/* Chart Section */}
-        <div className="flex-1 min-w-[300px]">
-          <div className="flex justify-between items-center mb-6 text-xs text-gray-500">
-            <span>단위/명</span>
-          </div>
-
-          <div className="relative h-64 w-full mb-4">
-            {/* Grid Lines */}
-            <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
-              {[0, 1].map((_, i) => (
-                <div key={i} className={`w-full border-b ${i === 1 ? 'border-gray-300' : 'border-gray-100'} h-0 flex items-center`}>
-                  <span className="absolute -left-6 text-xs text-gray-400">{i === 1 ? 0 : ''}</span>
-                </div>
-              ))}
+const InvoiceModal = ({ orders, onClose }: { orders: Order[], onClose: () => void }) => (
+  <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+    <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+      <div className="flex justify-between items-center mb-6 border-b pb-4">
+        <h2 className="text-xl font-bold text-gray-800">송장 출력</h2>
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <span className="sr-only">Close</span>
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
+      <div className="space-y-4">
+        {orders.map(order => (
+          <div key={order.id} className="border p-4 rounded-sm">
+            <div className="flex justify-between mb-2">
+              <span className="font-bold">주문번호: {order.id}</span>
+              <span className="text-gray-500">{order.date}</span>
             </div>
-
-            {/* Line Chart */}
-            <div className="absolute bottom-0 left-0 w-full h-full flex items-end">
-              <div className="w-full h-[1px] bg-orange-400 relative">
-                {/* Points */}
-                {chartDates.map((d, i) => (
-                  <div key={i} className="absolute transform -translate-x-1/2 flex flex-col items-center"
-                    style={{ left: `${(i / (chartDates.length - 1)) * 100}%`, bottom: '-1px' }}>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* X Axis Labels */}
-            <div className="absolute top-full w-full flex justify-between mt-2 text-xs text-gray-500">
-              {chartDates.map((d, i) => <span key={i}>{d.short}</span>)}
-            </div>
-          </div>
-
-          {/* Slider UI */}
-          <div className="mt-12 bg-red-50 h-10 rounded-sm relative border border-red-100 flex items-center px-2">
-            <div className="absolute left-0 top-0 bottom-0 bg-red-300 w-2 rounded-l-sm"></div>
-            <div className="absolute right-0 top-0 bottom-0 bg-red-300 w-2 rounded-r-sm"></div>
-            <div className="absolute left-0 right-0 h-full border-t-2 border-b-2 border-red-100 mx-2"></div>
-            <div className="w-full flex justify-between px-1 z-10">
-              <div className="w-6 h-6 bg-red-400 rounded flex items-center justify-center text-white shadow-sm cursor-pointer">
-                <Pause size={12} fill="white" />
-              </div>
-              <div className="w-6 h-6 bg-red-400 rounded flex items-center justify-center text-white shadow-sm cursor-pointer">
-                <Pause size={12} fill="white" />
-              </div>
+            <div className="text-sm text-gray-600">
+              <p>받는사람: {order.customerName}</p>
+              <p>금액: ₩{order.total.toLocaleString()}</p>
             </div>
           </div>
+        ))}
+      </div>
+      <div className="mt-6 flex justify-end gap-2">
+        <button onClick={onClose} className="px-4 py-2 border border-gray-300 rounded-sm hover:bg-gray-50">취소</button>
+        <button onClick={() => { alert('출력되었습니다.'); onClose(); }} className="px-4 py-2 bg-blue-600 text-white rounded-sm hover:bg-blue-700">인쇄하기</button>
+      </div>
+    </div>
+  </div>
+);
 
-          {/* Legend */}
-          <div className="flex justify-center mt-4 text-xs font-medium text-gray-600">
-            <div className="flex items-center"><span className="w-2 h-2 border-2 border-orange-400 rounded-full mr-2"></span>신규 회원 가입 현황</div>
-          </div>
-        </div>
-
-        {/* Table Section */}
-        <div className="flex-1 min-w-[300px] border-l border-gray-100 pl-0 xl:pl-8">
-          <table className="w-full text-sm">
-            <thead className="border-b border-gray-200">
-              <tr>
-                <th className="font-normal text-gray-500 py-2 text-left flex items-center gap-1">날짜 <ArrowDown size={12} /></th>
-                <th className="font-normal text-gray-500 py-2 text-right">
-                  <span className="flex items-center justify-end gap-1">
-                    <span className="w-1.5 h-1.5 border border-orange-500 rounded-full"></span> 신규 회원 가입 현황
-                  </span>
-                </th>
-                <th className="font-normal text-gray-500 py-2 text-right">적립금 적용 현황</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {dates.map((row, idx) => (
-                <tr key={idx} className="group hover:bg-gray-50">
-                  <td className="py-4 align-top">
-                    <div className="flex items-center">
-                      <span className={`font-medium ${row.isToday ? 'text-gray-900' : 'text-gray-600'}`}>{row.label}</span>
-                      {row.isToday && <span className="ml-2 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded-sm font-light">오늘</span>}
-                    </div>
-                  </td>
-                  <td className="py-4 text-right align-top text-gray-800 font-medium">0명</td>
-                  <td className="py-4 text-right align-top text-gray-800 font-medium">0원</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, isDestructive, confirmLabel = '확인', cancelLabel = '취소' }: any) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+      <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
+        <h3 className={`text-lg font-bold mb-2 ${isDestructive ? 'text-red-600' : 'text-gray-900'}`}>{title}</h3>
+        <p className="text-gray-600 mb-6 text-sm">{message}</p>
+        <div className="flex justify-end gap-2">
+          <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-sm text-sm">{cancelLabel}</button>
+          <button
+            onClick={onConfirm}
+            className={`px-4 py-2 text-white rounded-sm text-sm ${isDestructive ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+          >
+            {confirmLabel}
+          </button>
         </div>
       </div>
     </div>
   );
 };
 
-// Order Processing Status Component
-const OrderProcessingStats = () => {
-  const dates = [
-    { label: '11월 28일', isToday: true },
-    { label: '11월 27일' },
-    { label: '11월 26일' },
-    { label: '11월 25일' },
-    { label: '11월 24일' },
-    { label: '11월 23일' },
-    { label: '11월 22일' },
-  ];
-
-  // Initialize all with 0 to match design
-  const data = dates.map(d => ({
-    ...d,
-    preDeposit: 0,
-    prep: 0,
-    hold: 0,
-    shipping: 0,
-    completed: 0,
-    cancel: 0,
-    exchange: 0,
-    return: 0,
-    total: 0
-  }));
-
-  // Summary Row Data
-  const summary = {
-    preDeposit: 0, prep: 0, hold: 0, shipping: 0, completed: 0, cancel: 0, exchange: 0, return: 0, total: 0
-  };
-
-  return (
-    <div className="mt-4 overflow-x-auto">
-      <table className="w-full text-sm text-center">
-        <thead className="text-gray-500 border-b border-gray-100">
-          <tr>
-            <th className="py-3 font-normal text-left pl-4 flex items-center gap-1 cursor-pointer">
-              날짜 <ArrowDown size={12} />
-            </th>
-            <th className="py-3 font-normal">입금전</th>
-            <th className="py-3 font-normal">배송준비중</th>
-            <th className="py-3 font-normal">배송대기중</th>
-            <th className="py-3 font-normal">배송중</th>
-            <th className="py-3 font-normal">배송완료</th>
-            <th className="py-3 font-normal">취소</th>
-            <th className="py-3 font-normal">교환</th>
-            <th className="py-3 font-normal">반품</th>
-            <th className="py-3 font-normal pr-4">주문합계</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-50">
-          {/* Summary Row */}
-          <tr className="bg-[#f0f9ff]/50 font-bold text-gray-800">
-            <td className="py-4 text-left pl-4 text-gray-800">합계</td>
-            <td>{summary.preDeposit}</td>
-            <td>{summary.prep}</td>
-            <td>0</td>
-            <td>{summary.shipping}</td>
-            <td>{summary.completed}</td>
-            <td>{summary.cancel}</td>
-            <td>{summary.exchange}</td>
-            <td>{summary.return}</td>
-            <td className="pr-4">{summary.total}</td>
-          </tr>
-
-          {/* Daily Rows */}
-          {data.map((row, idx) => (
-            <tr key={idx} className="hover:bg-gray-50 transition">
-              <td className="py-4 text-left pl-4 font-medium text-gray-600 flex items-center">
-                {row.label}
-                {row.isToday && <span className="ml-2 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded-sm font-light">오늘</span>}
-              </td>
-              <td className="text-gray-900">{row.preDeposit}</td>
-              <td className="text-gray-900">{row.prep}</td>
-              <td className="text-gray-900">{row.hold}</td>
-              <td className="text-gray-900">{row.shipping}</td>
-              <td className="text-gray-900">{row.completed}</td>
-              <td className="text-gray-900">{row.cancel}</td>
-              <td className="text-gray-900">{row.exchange}</td>
-              <td className="text-gray-900">{row.return}</td>
-              <td className="pr-4 font-medium text-gray-900">{row.total}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-};
-
-// Post Status Component
 const PostStats = () => {
   const categories = [
     '공지사항', '상품 사용후기', '상품 Q&A', '자유게시판',
@@ -627,6 +380,44 @@ const Admin: React.FC = () => {
   const [products, setProducts] = useState<Product[]>(PRODUCTS);
   const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
   const [customers, setCustomers] = useState<Customer[]>(INITIAL_CUSTOMERS);
+  const [customerFilter, setCustomerFilter] = useState<'all' | 'vip' | 'at_risk' | 'potential'>('all');
+
+  // Design & Promotion State
+  const [banners, setBanners] = useState<Banner[]>([
+    { id: 1, imageUrl: 'https://picsum.photos/1200/400?random=1', link: '/promotion/winter', startDate: '2023-11-01', endDate: '2023-12-31', isActive: true, position: 'main_hero', title: 'Winter Collection' },
+    { id: 2, imageUrl: 'https://picsum.photos/1200/400?random=2', link: '/new-arrivals', startDate: '2023-11-15', endDate: '2023-12-15', isActive: true, position: 'main_hero', title: 'New Arrivals' },
+  ]);
+  const [promotions, setPromotions] = useState<Promotion[]>([
+    { id: 1, title: '겨울 시즌 오프', description: '최대 50% 할인', bannerImage: 'https://picsum.photos/800/400?random=3', productIds: [1, 3, 5], startDate: '2023-12-01', endDate: '2023-12-31', isActive: true }
+  ]);
+  const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
+  const [isPromotionModalOpen, setIsPromotionModalOpen] = useState(false);
+  const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
+  const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(null);
+
+  // Drag & Drop State
+  const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
+
+  const handleDragStart = (index: number) => {
+    setDraggedItemIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedItemIndex === null || draggedItemIndex === index) return;
+
+    const newProducts = [...products];
+    const draggedItem = newProducts[draggedItemIndex];
+    newProducts.splice(draggedItemIndex, 1);
+    newProducts.splice(index, 0, draggedItem);
+
+    setProducts(newProducts);
+    setDraggedItemIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItemIndex(null);
+  };
 
   // Access Control for Inactive Admins
   if (user && user.role === UserRole.ADMIN && user.isActive === false) {
@@ -647,6 +438,105 @@ const Admin: React.FC = () => {
   // Modal State
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [previewImage, setPreviewImage] = useState<string>('');
+  const [additionalImages, setAdditionalImages] = useState<string[]>([]);
+
+  // Description Block Editor State
+  type DescriptionBlock = { id: string; type: 'text' | 'image'; content: string };
+  const [descriptionBlocks, setDescriptionBlocks] = useState<DescriptionBlock[]>([]);
+
+  useEffect(() => {
+    if (isProductModalOpen) {
+      setPreviewImage(editingProduct?.image || 'https://picsum.photos/600/750');
+      // In a real app, we would load existing additional images here
+      setAdditionalImages([]);
+
+      // Parse existing description into blocks (Simple heuristic)
+      if (editingProduct?.description) {
+        // If it looks like our HTML format (contains <p> or <img), try to parse
+        // For now, simple fallback: one text block
+        setDescriptionBlocks([{ id: Date.now().toString(), type: 'text', content: editingProduct.description }]);
+      } else {
+        setDescriptionBlocks([{ id: Date.now().toString(), type: 'text', content: '' }]);
+      }
+    }
+  }, [isProductModalOpen, editingProduct]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setPreviewImage(url);
+    }
+  };
+
+  const handleAddAdditionalImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setAdditionalImages(prev => [...prev, url]);
+    }
+  };
+
+  const handleRemoveAdditionalImage = (index: number) => {
+    setAdditionalImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Block Editor Handlers
+  const addTextBlock = () => {
+    setDescriptionBlocks(prev => [...prev, { id: Date.now().toString(), type: 'text', content: '' }]);
+  };
+
+  const addImageBlock = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setDescriptionBlocks(prev => [...prev, { id: Date.now().toString(), type: 'image', content: url }]);
+    }
+  };
+
+  const updateBlock = (id: string, content: string) => {
+    setDescriptionBlocks(prev => prev.map(b => b.id === id ? { ...b, content } : b));
+  };
+
+  const removeBlock = (id: string) => {
+    setDescriptionBlocks(prev => prev.filter(b => b.id !== id));
+  };
+
+  const handleSaveProduct = (e: React.FormEvent) => {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
+
+    // Serialize blocks to HTML
+    const descriptionHtml = descriptionBlocks.map(block => {
+      if (block.type === 'text') return `<p class="mb-4">${block.content}</p>`;
+      if (block.type === 'image') return `<img src="${block.content}" class="w-full rounded-lg my-6" alt="Description Image" />`;
+      return '';
+    }).join('');
+
+    const newProduct: Product = {
+      id: editingProduct ? editingProduct.id : PRODUCTS.length + 1,
+      name: formData.get('name') as string,
+      price: parseInt(formData.get('price') as string),
+      image: formData.get('image') as string, // This will be the blob URL
+      category: formData.get('category') as string,
+      description: descriptionHtml, // Use the serialized HTML
+      stock: parseInt(formData.get('stock') as string),
+      isNew: formData.get('isNew') === 'on',
+      tags: editingProduct ? editingProduct.tags : [], // Preserve tags or initialize empty
+    };
+
+    if (editingProduct) {
+      // Update existing
+      // setProducts(prev => prev.map(p => p.id === newProduct.id ? newProduct : p));
+      alert('상품이 수정되었습니다.');
+    } else {
+      // Add new
+      // setProducts(prev => [...prev, newProduct]);
+      alert('상품이 등록되었습니다.');
+    }
+    setIsProductModalOpen(false);
+  };
 
   // Batch Selection State
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
@@ -809,43 +699,7 @@ const Admin: React.FC = () => {
     });
   };
 
-  const handleSaveProduct = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
 
-    // Validation
-    const name = formData.get('name') as string;
-    const price = Number(formData.get('price'));
-    const image = formData.get('image') as string;
-
-    if (!name || price === 0 || !image) {
-      alert('필수 정보를 모두 입력해주세요.');
-      return;
-    }
-
-    if (price < 0) {
-      alert('상품 가격은 0원 이상이어야 합니다.');
-      return;
-    }
-
-    const newProduct: any = {
-      name: name,
-      price: price,
-      category: formData.get('category'),
-      image: image,
-      description: formData.get('description'),
-      isNew: formData.get('isNew') === 'on'
-    };
-
-    if (editingProduct) {
-      setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...newProduct, id: editingProduct.id } : p));
-    } else {
-      const newId = Math.max(...products.map(p => p.id), 0) + 1;
-      setProducts(prev => [...prev, { ...newProduct, id: newId }]);
-    }
-    setIsProductModalOpen(false);
-    setEditingProduct(null);
-  };
 
   const handleDeleteProduct = (id: number) => {
     if (window.confirm('정말 이 상품을 삭제하시겠습니까?')) {
@@ -941,8 +795,10 @@ const Admin: React.FC = () => {
             <StatusBox title="반품신청" count={0} type="claim" />
             <StatusBox title="환불전" count={0} type="normal" />
             <div className="flex flex-col justify-center p-4 h-24 bg-white">
-              <span className="text-xs text-gray-500 mb-1">게시물관리</span>
-              <span className="text-lg font-bold text-gray-800">2</span>
+              <span className="text-xs text-gray-500 mb-1">재고부족 알림</span>
+              <span className="text-lg font-bold text-red-500">
+                {products.filter(p => (p.stock || 0) <= 10).length}
+              </span>
             </div>
           </div>
         </div>
@@ -1008,79 +864,14 @@ const Admin: React.FC = () => {
     );
   };
 
-  const renderProducts = () => (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-          <Package size={20} /> 상품 관리
-        </h2>
-        <button
-          onClick={() => { setEditingProduct(null); setIsProductModalOpen(true); }}
-          className="flex items-center space-x-2 bg-slate-700 text-white px-4 py-2 rounded-sm text-sm hover:bg-slate-800 transition"
-        >
-          <Plus size={16} />
-          <span>상품 등록</span>
-        </button>
-      </div>
-
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 text-gray-600 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 font-medium">상품 정보</th>
-                <th className="px-6 py-3 font-medium">카테고리</th>
-                <th className="px-6 py-3 font-medium">가격</th>
-                <th className="px-6 py-3 font-medium text-right">관리</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {products.map(product => (
-                <tr key={product.id} className="hover:bg-gray-50 transition">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-4">
-                      <img src={product.image} alt={product.name} className="w-12 h-12 object-cover rounded border border-gray-100" />
-                      <div>
-                        <p className="font-bold text-gray-800">{product.name}</p>
-                        <p className="text-xs text-gray-400 truncate max-w-[200px]">{product.description}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-gray-600 capitalize">
-                    {product.category === 'earring' ? '귀걸이' : product.category === 'necklace' ? '목걸이' : product.category === 'ring' ? '반지' : '팔찌'}
-                  </td>
-                  <td className="px-6 py-4 font-medium text-slate-700">₩{product.price.toLocaleString()}</td>
-                  <td className="px-6 py-4 text-right space-x-2">
-                    <button
-                      onClick={() => { setEditingProduct(product); setIsProductModalOpen(true); }}
-                      className="p-1.5 border border-gray-200 rounded text-gray-500 hover:text-blue-600 hover:border-blue-300 transition"
-                    >
-                      <Edit3 size={16} />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteProduct(product.id)}
-                      className="p-1.5 border border-gray-200 rounded text-gray-500 hover:text-red-600 hover:border-red-300 transition"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
+  const statusColors: Record<string, string> = {
+    '입금대기': 'bg-yellow-50 border border-yellow-100 text-yellow-700',
+    '결제완료': 'bg-blue-50 border border-blue-100 text-blue-600',
+    '배송중': 'bg-indigo-50 border border-indigo-100 text-indigo-600',
+    '배송완료': 'bg-gray-100 border border-gray-200 text-gray-500'
+  };
 
   const renderOrders = () => {
-    const statusColors: any = {
-      '입금대기': 'bg-white border border-gray-200 text-gray-600',
-      '결제완료': 'bg-blue-50 border border-blue-100 text-blue-600',
-      '배송중': 'bg-indigo-50 border border-indigo-100 text-indigo-600',
-      '배송완료': 'bg-gray-100 border border-gray-200 text-gray-500'
-    };
-
     return (
       <div className="space-y-6">
         <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
@@ -1149,7 +940,7 @@ const Admin: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {orders.map(order => (
-                  <tr key={order.id} className={`hover:bg-gray-50 transition ${selectedOrderIds.includes(order.id) ? 'bg-blue-50/30' : ''}`}>
+                  <tr key={order.id} className="hover:bg-gray-50 transition group">
                     <td className="px-6 py-4">
                       <input
                         type="checkbox"
@@ -1158,24 +949,17 @@ const Admin: React.FC = () => {
                         className="rounded text-blue-500 focus:ring-blue-500"
                       />
                     </td>
-                    <td className="px-6 py-4 font-mono text-xs text-gray-500">{order.id}</td>
-                    <td className="px-6 py-4 text-gray-600">{order.date}</td>
-                    <td className="px-6 py-4 font-medium">{order.customerName}</td>
-                    <td className="px-6 py-4 font-medium">₩{order.total.toLocaleString()}</td>
+                    <td className="px-6 py-4 font-medium text-gray-900">{order.id}</td>
+                    <td className="px-6 py-4 text-gray-500">{order.date}</td>
+                    <td className="px-6 py-4 font-medium text-gray-800">{order.customerName}</td>
+                    <td className="px-6 py-4 text-gray-600">₩{order.total.toLocaleString()}</td>
                     <td className="px-6 py-4">
-                      <select
-                        value={order.status}
-                        onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
-                        className={`px-3 py-1 rounded-sm text-xs font-medium focus:ring-0 cursor-pointer outline-none ${statusColors[order.status]}`}
-                      >
-                        <option value="입금대기">입금대기</option>
-                        <option value="결제완료">결제완료</option>
-                        <option value="배송중">배송중</option>
-                        <option value="배송완료">배송완료</option>
-                      </select>
+                      <span className={`px-2 py-1 rounded-sm text-xs font-medium ${statusColors[order.status] || 'bg-gray-100 text-gray-600'}`}>
+                        {order.status}
+                      </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button className="text-gray-400 hover:text-slate-700">
+                      <button className="text-gray-400 hover:text-blue-600 transition">
                         <MoreHorizontal size={18} />
                       </button>
                     </td>
@@ -1189,47 +973,57 @@ const Admin: React.FC = () => {
     );
   };
 
-  const renderCustomers = () => (
-    <div className="space-y-6">
-      <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-        <Users size={20} /> 고객 관리
-      </h2>
-
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-          <div className="flex items-center flex-1 max-w-sm bg-white border border-gray-300 rounded-sm px-3 py-1.5">
-            <Search size={16} className="text-gray-400 mr-2" />
-            <input type="text" placeholder="회원명, 아이디, 전화번호" className="text-sm w-full focus:outline-none" />
-          </div>
+  const renderProducts = () => {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+            <Package size={20} /> 상품 관리
+          </h2>
+          <button
+            onClick={() => { setEditingProduct(null); setIsProductModalOpen(true); }}
+            className="bg-black text-white px-4 py-2 rounded-sm text-sm hover:bg-gray-800 transition flex items-center gap-2"
+          >
+            <Plus size={16} /> 상품 등록
+          </button>
         </div>
-        <div className="overflow-x-auto">
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <table className="w-full text-left text-sm">
             <thead className="bg-white text-gray-600 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 font-medium">고객명</th>
-                <th className="px-6 py-3 font-medium">연락처/이메일</th>
-                <th className="px-6 py-3 font-medium">가입일</th>
-                <th className="px-6 py-3 font-medium">총 구매액</th>
-                <th className="px-6 py-3 font-medium">등급</th>
+                <th className="px-6 py-3 font-medium">상품명</th>
+                <th className="px-6 py-3 font-medium">판매가</th>
+                <th className="px-6 py-3 font-medium">카테고리</th>
+                <th className="px-6 py-3 font-medium">재고</th>
+                <th className="px-6 py-3 font-medium text-right">관리</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {customers.map(customer => (
-                <tr key={customer.id} className="hover:bg-gray-50 transition">
-                  <td className="px-6 py-4 font-medium text-gray-800">{customer.name}</td>
-                  <td className="px-6 py-4">
-                    <p className="text-gray-900">{customer.phone}</p>
-                    <p className="text-xs text-gray-400">{customer.email}</p>
+              {products.map(product => (
+                <tr key={product.id} className="hover:bg-gray-50 transition group">
+                  <td className="px-6 py-4 font-medium text-gray-800">
+                    <div className="flex items-center gap-3">
+                      <img src={product.image} alt={product.name} className="w-10 h-10 rounded object-cover border border-gray-100" />
+                      {product.name}
+                    </div>
                   </td>
-                  <td className="px-6 py-4 text-gray-600">{customer.joinDate}</td>
-                  <td className="px-6 py-4 text-slate-700">₩{customer.totalSpent.toLocaleString()}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-0.5 rounded-sm text-xs font-medium border
-                      ${customer.grade === 'VIP' ? 'bg-purple-50 text-purple-700 border-purple-100' :
-                        customer.grade === 'Gold' ? 'bg-yellow-50 text-yellow-700 border-yellow-100' :
-                          customer.grade === 'Silver' ? 'bg-gray-50 text-gray-700 border-gray-200' : 'bg-orange-50 text-orange-700 border-orange-100'}`}>
-                      {customer.grade}
-                    </span>
+                  <td className="px-6 py-4 text-gray-600">₩{product.price.toLocaleString()}</td>
+                  <td className="px-6 py-4 text-gray-500">{product.category}</td>
+                  <td className="px-6 py-4 text-gray-600">{product.stock}</td>
+                  <td className="px-6 py-4 text-right">
+                    <button
+                      onClick={() => { setEditingProduct(product); setIsProductModalOpen(true); }}
+                      className="text-gray-400 hover:text-blue-600 mr-2"
+                    >
+                      <Edit3 size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteProduct(product.id)}
+                      className="text-gray-400 hover:text-red-600"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -1237,8 +1031,145 @@ const Admin: React.FC = () => {
           </table>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
+
+  const renderCustomers = () => {
+    // CRM Logic: Calculate Stats
+    const totalCustomers = customers.length;
+    const newCustomers = customers.filter(c => {
+      const join = new Date(c.joinDate);
+      const now = new Date();
+      return join.getMonth() === now.getMonth() && join.getFullYear() === now.getFullYear();
+    }).length;
+    const vipCustomers = customers.filter(c => c.grade === 'VIP').length;
+    const atRiskCustomers = customers.filter(c => c.status === 'inactive' || !c.lastLoginDate).length;
+
+    // Filter Logic
+    const filteredCustomers = customers.filter(c => {
+      if (customerFilter === 'all') return true;
+      if (customerFilter === 'vip') return c.grade === 'VIP';
+      if (customerFilter === 'at_risk') return c.status === 'inactive';
+      if (customerFilter === 'potential') return c.totalSpent === 0;
+      return true;
+    });
+
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+            <Users size={20} /> 고객 관리 (CRM)
+          </h2>
+          <button className="bg-black text-white px-4 py-2 rounded-sm text-sm hover:bg-gray-800 transition flex items-center gap-2">
+            <Plus size={16} /> 고객 수동 등록
+          </button>
+        </div>
+
+        {/* CRM Stats Cards */}
+        <div className="grid grid-cols-4 gap-4">
+          <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+            <p className="text-xs text-gray-500 mb-1">총 회원수</p>
+            <p className="text-2xl font-bold text-gray-900">{totalCustomers.toLocaleString()}</p>
+          </div>
+          <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+            <p className="text-xs text-gray-500 mb-1">신규 회원 (이번달)</p>
+            <p className="text-2xl font-bold text-blue-600">+{newCustomers}</p>
+          </div>
+          <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+            <p className="text-xs text-gray-500 mb-1">VIP 회원</p>
+            <p className="text-2xl font-bold text-purple-600">{vipCustomers}</p>
+          </div>
+          <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+            <p className="text-xs text-gray-500 mb-1">이탈 위험</p>
+            <p className="text-2xl font-bold text-red-500">{atRiskCustomers}</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          {/* Filters & Search */}
+          <div className="p-4 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50">
+            <div className="flex space-x-2">
+              {[
+                { id: 'all', label: '전체' },
+                { id: 'vip', label: 'VIP' },
+                { id: 'at_risk', label: '이탈위험' },
+                { id: 'potential', label: '잠재고객' }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setCustomerFilter(tab.id as any)}
+                  className={`px-3 py-1.5 text-sm rounded-sm transition ${customerFilter === tab.id
+                    ? 'bg-black text-white font-medium'
+                    : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'
+                    }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center w-full md:w-auto bg-white border border-gray-300 rounded-sm px-3 py-1.5">
+              <Search size={16} className="text-gray-400 mr-2" />
+              <input type="text" placeholder="회원명, 아이디, 전화번호" className="text-sm w-full focus:outline-none" />
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-white text-gray-600 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 font-medium">고객명</th>
+                  <th className="px-6 py-3 font-medium">연락처/이메일</th>
+                  <th className="px-6 py-3 font-medium">최근 접속</th>
+                  <th className="px-6 py-3 font-medium">총 구매액</th>
+                  <th className="px-6 py-3 font-medium">등급/상태</th>
+                  <th className="px-6 py-3 font-medium text-right">관리</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {filteredCustomers.map(customer => (
+                  <tr key={customer.id} className="hover:bg-gray-50 transition group">
+                    <td className="px-6 py-4 font-medium text-gray-800">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500">
+                          {customer.name[0]}
+                        </div>
+                        {customer.name}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-gray-900">{customer.phone}</p>
+                      <p className="text-xs text-gray-400">{customer.email}</p>
+                    </td>
+                    <td className="px-6 py-4 text-gray-600">
+                      {customer.lastLoginDate || '-'}
+                      {customer.status === 'inactive' && <span className="ml-2 text-[10px] text-red-500 font-bold">휴면</span>}
+                    </td>
+                    <td className="px-6 py-4 text-slate-700">₩{customer.totalSpent.toLocaleString()}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-0.5 rounded-sm text-xs font-medium border
+                        ${customer.grade === 'VIP' ? 'bg-purple-50 text-purple-700 border-purple-100' :
+                          customer.grade === 'Gold' ? 'bg-yellow-50 text-yellow-700 border-yellow-100' :
+                            customer.grade === 'Silver' ? 'bg-gray-50 text-gray-700 border-gray-200' : 'bg-orange-50 text-orange-700 border-orange-100'}`}>
+                        {customer.grade}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button className="text-gray-400 hover:text-blue-600 mr-2" title="상세보기">
+                        <Maximize2 size={16} />
+                      </button>
+                      <button className="text-gray-400 hover:text-gray-800" title="메모">
+                        <FileText size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderSystem = () => {
     return (
@@ -1317,144 +1248,148 @@ const Admin: React.FC = () => {
             </tbody>
           </table>
         </div>
-
-        {/* User Modal */}
-        {isUserModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg w-full max-w-md">
-              <h3 className="text-lg font-bold mb-4">{editingUser ? '관리자 수정' : '관리자 추가'}</h3>
-              <form onSubmit={handleSaveUser} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">이메일</label>
-                  <input
-                    type="email"
-                    name="email"
-                    defaultValue={editingUser?.email}
-                    disabled={!!editingUser}
-                    className="w-full border p-2 rounded-sm disabled:bg-gray-100"
-                    placeholder="email@lumina.com"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">이름</label>
-                  <input
-                    type="text"
-                    name="username"
-                    defaultValue={editingUser?.username}
-                    className="w-full border p-2 rounded-sm"
-                    placeholder="이름"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">아이디</label>
-                  <input
-                    type="text"
-                    name="displayId"
-                    defaultValue={editingUser?.displayId}
-                    className="w-full border p-2 rounded-sm"
-                    placeholder="관리자 아이디"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">직급</label>
-                  <input
-                    type="text"
-                    name="jobTitle"
-                    defaultValue={editingUser?.jobTitle}
-                    className="w-full border p-2 rounded-sm"
-                    placeholder="예: 매니저, 팀장"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">연락처</label>
-                  <input
-                    type="tel"
-                    name="phoneNumber"
-                    defaultValue={editingUser?.phoneNumber}
-                    className="w-full border p-2 rounded-sm"
-                    placeholder="010-0000-0000"
-                  />
-                </div>
-
-                {!editingUser && (
-                  <div>
-                    <label className="block text-sm font-medium mb-1">비밀번호 (신규 생성 시)</label>
-                    <input
-                      type="password"
-                      name="password"
-                      className="w-full border p-2 rounded-sm"
-                      placeholder="비밀번호 (입력 시 신규 계정 생성)"
-                      minLength={6}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">* 비워두면 기존 가입자를 이메일로 찾아 관리자로 승격합니다.</p>
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">권한 설정</label>
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2">
-                      <input type="checkbox" name="perm_orders" defaultChecked={editingUser?.permissions?.orders} /> 주문 관리
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input type="checkbox" name="perm_products" defaultChecked={editingUser?.permissions?.products} /> 상품 관리
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input type="checkbox" name="perm_customers" defaultChecked={editingUser?.permissions?.customers} /> 고객 관리
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input type="checkbox" name="perm_analytics" defaultChecked={editingUser?.permissions?.analytics} /> 애널리틱스
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input type="checkbox" name="perm_system" defaultChecked={editingUser?.permissions?.system} /> 시스템 관리
-                    </label>
-                  </div>
-                </div>
-
-                {editingUser && editingUser.uid !== user?.uid && (
-                  <div className="pt-4 border-t">
-                    <button
-                      type="button"
-                      onClick={() => handleSendResetEmail(editingUser.email)}
-                      className="text-sm text-blue-600 hover:underline"
-                    >
-                      비밀번호 재설정 이메일 발송
-                    </button>
-                  </div>
-                )}
-
-                <div className="flex justify-end gap-2 mt-6">
-                  <button type="button" onClick={() => setIsUserModalOpen(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-sm">취소</button>
-                  <button type="submit" className="px-4 py-2 bg-primary text-white rounded-sm hover:bg-black">저장</button>
-                </div>
-              </form>
-
-              {editingUser && editingUser.uid === user?.uid && (
-                <div className="mt-8 pt-6 border-t">
-                  <h4 className="font-bold mb-4">내 비밀번호 변경</h4>
-                  <form onSubmit={handleChangePassword} className="space-y-3">
-                    <input
-                      type="password"
-                      name="newPassword"
-                      className="w-full border p-2 rounded-sm"
-                      placeholder="새 비밀번호 (6자 이상)"
-                      minLength={6}
-                      required
-                    />
-                    <button type="submit" className="w-full px-4 py-2 bg-gray-800 text-white rounded-sm hover:bg-black text-sm">
-                      비밀번호 변경
-                    </button>
-                  </form>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
     );
   };
+
+  const renderDesign = () => {
+    return (
+      <div className="space-y-8">
+        {/* Banner Management */}
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <ImageIcon size={20} /> 배너 관리
+            </h2>
+            <button
+              onClick={() => { setEditingBanner(null); setIsBannerModalOpen(true); }}
+              className="flex items-center space-x-2 bg-slate-700 text-white px-4 py-2 rounded-sm text-sm hover:bg-slate-800 transition"
+            >
+              <Plus size={16} />
+              <span>배너 등록</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {banners.map(banner => (
+              <div key={banner.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden group">
+                <div className="relative h-40 bg-gray-100">
+                  <img src={banner.imageUrl} alt={banner.title} className="w-full h-full object-cover" />
+                  <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition">
+                    <button className="p-1.5 bg-white rounded-full shadow-sm hover:text-blue-600"><Edit3 size={14} /></button>
+                    <button className="p-1.5 bg-white rounded-full shadow-sm hover:text-red-600"><Trash2 size={14} /></button>
+                  </div>
+                  <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                    {banner.position === 'main_hero' ? '메인 히어로' : '팝업'}
+                  </div>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-bold text-gray-800 mb-1">{banner.title || '제목 없음'}</h3>
+                  <div className="flex items-center text-xs text-gray-500 gap-4">
+                    <span className="flex items-center gap-1"><LinkIcon size={12} /> {banner.link}</span>
+                    <span className="flex items-center gap-1"><Calendar size={12} /> {banner.startDate} ~ {banner.endDate}</span>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between">
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${banner.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                      {banner.isActive ? '게시중' : '비활성'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Display Management (DnD) */}
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <GripVertical size={20} /> 진열 관리 (추천 상품 순서)
+            </h2>
+            <button className="text-sm text-blue-600 hover:underline">순서 저장</button>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="p-4 bg-gray-50 border-b border-gray-200 text-xs text-gray-500">
+              * 드래그하여 순서를 변경할 수 있습니다.
+            </div>
+            <ul className="divide-y divide-gray-100">
+              {products.slice(0, 5).map((product, index) => (
+                <li
+                  key={product.id}
+                  draggable
+                  onDragStart={() => handleDragStart(index)}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDragEnd={handleDragEnd}
+                  className={`flex items-center p-4 hover:bg-gray-50 transition cursor-move ${draggedItemIndex === index ? 'bg-blue-50 opacity-50' : ''}`}
+                >
+                  <div className="text-gray-400 mr-4"><GripVertical size={20} /></div>
+                  <div className="w-8 text-center font-bold text-gray-400 mr-4">{index + 1}</div>
+                  <img src={product.image} alt={product.name} className="w-12 h-12 object-cover rounded border border-gray-100 mr-4" />
+                  <div className="flex-1">
+                    <p className="font-bold text-gray-800">{product.name}</p>
+                    <p className="text-xs text-gray-500">₩{product.price.toLocaleString()}</p>
+                  </div>
+                  <div className="text-xs text-gray-400">ID: {product.id}</div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderPromotion = () => (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+          <Percent size={20} /> 기획전 관리
+        </h2>
+        <button
+          onClick={() => { setEditingPromotion(null); setIsPromotionModalOpen(true); }}
+          className="flex items-center space-x-2 bg-slate-700 text-white px-4 py-2 rounded-sm text-sm hover:bg-slate-800 transition"
+        >
+          <Plus size={16} />
+          <span>기획전 생성</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6">
+        {promotions.map(promo => (
+          <div key={promo.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 flex gap-6">
+            <div className="w-48 h-32 bg-gray-100 rounded-lg overflow-hidden shrink-0">
+              <img src={promo.bannerImage} alt={promo.title} className="w-full h-full object-cover" />
+            </div>
+            <div className="flex-1">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800 mb-1">{promo.title}</h3>
+                  <p className="text-gray-600 text-sm mb-3">{promo.description}</p>
+                </div>
+                <div className="flex space-x-2">
+                  <button className="text-gray-400 hover:text-blue-600"><Edit3 size={18} /></button>
+                  <button className="text-gray-400 hover:text-red-600"><Trash2 size={18} /></button>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
+                <span className="flex items-center gap-1"><Calendar size={14} /> {promo.startDate} ~ {promo.endDate}</span>
+                <span className="flex items-center gap-1"><Package size={14} /> 상품 {promo.productIds.length}개</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`text-xs px-2 py-1 rounded-full ${promo.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                  {promo.isActive ? '진행중' : '종료'}
+                </span>
+                <button className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                  페이지 미리보기 <ExternalLink size={10} />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   const renderPlaceholder = (title: string) => (
     <div className="h-[60vh] flex flex-col items-center justify-center text-gray-400">
@@ -1473,19 +1408,15 @@ const Admin: React.FC = () => {
   });
 
   return (
-    <div className="flex h-screen bg-[#f1f5f9] font-sans">
+    <div className="flex h-screen bg-gray-50 font-sans text-gray-900">
       {/* Sidebar */}
-      <aside className="w-60 bg-[#1e293b] text-slate-300 flex flex-col shrink-0">
-        <div className="p-5 border-b border-slate-700/50">
-          <h1 className="text-lg font-bold text-white tracking-wider flex items-center gap-2">
-            <div className="w-5 h-5 bg-blue-500 rounded-sm"></div>
-            LUMINA
-          </h1>
-          <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-widest">Administrator</p>
+      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col z-20">
+        <div className="h-16 flex items-center px-6 border-b border-gray-100">
+          <h1 className="text-xl font-serif font-bold tracking-wider">LUMINA ADMIN</h1>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-2">
-          <ul className="space-y-0.5">
+        <nav className="flex-1 overflow-y-auto py-4">
+          <ul className="space-y-1 px-3">
             {filteredMenuItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -1493,15 +1424,13 @@ const Admin: React.FC = () => {
                 <li key={item.id}>
                   <button
                     onClick={() => setActiveTab(item.id as Tab)}
-                    className={`w-full flex items-center space-x-3 px-5 py-3 text-sm transition-all duration-200 group relative
+                    className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-sm transition-all duration-200
                       ${isActive
-                        ? 'bg-[#0f172a] text-white'
-                        : 'hover:bg-[#334155] hover:text-white'
-                      }`}
+                        ? 'bg-gray-50 text-black font-bold border-l-2 border-black'
+                        : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
                   >
-                    {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>}
-                    <Icon size={18} className={isActive ? 'text-blue-400' : 'text-slate-400 group-hover:text-white'} />
-                    <span className="font-medium">{item.label}</span>
+                    <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+                    <span>{item.label}</span>
                   </button>
                 </li>
               );
@@ -1509,99 +1438,301 @@ const Admin: React.FC = () => {
           </ul>
         </nav>
 
-        <div className="p-4 border-t border-slate-700/50 bg-[#1e293b]">
+        <div className="p-4 border-t border-gray-100">
+          <div className="flex items-center gap-3 mb-4 px-2">
+            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-bold">
+              {user?.username?.[0] || 'A'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">{user?.username}</p>
+              <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+            </div>
+          </div>
           <button
             onClick={logout}
-            className="flex items-center justify-center w-full space-x-2 text-slate-400 hover:text-white transition text-xs py-2 border border-slate-600 rounded hover:border-slate-500"
+            className="w-full flex items-center justify-center space-x-2 px-4 py-2 border border-gray-200 rounded-sm text-sm text-gray-600 hover:bg-gray-50 transition"
           >
-            <LogOut size={14} />
+            <LogOut size={16} />
             <span>로그아웃</span>
           </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
-        {/* Header Bar */}
-        <header className="bg-white h-14 shadow-sm flex items-center justify-between px-6 sticky top-0 z-20 border-b border-gray-200">
-          <h2 className="font-bold text-gray-700 text-sm">
-            {MENU_ITEMS.find(m => m.id === activeTab)?.label}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="h-16 bg-white border-b border-gray-200 flex justify-between items-center px-6 z-10">
+          <h2 className="text-lg font-bold text-gray-800">
+            {MENU_ITEMS.find(item => item.id === activeTab)?.label}
           </h2>
           <div className="flex items-center space-x-4">
-            <div className="text-right hidden sm:block">
-              <p className="text-sm font-bold text-gray-700">{user?.username || 'Admin'}</p>
-              <p className="text-[10px] text-gray-400">{user?.email}</p>
-            </div>
-            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center border border-blue-200 text-blue-600 font-bold text-xs">
-              {user?.username?.[0] || 'A'}
-            </div>
+            <button className="p-2 text-gray-400 hover:text-gray-600 relative">
+              <MessageCircle size={20} />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+            </button>
+            <button className="p-2 text-gray-400 hover:text-gray-600">
+              <HelpCircle size={20} />
+            </button>
           </div>
         </header>
 
-        <div className="p-6 max-w-[1600px] mx-auto">
+        {/* Dashboard Content */}
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6">
           {activeTab === 'home' && renderHome()}
-          {activeTab === 'products' && renderProducts()}
           {activeTab === 'orders' && renderOrders()}
+          {activeTab === 'products' && renderProducts()}
           {activeTab === 'customers' && renderCustomers()}
           {activeTab === 'system' && renderSystem()}
-          {activeTab === 'analytics' && renderHome()}
-          {activeTab === 'stats' && renderHome()}
-          {['messages', 'board', 'design', 'promotion', 'excel'].includes(activeTab) && renderPlaceholder(MENU_ITEMS.find(m => m.id === activeTab)?.label || '')}
-        </div>
-      </main>
+          {activeTab === 'design' && renderDesign()}
+          {activeTab === 'promotion' && renderPromotion()}
+          {['messages', 'board', 'analytics', 'stats', 'excel'].includes(activeTab) && renderPlaceholder(MENU_ITEMS.find(i => i.id === activeTab)?.label || '')}
+        </main>
+      </div>
 
-      {/* Product Modal */}
+      {/* Modals */}
       {isProductModalOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-lg shadow-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-lg font-bold mb-6 text-gray-800 border-b pb-2">
-              {editingProduct ? '상품 정보 수정' : '신규 상품 등록'}
-            </h2>
-            <form onSubmit={handleSaveProduct} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">상품명 <span className="text-red-500">*</span></label>
-                <input name="name" defaultValue={editingProduct?.name} required className="w-full border border-gray-300 p-2 text-sm rounded-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1">카테고리</label>
-                  <select name="category" defaultValue={editingProduct?.category || 'earring'} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none bg-white">
-                    <option value="earring">귀걸이</option>
-                    <option value="necklace">목걸이</option>
-                    <option value="ring">반지</option>
-                    <option value="bracelet">팔찌</option>
-                  </select>
+          <div className="bg-white rounded-lg shadow-2xl max-w-5xl w-full h-[90vh] overflow-y-auto flex flex-col">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center p-6 border-b border-gray-100">
+              <h2 className="text-xl font-bold text-gray-800">
+                {editingProduct ? '상품 정보 수정' : '신규 상품 등록'}
+              </h2>
+              <button onClick={() => setIsProductModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <span className="sr-only">Close</span>
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            {/* Modal Body (Two Column Layout) */}
+            <form onSubmit={handleSaveProduct} className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+              {/* Left: Gallery & Image Input */}
+              <div className="lg:w-1/2 p-8 bg-gray-50 overflow-y-auto border-r border-gray-100">
+                <div className="mb-6">
+                  <label className="block text-xs font-bold text-gray-600 mb-2">대표 이미지 <span className="text-red-500">*</span></label>
+                  <div className="flex items-center gap-2">
+                    <label className="flex-1 cursor-pointer bg-white border border-gray-300 rounded-sm px-4 py-3 flex items-center justify-center gap-2 hover:bg-gray-50 transition">
+                      <ImageIcon size={16} className="text-gray-500" />
+                      <span className="text-sm text-gray-600">이미지 파일 선택</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleImageChange}
+                      />
+                    </label>
+                    {/* Hidden input to store the URL for form submission */}
+                    <input type="hidden" name="image" value={previewImage} />
+                  </div>
+                  <p className="text-[10px] text-gray-400 mt-2">* 실제 쇼핑몰과 동일한 비율(4:5)의 이미지를 권장합니다.</p>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1">판매가 <span className="text-red-500">*</span></label>
-                  <input name="price" type="number" defaultValue={editingProduct?.price} required className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" />
+
+                <div className="relative aspect-[4/5] bg-white shadow-sm overflow-hidden mb-4 border border-gray-200 group">
+                  <img
+                    src={previewImage}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                    onError={(e) => e.currentTarget.src = "https://via.placeholder.com/600x750?text=No+Image"}
+                  />
+                  <div className="absolute top-4 left-4">
+                    {/* New Badge Preview */}
+                    <span id="preview-badge" className={`text-xs font-bold tracking-widest uppercase bg-black text-white px-2 py-1 ${editingProduct?.isNew ? '' : 'hidden'}`}>New Arrival</span>
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">이미지 URL <span className="text-red-500">*</span></label>
-                <input name="image" defaultValue={editingProduct?.image || 'https://picsum.photos/400/500'} required className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">상품 설명</label>
-                <textarea name="description" defaultValue={editingProduct?.description} rows={3} required className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none resize-none" />
-              </div>
-              <div className="flex items-center space-x-2 bg-gray-50 p-2 rounded-sm border border-gray-100">
-                <input type="checkbox" name="isNew" id="isNew" defaultChecked={editingProduct?.isNew} className="rounded text-blue-500 focus:ring-blue-500" />
-                <label htmlFor="isNew" className="text-sm text-gray-700">신상품 (NEW) 뱃지 노출</label>
+
+                {/* Additional Images (Thumbnails) */}
+                <div className="flex gap-4 overflow-x-auto pb-2">
+                  {/* Render existing additional images */}
+                  {additionalImages.map((img, idx) => (
+                    <div key={idx} className="relative w-20 h-24 bg-white border border-gray-200 group">
+                      <img src={img} alt={`Sub ${idx}`} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveAdditionalImage(idx)}
+                        className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
+                      >
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* Add Button (Show if less than 5 images) */}
+                  {additionalImages.length < 5 && (
+                    <label className="w-20 h-24 bg-white border border-dashed border-gray-300 cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition flex flex-col items-center justify-center gap-1">
+                      <Plus size={16} className="text-gray-400" />
+                      <span className="text-[10px] text-gray-400">Add</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleAddAdditionalImage}
+                      />
+                    </label>
+                  )}
+                </div>
               </div>
 
-              <div className="flex space-x-2 pt-4">
-                <button type="button" onClick={() => setIsProductModalOpen(false)} className="flex-1 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 transition rounded-sm">취소</button>
-                <button type="submit" className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition rounded-sm shadow-sm">
-                  {editingProduct ? '저장하기' : '등록하기'}
-                </button>
+              {/* Right: Info Inputs */}
+              <div className="lg:w-1/2 p-8 overflow-y-auto bg-white">
+                <div className="max-w-md mx-auto space-y-8">
+                  {/* Breadcrumb Style Category Selector */}
+                  <div className="flex items-center text-sm text-gray-500 font-light">
+                    <span className="hover:text-black cursor-pointer">Home</span>
+                    <span className="mx-2 text-xs">/</span>
+                    <span className="hover:text-black cursor-pointer">Shop</span>
+                    <span className="mx-2 text-xs">/</span>
+                    <select
+                      name="category"
+                      defaultValue={editingProduct?.category || 'earring'}
+                      className="text-black font-medium border-none focus:ring-0 p-0 cursor-pointer bg-transparent outline-none hover:underline"
+                    >
+                      <option value="earring">Earrings (귀걸이)</option>
+                      <option value="necklace">Necklaces (목걸이)</option>
+                      <option value="ring">Rings (반지)</option>
+                      <option value="bracelet">Bracelets (팔찌)</option>
+                    </select>
+                  </div>
+
+                  {/* Product Name */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 mb-1">상품명</label>
+                    <input
+                      name="name"
+                      defaultValue={editingProduct?.name}
+                      required
+                      className="w-full text-3xl md:text-4xl font-serif text-primary border-b border-gray-200 focus:border-black outline-none py-2 placeholder-gray-200 transition"
+                      placeholder="Product Name"
+                    />
+                  </div>
+
+                  {/* Price & Stock */}
+                  <div className="flex gap-8">
+                    <div className="flex-1">
+                      <label className="block text-xs font-bold text-gray-400 mb-1">판매가 (KRW)</label>
+                      <div className="flex items-center">
+                        <span className="text-xl font-medium text-gray-900 mr-1">₩</span>
+                        <input
+                          name="price"
+                          type="number"
+                          defaultValue={editingProduct?.price}
+                          required
+                          className="w-full text-xl font-medium text-gray-900 border-b border-gray-200 focus:border-black outline-none py-1"
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-xs font-bold text-gray-400 mb-1">재고 수량</label>
+                      <input
+                        name="stock"
+                        type="number"
+                        defaultValue={editingProduct?.stock ?? 100}
+                        className="w-full text-xl font-medium text-gray-900 border-b border-gray-200 focus:border-black outline-none py-1"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Description (Block Editor) */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 mb-2">상품 상세 설명 (블로그형 에디터)</label>
+                    <div className="border border-gray-200 rounded-sm p-4 space-y-4 bg-gray-50 min-h-[300px]">
+                      {descriptionBlocks.map((block, index) => (
+                        <div key={block.id} className="relative group">
+                          {block.type === 'text' ? (
+                            <textarea
+                              value={block.content}
+                              onChange={(e) => updateBlock(block.id, e.target.value)}
+                              rows={3}
+                              className="w-full text-sm text-gray-600 leading-relaxed border border-gray-200 p-3 rounded-sm focus:border-black outline-none resize-none bg-white"
+                              placeholder="텍스트를 입력하세요..."
+                            />
+                          ) : (
+                            <div className="relative">
+                              <img src={block.content} alt="Content" className="w-full rounded-lg border border-gray-200" />
+                            </div>
+                          )}
+
+                          {/* Remove Block Button */}
+                          <button
+                            type="button"
+                            onClick={() => removeBlock(block.id)}
+                            className="absolute -right-2 -top-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition shadow-sm z-10"
+                          >
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                          </button>
+                        </div>
+                      ))}
+
+                      {/* Add Block Buttons */}
+                      <div className="flex gap-2 justify-center pt-4 border-t border-gray-200 border-dashed">
+                        <button
+                          type="button"
+                          onClick={addTextBlock}
+                          className="flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 rounded-sm text-xs font-medium hover:bg-gray-50 transition"
+                        >
+                          <FileText size={14} /> 텍스트 추가
+                        </button>
+                        <label className="flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 rounded-sm text-xs font-medium hover:bg-gray-50 transition cursor-pointer">
+                          <ImageIcon size={14} /> 이미지 추가
+                          <input type="file" accept="image/*" className="hidden" onChange={addImageBlock} />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Options (New/Best) */}
+                  <div className="border-t border-b border-gray-100 py-6 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-900">신상품 뱃지 (New Arrival)</span>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          name="isNew"
+                          defaultChecked={editingProduct?.isNew}
+                          className="sr-only peer"
+                          onChange={(e) => {
+                            const badge = document.getElementById('preview-badge');
+                            if (badge) {
+                              if (e.target.checked) badge.classList.remove('hidden');
+                              else badge.classList.add('hidden');
+                            }
+                          }}
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-4 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setIsProductModalOpen(false)}
+                      className="flex-1 py-4 border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 transition uppercase tracking-widest"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 py-4 bg-primary text-white text-sm font-medium hover:bg-black transition uppercase tracking-widest shadow-lg"
+                    >
+                      {editingProduct ? 'Save Changes' : 'Register Product'}
+                    </button>
+                  </div>
+
+                  <div className="text-center">
+                    <p className="text-xs text-gray-400">
+                      * 이 화면은 실제 상품 상세 페이지와 동일한 레이아웃을 사용합니다.
+                    </p>
+                  </div>
+                </div>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* Invoice Modal */}
       {isInvoiceModalOpen && (
         <InvoiceModal
           orders={orders.filter(o => selectedOrderIds.includes(o.id))}
@@ -1609,7 +1740,96 @@ const Admin: React.FC = () => {
         />
       )}
 
-      {/* Confirm Modal */}
+      {isBannerModalOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-lg shadow-2xl max-w-lg w-full p-6">
+            <h2 className="text-lg font-bold mb-6 text-gray-800 border-b pb-2">
+              {editingBanner ? '배너 수정' : '배너 등록'}
+            </h2>
+            <form onSubmit={(e) => { e.preventDefault(); setIsBannerModalOpen(false); }} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">제목</label>
+                <input defaultValue={editingBanner?.title} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">이미지 URL</label>
+                <input defaultValue={editingBanner?.imageUrl} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">링크</label>
+                <input defaultValue={editingBanner?.link} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 mb-1">시작일</label>
+                  <input type="date" defaultValue={editingBanner?.startDate} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 mb-1">종료일</label>
+                  <input type="date" defaultValue={editingBanner?.endDate} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" />
+                </div>
+              </div>
+              <div className="flex space-x-2 pt-4">
+                <button type="button" onClick={() => setIsBannerModalOpen(false)} className="flex-1 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 transition rounded-sm">취소</button>
+                <button type="submit" className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition rounded-sm shadow-sm">저장</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isPromotionModalOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-lg font-bold mb-6 text-gray-800 border-b pb-2">
+              {editingPromotion ? '기획전 수정' : '기획전 생성'}
+            </h2>
+            <form onSubmit={(e) => { e.preventDefault(); setIsPromotionModalOpen(false); }} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">기획전명</label>
+                <input defaultValue={editingPromotion?.title} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">설명</label>
+                <textarea defaultValue={editingPromotion?.description} rows={2} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none resize-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">배너 이미지 URL</label>
+                <input defaultValue={editingPromotion?.bannerImage} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 mb-1">시작일</label>
+                  <input type="date" defaultValue={editingPromotion?.startDate} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 mb-1">종료일</label>
+                  <input type="date" defaultValue={editingPromotion?.endDate} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">상품 선택</label>
+                <div className="border border-gray-300 rounded-sm p-2 max-h-40 overflow-y-auto bg-gray-50">
+                  {products.map(product => (
+                    <label key={product.id} className="flex items-center space-x-2 p-1 hover:bg-white rounded cursor-pointer">
+                      <input type="checkbox" className="rounded text-blue-500" defaultChecked={editingPromotion?.productIds.includes(product.id)} />
+                      <img src={product.image} alt="" className="w-6 h-6 rounded object-cover" />
+                      <span className="text-sm text-gray-700">{product.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex space-x-2 pt-4">
+                <button type="button" onClick={() => setIsPromotionModalOpen(false)} className="flex-1 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 transition rounded-sm">취소</button>
+                <button type="submit" className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition rounded-sm shadow-sm">저장</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <ConfirmModal
         isOpen={confirmModal.isOpen}
         onClose={closeConfirmModal}
@@ -1625,3 +1845,5 @@ const Admin: React.FC = () => {
 };
 
 export default Admin;
+
+

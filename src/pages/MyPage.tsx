@@ -8,15 +8,14 @@ import RecentlyViewed from '../components/MyPage/RecentlyViewed';
 import SEO from '../components/SEO';
 import { User, Package, Heart, Camera, Clock, LogOut, Settings, LayoutDashboard } from 'lucide-react';
 import { Order, Product, OOTDPost } from '../types';
+import { PRODUCTS } from '../constants';
 
 import { getOrders } from '../services/orderService';
+import { storage, db } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { doc, updateDoc } from 'firebase/firestore';
 
 // Mock Data Services (Replace with actual API calls later)
-const mockWishlist: Product[] = [
-    { id: 2, name: "셀레스티얼 골드 링", price: 32000, category: "ring", image: "https://picsum.photos/400/500?random=2", description: "", tags: [] },
-    { id: 6, name: "골든 리프 커프", price: 40000, category: "bracelet", image: "https://picsum.photos/400/500?random=6", description: "", tags: [] }
-];
-
 const mockMyOOTD: OOTDPost[] = [
     { id: 101, user: "@me", image: "https://picsum.photos/400/600?random=101", likes: 12, caption: "My daily look", productsUsed: [1] }
 ];
@@ -60,6 +59,34 @@ const MyPage: React.FC = () => {
         navigate('/');
     };
 
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !user) return;
+
+        try {
+            setLoading(true);
+            const storageRef = ref(storage, `profile_images/${user.uid}`);
+            await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(storageRef);
+
+            await updateDoc(doc(db, 'users', user.uid), {
+                profileImage: downloadURL
+            });
+
+            alert("프로필 이미지가 변경되었습니다. 새로고침 후 반영됩니다.");
+            window.location.reload();
+        } catch (error) {
+            console.error("Error uploading image:", error);
+            alert("이미지 업로드 중 오류가 발생했습니다.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const wishlistItems = user?.wishlist
+        ? PRODUCTS.filter(p => user.wishlist?.includes(p.id))
+        : [];
+
     return (
         <div className="pt-24 pb-20 bg-gray-50 min-h-screen">
             <SEO title="My Page" description="마이페이지" />
@@ -70,8 +97,18 @@ const MyPage: React.FC = () => {
                     <div className="lg:w-1/4">
                         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
                             <div className="flex items-center space-x-4 mb-6">
-                                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
-                                    <User size={32} className="text-gray-400" />
+                                <div className="relative group">
+                                    <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden border border-gray-100">
+                                        {user?.profileImage ? (
+                                            <img src={user.profileImage} alt="Profile" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <User size={32} className="text-gray-400" />
+                                        )}
+                                    </div>
+                                    <label className="absolute bottom-0 right-0 bg-white rounded-full p-1.5 shadow-md cursor-pointer border border-gray-200 hover:bg-gray-50 transition-colors">
+                                        <Camera size={14} className="text-gray-600" />
+                                        <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                                    </label>
                                 </div>
                                 <div>
                                     <h2 className="text-lg font-serif font-bold text-primary">{user?.username || 'Guest User'}</h2>
@@ -146,7 +183,7 @@ const MyPage: React.FC = () => {
                             </h2>
 
                             {activeTab === 'orders' && <OrderHistory orders={orders} loading={loading} />}
-                            {activeTab === 'wishlist' && <Wishlist items={mockWishlist} loading={loading} />}
+                            {activeTab === 'wishlist' && <Wishlist items={wishlistItems} loading={loading} />}
                             {activeTab === 'ootd' && <MyOOTD posts={mockMyOOTD} loading={loading} />}
                             {activeTab === 'recent' && <RecentlyViewed />}
                         </div>

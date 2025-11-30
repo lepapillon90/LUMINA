@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '../firebase';
 
 const ForgotPassword: React.FC = () => {
     const [email, setEmail] = useState('');
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [error, setError] = useState('');
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
 
@@ -21,8 +23,19 @@ const ForgotPassword: React.FC = () => {
             return;
         }
 
-        // Mock password reset email
-        setIsSubmitted(true);
+        try {
+            await sendPasswordResetEmail(auth, email);
+            setIsSubmitted(true);
+        } catch (err: any) {
+            console.error("Password reset error:", err);
+            if (err.code === 'auth/user-not-found') {
+                setError('등록되지 않은 이메일 주소입니다.');
+            } else if (err.code === 'auth/invalid-email') {
+                setError('유효하지 않은 이메일 형식입니다.');
+            } else {
+                setError('이메일 전송 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+            }
+        }
     };
 
     return (

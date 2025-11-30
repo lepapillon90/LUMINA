@@ -22,15 +22,7 @@ const ProductDetail: React.FC = () => {
                     const data = await getProductById(parseInt(id));
                     setProduct(data || null);
 
-                    // Save to recently viewed
-                    if (data) {
-                        const stored = localStorage.getItem('recentlyViewed');
-                        let viewed: Product[] = stored ? JSON.parse(stored) : [];
-                        viewed = viewed.filter(p => p.id !== data.id); // Remove if exists
-                        viewed.unshift(data); // Add to front
-                        if (viewed.length > 4) viewed.pop(); // Keep max 4
-                        localStorage.setItem('recentlyViewed', JSON.stringify(viewed));
-                    }
+                    setProduct(data || null);
                 } catch (error) {
                     console.error("Error fetching product:", error);
                 } finally {
@@ -101,11 +93,25 @@ const ProductDetail: React.FC = () => {
                             {product.isNew && <span className="text-xs font-bold tracking-widest uppercase bg-black text-white px-2 py-1">New Arrival</span>}
                         </div>
                         <h1 className="text-3xl md:text-4xl font-serif text-primary mb-4">{product.name}</h1>
+
+                        {/* Stock Status */}
+                        {product.stock !== undefined && product.stock > 0 && product.stock <= 5 && (
+                            <p className="text-red-600 font-bold mb-2 animate-pulse">
+                                품절 임박! 남은 수량: {product.stock}개
+                            </p>
+                        )}
+                        {product.stock === 0 && (
+                            <p className="text-red-600 font-bold mb-2 text-xl">
+                                일시 품절 (Sold Out)
+                            </p>
+                        )}
+
                         <p className="text-xl font-medium text-gray-900 mb-6">₩{product.price.toLocaleString()}</p>
 
-                        <div className="prose prose-sm text-gray-600 mb-8 leading-relaxed">
-                            <p>{product.description}</p>
-                        </div>
+                        <div
+                            className="prose prose-sm text-gray-600 mb-8 leading-relaxed max-w-none"
+                            dangerouslySetInnerHTML={{ __html: product.description }}
+                        />
 
                         {/* Options & Quantity */}
                         <div className="border-t border-b border-gray-100 py-6 mb-8">
@@ -114,12 +120,14 @@ const ProductDetail: React.FC = () => {
                                 <div className="flex items-center border border-gray-300">
                                     <button
                                         onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                                        className="px-3 py-1 hover:bg-gray-100 transition"
+                                        className="px-3 py-1 hover:bg-gray-100 transition disabled:opacity-50"
+                                        disabled={product.stock === 0}
                                     >-</button>
                                     <span className="px-3 py-1 text-sm font-medium min-w-[2rem] text-center">{quantity}</span>
                                     <button
                                         onClick={() => setQuantity(quantity + 1)}
-                                        className="px-3 py-1 hover:bg-gray-100 transition"
+                                        className="px-3 py-1 hover:bg-gray-100 transition disabled:opacity-50"
+                                        disabled={product.stock === 0}
                                     >+</button>
                                 </div>
                             </div>
@@ -129,9 +137,13 @@ const ProductDetail: React.FC = () => {
                         <div className="flex gap-4 mb-10">
                             <button
                                 onClick={handleAddToCart}
-                                className="flex-1 bg-primary text-white py-4 uppercase tracking-widest text-sm font-medium hover:bg-accent transition duration-300"
+                                disabled={product.stock === 0}
+                                className={`flex-1 text-white py-4 uppercase tracking-widest text-sm font-medium transition duration-300 ${product.stock === 0
+                                    ? 'bg-gray-300 cursor-not-allowed'
+                                    : 'bg-primary hover:bg-accent'
+                                    }`}
                             >
-                                장바구니 담기
+                                {product.stock === 0 ? '품절 (Sold Out)' : '장바구니 담기'}
                             </button>
                             <button className="p-4 border border-gray-300 hover:border-red-400 hover:text-red-500 transition duration-300">
                                 <Heart size={20} />
@@ -160,8 +172,8 @@ const ProductDetail: React.FC = () => {
                                 key={tab}
                                 onClick={() => setActiveTab(tab as any)}
                                 className={`px-8 py-4 text-sm uppercase tracking-widest font-medium transition-all relative ${activeTab === tab
-                                        ? 'text-primary'
-                                        : 'text-gray-400 hover:text-gray-600'
+                                    ? 'text-primary'
+                                    : 'text-gray-400 hover:text-gray-600'
                                     }`}
                             >
                                 {tab === 'details' ? '상세 정보' : tab === 'reviews' ? '리뷰 (0)' : 'Style OOTD'}
@@ -192,7 +204,10 @@ const ProductDetail: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+
         </div>
+
     );
 };
 

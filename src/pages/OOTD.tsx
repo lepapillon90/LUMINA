@@ -48,6 +48,7 @@ const OOTD: React.FC = () => {
       const postToCreate = {
         ...newPostData,
         user: user.username,
+        userId: user.uid,
         likes: 0,
         comments: [],
         isLiked: false,
