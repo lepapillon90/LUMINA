@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ImageIcon, Plus, FileText } from 'lucide-react';
+import { ImageIcon, Plus, FileText, Loader2 } from 'lucide-react';
 import { Product } from '../../../types';
+import { uploadImage } from '../../../services/storageService';
 
 interface ProductModalProps {
     isOpen: boolean;
@@ -15,15 +16,17 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
     const [previewImage, setPreviewImage] = useState<string>('');
     const [additionalImages, setAdditionalImages] = useState<string[]>([]);
     const [descriptionBlocks, setDescriptionBlocks] = useState<DescriptionBlock[]>([]);
+    const [uploading, setUploading] = useState(false);
+    const [mainImageFile, setMainImageFile] = useState<File | null>(null);
 
     useEffect(() => {
         if (isOpen) {
-            setPreviewImage(product?.image || 'https://picsum.photos/600/750');
-            setAdditionalImages([]);
+            setPreviewImage(product?.image || '');
+            setAdditionalImages(product?.images || []);
+            setMainImageFile(null);
 
             if (product?.description) {
                 // Simple heuristic to parse existing description
-                // In a real app, you'd want a more robust parser or store blocks directly
                 setDescriptionBlocks([{ id: Date.now().toString(), type: 'text', content: product.description.replace(/<[^>]*>?/gm, '') }]);
             } else {
                 setDescriptionBlocks([{ id: Date.now().toString(), type: 'text', content: '' }]);
@@ -34,6 +37,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            setMainImageFile(file);
             const url = URL.createObjectURL(file);
             setPreviewImage(url);
         }
@@ -41,7 +45,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
 
     const handleAddAdditionalImage = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) {
+        if (file && additionalImages.length < 5) {
             const url = URL.createObjectURL(file);
             setAdditionalImages(prev => [...prev, url]);
         }
@@ -71,30 +75,74 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
         setDescriptionBlocks(prev => prev.filter(b => b.id !== id));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const formData = new FormData(e.target as HTMLFormElement);
+        setUploading(true);
 
-        const descriptionHtml = descriptionBlocks.map(block => {
-            if (block.type === 'text') return `<p class="mb-4">${block.content}</p>`;
-            if (block.type === 'image') return `<img src="${block.content}" class="w-full rounded-lg my-6" alt="Description Image" />`;
-            return '';
-        }).join('');
+        try {
+            const formData = new FormData(e.target as HTMLFormElement);
 
-        const newProduct: Product = {
-            id: product ? product.id : Date.now(), // Simple ID generation
-            name: formData.get('name') as string,
-            price: parseInt(formData.get('price') as string),
-            image: previewImage,
-            category: formData.get('category') as string,
-            description: descriptionHtml,
-            stock: parseInt(formData.get('stock') as string),
-            isNew: formData.get('isNew') === 'on',
-            tags: product ? product.tags : [],
-        };
+            // 1. Upload main image if a new file was selected
+            let mainImageUrl = previewImage;
+            if (mainImageFile) {
+                mainImageUrl = await uploadImage(mainImageFile, 'products');
+            }
 
-        onSave(newProduct);
-        onClose();
+            // 2. Upload additional images
+            // Filter out blob URLs and upload them, keep existing URLs
+            const finalAdditionalImages = await Promise.all(
+                additionalImages.map(async (url) => {
+                    if (url.startsWith('blob:')) {
+                        const response = await fetch(url);
+                        const blob = await response.blob();
+                        const file = new File([blob], 'additional-image.jpg', { type: blob.type });
+                        return await uploadImage(file, 'products/additional');
+                    }
+                    return url;
+                })
+            );
+
+            // 3. Upload description block images if they are new
+            const uploadedDescriptionBlocks = await Promise.all(
+                descriptionBlocks.map(async (block) => {
+                    if (block.type === 'image' && block.content.startsWith('blob:')) {
+                        const response = await fetch(block.content);
+                        const blob = await response.blob();
+                        const file = new File([blob], 'description-image.jpg', { type: blob.type });
+                        const uploadedUrl = await uploadImage(file, 'products/descriptions');
+                        return { ...block, content: uploadedUrl };
+                    }
+                    return block;
+                })
+            );
+
+            const descriptionHtml = uploadedDescriptionBlocks.map(block => {
+                if (block.type === 'text') return `<p class="mb-4">${block.content}</p>`;
+                if (block.type === 'image') return `<img src="${block.content}" class="w-full rounded-lg my-6" alt="Description Image" />`;
+                return '';
+            }).join('');
+
+            const newProduct: Product = {
+                id: product ? product.id : Date.now(),
+                name: formData.get('name') as string,
+                price: parseInt(formData.get('price') as string),
+                image: mainImageUrl,
+                images: finalAdditionalImages, // Add this line
+                category: formData.get('category') as string,
+                description: descriptionHtml,
+                stock: parseInt(formData.get('stock') as string),
+                isNew: formData.get('isNew') === 'on',
+                tags: product ? product.tags : [],
+            };
+
+            await onSave(newProduct);
+            onClose();
+        } catch (error) {
+            console.error('Error uploading images:', error);
+            alert('이미지 업로드에 실패했습니다. 다시 시도해주세요.');
+        } finally {
+            setUploading(false);
+        }
     };
 
     if (!isOpen) return null;
@@ -131,25 +179,35 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                                     />
                                 </label>
                             </div>
-                            <p className="text-[10px] text-gray-400 mt-2">* 실제 쇼핑몰과 동일한 비율(4:5)의 이미지를 권장합니다.</p>
+                            <p className="text-[10px] text-gray-400 mt-2">* 950 x 950 사이즈의 이미지를 권장합니다.</p>
                         </div>
 
-                        <div className="relative aspect-[4/5] bg-white shadow-sm overflow-hidden mb-4 border border-gray-200 group">
-                            <img
-                                src={previewImage}
-                                alt="Preview"
-                                className="w-full h-full object-cover"
-                                onError={(e) => e.currentTarget.src = "https://via.placeholder.com/600x750?text=No+Image"}
-                            />
+                        <div className="relative aspect-square bg-gray-50 shadow-sm overflow-hidden mb-4 border border-gray-200 group">
+                            {previewImage ? (
+                                <img
+                                    src={previewImage}
+                                    alt="Preview"
+                                    className="w-full h-full object-contain"
+                                    onError={(e) => e.currentTarget.src = "https://via.placeholder.com/600x750?text=No+Image"}
+                                />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                    <div className="text-center">
+                                        <ImageIcon size={48} className="mx-auto mb-2 text-gray-300" />
+                                        <p className="text-sm font-medium">메인 이미지를 추가해 주세요</p>
+                                    </div>
+                                </div>
+                            )}
                             <div className="absolute top-4 left-4">
                                 <span id="preview-badge" className={`text-xs font-bold tracking-widest uppercase bg-black text-white px-2 py-1 ${product?.isNew ? '' : 'hidden'}`}>New Arrival</span>
                             </div>
                         </div>
 
                         {/* Additional Images */}
+                        <label className="block text-xs font-bold text-gray-600 mb-2">추가 이미지 (최대 5장)</label>
                         <div className="flex gap-4 overflow-x-auto pb-2">
                             {additionalImages.map((img, idx) => (
-                                <div key={idx} className="relative w-20 h-24 bg-white border border-gray-200 group">
+                                <div key={idx} className="relative w-20 h-24 bg-white border border-gray-200 group flex-shrink-0">
                                     <img src={img} alt={`Sub ${idx}`} className="w-full h-full object-cover" />
                                     <button
                                         type="button"
@@ -161,7 +219,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                                 </div>
                             ))}
                             {additionalImages.length < 5 && (
-                                <label className="w-20 h-24 bg-white border border-dashed border-gray-300 cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition flex flex-col items-center justify-center gap-1">
+                                <label className="w-20 h-24 bg-white border border-dashed border-gray-300 cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition flex flex-col items-center justify-center gap-1 flex-shrink-0">
                                     <Plus size={16} className="text-gray-400" />
                                     <span className="text-[10px] text-gray-400">Add</span>
                                     <input
@@ -217,6 +275,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                                         <input
                                             name="price"
                                             type="number"
+                                            min="0"
                                             defaultValue={product?.price}
                                             required
                                             className="w-full text-xl font-medium text-gray-900 border-b border-gray-200 focus:border-black outline-none py-1"
@@ -229,7 +288,8 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                                     <input
                                         name="stock"
                                         type="number"
-                                        defaultValue={product?.stock ?? 100}
+                                        min="0"
+                                        defaultValue={product?.stock ?? 0}
                                         className="w-full text-xl font-medium text-gray-900 border-b border-gray-200 focus:border-black outline-none py-1"
                                         placeholder="0"
                                     />
@@ -314,9 +374,11 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                                 </button>
                                 <button
                                     type="submit"
-                                    className="flex-1 py-4 bg-primary text-white text-sm font-medium hover:bg-black transition uppercase tracking-widest shadow-lg"
+                                    disabled={uploading}
+                                    className="flex-1 py-4 bg-primary text-white text-sm font-medium hover:bg-black transition uppercase tracking-widest shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                 >
-                                    {product ? 'Save Changes' : 'Register Product'}
+                                    {uploading && <Loader2 size={16} className="animate-spin" />}
+                                    {uploading ? 'Uploading...' : (product ? 'Save Changes' : 'Register Product')}
                                 </button>
                             </div>
                         </div>

@@ -7,6 +7,7 @@ import AIStylist from './components/AIStylist';
 import ErrorBoundary from './components/ErrorBoundary';
 import Loading from './components/Loading';
 import { Providers } from './contexts';
+import { ToastProvider } from './contexts/ToastContext';
 
 // Static Import for Login to debug
 import Login from './pages/Login';
@@ -72,13 +73,15 @@ const Layout: React.FC = () => {
 const App: React.FC = () => {
   return (
     <Providers>
-      {/* <HelmetProvider> */}
-      <HashRouter>
-        <ErrorBoundary>
-          <Layout />
-        </ErrorBoundary>
-      </HashRouter>
-      {/* </HelmetProvider> */}
+      <ToastProvider>
+        {/* <HelmetProvider> */}
+        <HashRouter>
+          <ErrorBoundary>
+            <Layout />
+          </ErrorBoundary>
+        </HashRouter>
+        {/* </HelmetProvider> */}
+      </ToastProvider>
     </Providers>
   );
 };

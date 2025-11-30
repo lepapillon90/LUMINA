@@ -18,31 +18,6 @@ import SystemManager from '../components/Admin/System/SystemManager';
 import DesignManager from '../components/Admin/Design/DesignManager';
 import ConfirmModal from '../components/Admin/Shared/ConfirmModal';
 
-// --- Mock Data ---
-const PRODUCTS: Product[] = [
-  { id: 1, name: 'Premium Silk Blouse', price: 120000, category: 'clothing', image: 'https://picsum.photos/200/300?random=1', description: 'Soft silk blouse', tags: ['silk', 'blouse'], stock: 50 },
-  { id: 2, name: 'Leather Crossbody Bag', price: 250000, category: 'bags', image: 'https://picsum.photos/200/300?random=2', description: 'Genuine leather bag', tags: ['leather', 'bag'], stock: 20 },
-  { id: 3, name: 'Gold Plated Earrings', price: 45000, category: 'jewelry', image: 'https://picsum.photos/200/300?random=3', description: 'Elegant earrings', tags: ['gold', 'earrings'], stock: 100 },
-  { id: 4, name: 'Summer Floral Dress', price: 89000, category: 'clothing', image: 'https://picsum.photos/200/300?random=4', description: 'Light summer dress', tags: ['summer', 'dress'], stock: 5 },
-  { id: 5, name: 'Classic Denim Jacket', price: 110000, category: 'clothing', image: 'https://picsum.photos/200/300?random=5', description: 'Vintage style jacket', tags: ['denim', 'jacket'], stock: 30 },
-];
-
-const INITIAL_ORDERS: Order[] = [
-  { id: 'ORD-2023-001', userId: 'user1', customerName: '김지수', total: 120000, status: '배송중', date: '2023-11-28', items: [] },
-  { id: 'ORD-2023-002', userId: 'user2', customerName: '이민호', total: 45000, status: '결제완료', date: '2023-11-28', items: [] },
-  { id: 'ORD-2023-003', userId: 'user3', customerName: '박서준', total: 250000, status: '입금대기', date: '2023-11-27', items: [] },
-  { id: 'ORD-2023-004', userId: 'user4', customerName: '최유리', total: 89000, status: '배송완료', date: '2023-11-26', items: [] },
-  { id: 'ORD-2023-005', userId: 'user5', customerName: '정우성', total: 110000, status: '결제완료', date: '2023-11-28', items: [] },
-];
-
-const INITIAL_CUSTOMERS: Customer[] = [
-  { id: 'cust_1', name: '김지수', email: 'jisoo@example.com', phone: '010-1234-5678', joinDate: '2023-01-15', totalSpent: 1200000, grade: 'VIP', lastLoginDate: '2023-11-28', status: 'active' },
-  { id: 'cust_2', name: '이민호', email: 'minho@example.com', phone: '010-2345-6789', joinDate: '2023-03-20', totalSpent: 450000, grade: 'Gold', lastLoginDate: '2023-11-25', status: 'active' },
-  { id: 'cust_3', name: '박서준', email: 'seojun@example.com', phone: '010-3456-7890', joinDate: '2023-05-10', totalSpent: 150000, grade: 'Silver', lastLoginDate: '2023-10-15', status: 'inactive' },
-  { id: 'cust_4', name: '최유리', email: 'yuri@example.com', phone: '010-4567-8901', joinDate: '2023-07-01', totalSpent: 89000, grade: 'Bronze', lastLoginDate: '2023-11-20', status: 'active' },
-  { id: 'cust_5', name: '정우성', email: 'woosung@example.com', phone: '010-5678-9012', joinDate: '2023-09-15', totalSpent: 0, grade: 'Bronze', lastLoginDate: '2023-11-28', status: 'active' },
-];
-
 // --- Main Admin Component ---
 
 type Tab = 'home' | 'orders' | 'products' | 'customers' | 'messages' | 'board' | 'design' | 'promotion' | 'analytics' | 'stats' | 'excel' | 'system';
@@ -66,10 +41,10 @@ const Admin: React.FC = () => {
   const { user, logout, loading } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('home');
 
-  // Data State
-  const [products, setProducts] = useState<Product[]>(PRODUCTS);
-  const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
-  const [customers, setCustomers] = useState<Customer[]>(INITIAL_CUSTOMERS);
+  // Data State - ProductManager will fetch from Firestore
+  const [products, setProducts] = useState<Product[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
 
   // Design & Promotion State
   const [banners, setBanners] = useState<Banner[]>([

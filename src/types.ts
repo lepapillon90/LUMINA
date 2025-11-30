@@ -42,6 +42,7 @@ export interface Product {
     reviewCount?: number;
     discount?: number;
     stock?: number;
+    images?: string[];
 }
 
 export interface CartItem extends Product {

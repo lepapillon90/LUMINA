@@ -13,6 +13,7 @@ const ProductDetail: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [quantity, setQuantity] = useState(1);
     const [activeTab, setActiveTab] = useState<'details' | 'reviews' | 'ootd'>('details');
+    const [selectedImage, setSelectedImage] = useState<string>('');
     const { addToCart } = useCart();
 
     useEffect(() => {
@@ -21,8 +22,9 @@ const ProductDetail: React.FC = () => {
                 try {
                     const data = await getProductById(parseInt(id));
                     setProduct(data || null);
-
-                    setProduct(data || null);
+                    if (data) {
+                        setSelectedImage(data.image);
+                    }
                 } catch (error) {
                     console.error("Error fetching product:", error);
                 } finally {
@@ -52,6 +54,9 @@ const ProductDetail: React.FC = () => {
         );
     }
 
+    // Combine main image and additional images for the gallery
+    const allImages = [product.image, ...(product.images || [])];
+
     return (
         <div className="pt-24 pb-20 bg-white min-h-screen">
             <SEO title={product.name} description={product.description} image={product.image} />
@@ -69,22 +74,28 @@ const ProductDetail: React.FC = () => {
                 <div className="flex flex-col lg:flex-row gap-12 lg:gap-20">
                     {/* Left: Gallery */}
                     <div className="lg:w-1/2">
-                        <div className="relative aspect-[4/5] bg-gray-100 overflow-hidden mb-4">
+                        <div className="relative aspect-square bg-gray-50 overflow-hidden mb-4 border border-gray-100">
                             <img
-                                src={product.image}
+                                src={selectedImage || product.image}
                                 alt={product.name}
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-contain"
                                 onError={(e) => e.currentTarget.src = "https://via.placeholder.com/600x750?text=No+Image"}
                             />
                         </div>
-                        {/* Thumbnails (Mock) */}
-                        <div className="flex gap-4 overflow-x-auto">
-                            {[product.image, product.image, product.image].map((img, idx) => (
-                                <div key={idx} className="w-20 h-24 bg-gray-100 cursor-pointer opacity-70 hover:opacity-100 transition">
-                                    <img src={img} alt="Thumbnail" className="w-full h-full object-cover" />
-                                </div>
-                            ))}
-                        </div>
+                        {/* Thumbnails */}
+                        {allImages.length > 1 && (
+                            <div className="flex gap-4 overflow-x-auto pb-2">
+                                {allImages.map((img, idx) => (
+                                    <div
+                                        key={idx}
+                                        className={`w-20 h-20 flex-shrink-0 bg-gray-50 cursor-pointer border transition ${selectedImage === img ? 'border-black opacity-100' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                                        onClick={() => setSelectedImage(img)}
+                                    >
+                                        <img src={img} alt={`Thumbnail ${idx}`} className="w-full h-full object-cover" />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* Right: Info */}
@@ -106,12 +117,14 @@ const ProductDetail: React.FC = () => {
                             </p>
                         )}
 
-                        <p className="text-xl font-medium text-gray-900 mb-6">₩{product.price.toLocaleString()}</p>
+                        <p className="text-2xl font-medium text-gray-900 mb-8">₩{product.price.toLocaleString()}</p>
 
-                        <div
-                            className="prose prose-sm text-gray-600 mb-8 leading-relaxed max-w-none"
-                            dangerouslySetInnerHTML={{ __html: product.description }}
-                        />
+                        {/* Short Description or Key Features could go here */}
+                        <div className="text-sm text-gray-600 mb-8 space-y-2">
+                            <p>• 모던하고 심플한 디자인</p>
+                            <p>• 데일리 아이템으로 추천</p>
+                            <p>• 알러지 방지 처리 완료</p>
+                        </div>
 
                         {/* Options & Quantity */}
                         <div className="border-t border-b border-gray-100 py-6 mb-8">
@@ -184,12 +197,12 @@ const ProductDetail: React.FC = () => {
                         ))}
                     </div>
 
-                    <div className="max-w-3xl mx-auto py-8">
+                    <div className="max-w-4xl mx-auto py-8 px-4">
                         {activeTab === 'details' && (
-                            <div className="text-center text-gray-600 leading-loose">
-                                <p>상품의 상세한 정보가 이곳에 표시됩니다.</p>
-                                <p>소재, 사이즈, 관리 방법 등...</p>
-                            </div>
+                            <div
+                                className="prose prose-lg max-w-none text-gray-600 leading-relaxed"
+                                dangerouslySetInnerHTML={{ __html: product.description }}
+                            />
                         )}
                         {activeTab === 'reviews' && (
                             <div className="text-center text-gray-500">
@@ -204,10 +217,7 @@ const ProductDetail: React.FC = () => {
                     </div>
                 </div>
             </div>
-
-
         </div>
-
     );
 };
 

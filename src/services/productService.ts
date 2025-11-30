@@ -1,4 +1,4 @@
-import { collection, getDocs, doc, getDoc, query, where } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, query, where, setDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Product } from '../types';
 
@@ -86,5 +86,64 @@ export const getNewProducts = async (): Promise<Product[]> => {
     } catch (error) {
         console.error('Error fetching new products:', error);
         return [];
+    }
+};
+
+/**
+ * Create a new product in Firestore
+ */
+export const createProduct = async (product: Omit<Product, 'id'>): Promise<Product> => {
+    try {
+        // Generate new ID using timestamp
+        const newId = Date.now().toString();
+        const docRef = doc(db, PRODUCTS_COLLECTION, newId);
+
+        const productData = {
+            ...product,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+        };
+
+        await setDoc(docRef, productData);
+
+        return { id: newId as any, ...product };
+    } catch (error) {
+        console.error('Error creating product:', error);
+        throw error;
+    }
+};
+
+/**
+ * Update an existing product in Firestore
+ */
+export const updateProduct = async (id: number | string, updates: Partial<Product>): Promise<void> => {
+    try {
+        const docRef = doc(db, PRODUCTS_COLLECTION, id.toString());
+
+        const updateData = {
+            ...updates,
+            updatedAt: serverTimestamp(),
+        };
+
+        // Remove id from updates if present
+        delete (updateData as any).id;
+
+        await updateDoc(docRef, updateData);
+    } catch (error) {
+        console.error('Error updating product:', error);
+        throw error;
+    }
+};
+
+/**
+ * Delete a product from Firestore
+ */
+export const deleteProduct = async (id: number | string): Promise<void> => {
+    try {
+        const docRef = doc(db, PRODUCTS_COLLECTION, id.toString());
+        await deleteDoc(docRef);
+    } catch (error) {
+        console.error('Error deleting product:', error);
+        throw error;
     }
 };
