@@ -4,10 +4,10 @@ import { getProductById } from '../services/productService';
 import { Product } from '../types';
 import { useCart } from '../contexts';
 import { ChevronRight, Star, Truck, ShieldCheck, Heart } from 'lucide-react';
-import SEO from '../components/SEO';
-import Loading from '../components/Loading';
+import SEO from '../components/common/SEO';
+import Loading from '../components/common/Loading';
 
-import ConfirmModal from '../components/ConfirmModal';
+import ConfirmModal from '../components/common/ConfirmModal';
 
 const ProductDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import ConfirmModal from '../components/ConfirmModal';
+import ConfirmModal from '../components/common/ConfirmModal';
 
 interface GlobalModalContextType {
     showAlert: (message: string, title?: string) => Promise<void>;

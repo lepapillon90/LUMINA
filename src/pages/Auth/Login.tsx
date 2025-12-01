@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { auth } from '../firebase';
+import { auth } from '../../firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { getQuery } from '../services/db';
+import { getQuery } from '../../services/db';
 import { where } from 'firebase/firestore';
-import { useAuth } from '../contexts';
-import { UserRole } from '../types';
+import { useAuth } from '../../contexts';
+import { UserRole } from '../../types';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');

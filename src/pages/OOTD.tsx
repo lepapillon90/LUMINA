@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { PRODUCTS } from '../constants';
 import { Heart, MessageCircle, Plus, Send } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import SEO from '../components/SEO';
-import CreatePostModal from '../components/CreatePostModal';
+import SEO from '../components/common/SEO';
+import CreatePostModal from '../components/features/posts/CreatePostModal';
 import { OOTDPost } from '../types';
 import { getOOTDPosts, createOOTDPost, toggleLikeOOTDPost, addCommentToOOTDPost } from '../services/ootdService';
 import { useAuth } from '../contexts';
-import Loading from '../components/Loading';
+import Loading from '../components/common/Loading';
 import { useGlobalModal } from '../contexts/GlobalModalContext';
 
 const OOTD: React.FC = () => {

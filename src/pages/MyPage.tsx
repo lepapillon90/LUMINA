@@ -6,7 +6,7 @@ import OrderHistory from '../components/MyPage/OrderHistory';
 import Wishlist from '../components/MyPage/Wishlist';
 import MyOOTD from '../components/MyPage/MyOOTD';
 import RecentlyViewed from '../components/MyPage/RecentlyViewed';
-import SEO from '../components/SEO';
+import SEO from '../components/common/SEO';
 import { User, Package, Heart, Camera, Clock, LogOut, Settings, LayoutDashboard } from 'lucide-react';
 import { Order, Product, OOTDPost } from '../types';
 import { PRODUCTS } from '../constants';

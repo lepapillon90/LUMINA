@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
-import { useCart } from '../contexts';
+import { useCart } from '../../contexts';
 import { Link, useNavigate } from 'react-router-dom';
 
 interface CartDrawerProps {

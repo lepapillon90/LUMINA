@@ -1,33 +1,29 @@
 import React, { Suspense, lazy, useEffect } from 'react';
 import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
-// import { HelmetProvider } from 'react-helmet-async';
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
-import AIStylist from './components/AIStylist';
-import ErrorBoundary from './components/ErrorBoundary';
-import Loading from './components/Loading';
-import { Providers } from './contexts';
-import { ToastProvider } from './contexts/ToastContext';
 import { GlobalModalProvider } from './contexts/GlobalModalContext';
+import { ToastProvider } from './contexts/ToastContext';
+import { Providers } from './contexts'; // Correct import for Auth and Cart providers
+// import { HelmetProvider } from 'react-helmet-async';
 
-// Static Import for Login to debug
-import Login from './pages/Login';
-// Static Import for Signup to debug
-import Signup from './pages/Signup';
+import Navbar from './components/layout/Navbar';
+import Footer from './components/layout/Footer';
+import AIStylist from './components/features/home/AIStylist';
+import ErrorBoundary from './components/common/ErrorBoundary';
+import Loading from './components/common/Loading';
 
-// Lazy Imports
-const Home = lazy(() => import('./pages/Home'));
-const Shop = lazy(() => import('./pages/Shop'));
-const OOTD = lazy(() => import('./pages/OOTD'));
-const Cart = lazy(() => import('./pages/Cart'));
-// const Login = lazy(() => import('./pages/Login'));
-// const Signup = lazy(() => import('./pages/Signup'));
-const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
-const Admin = lazy(() => import('./pages/Admin'));
-const MyPage = lazy(() => import('./pages/MyPage'));
-const DataMigration = lazy(() => import('./components/Admin/DataMigration'));
-const ProductDetail = lazy(() => import('./pages/ProductDetail'));
-const NotFound = lazy(() => import('./pages/NotFound'));
+import Home from './pages/Home';
+import Shop from './pages/Shop';
+import ProductDetail from './pages/ProductDetail';
+import OOTD from './pages/OOTD';
+import Cart from './pages/Cart';
+import MyPage from './pages/MyPage';
+import Admin from './pages/Admin';
+import DataMigration from './components/Admin/DataMigration';
+import NotFound from './pages/NotFound';
+
+import Login from './pages/Auth/Login';
+import Signup from './pages/Auth/Signup';
+const ForgotPassword = lazy(() => import('./pages/Auth/ForgotPassword'));
 
 // --- Layout Helper ---
 const ScrollToTop = () => {
@@ -73,9 +69,9 @@ const Layout: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <Providers>
-      <GlobalModalProvider>
-        <ToastProvider>
+    <GlobalModalProvider>
+      <ToastProvider>
+        <Providers>
           {/* <HelmetProvider> */}
           <HashRouter>
             <ErrorBoundary>
@@ -83,9 +79,9 @@ const App: React.FC = () => {
             </ErrorBoundary>
           </HashRouter>
           {/* </HelmetProvider> */}
-        </ToastProvider>
-      </GlobalModalProvider>
-    </Providers>
+        </Providers>
+      </ToastProvider>
+    </GlobalModalProvider>
   );
 };
 

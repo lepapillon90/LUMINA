@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ShoppingBag, Menu, X, User as UserIcon, LogOut } from 'lucide-react';
-import { useCart, useAuth } from '../contexts';
-import { UserRole } from '../types';
+import { useCart, useAuth } from '../../contexts';
+import { UserRole } from '../../types';
 import CartDrawer from './CartDrawer';
 
 const Navbar: React.FC = () => {

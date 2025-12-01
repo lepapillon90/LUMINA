@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { OOTD_POSTS } from '../constants';
+import { OOTD_POSTS } from '../../../constants';
 import { Heart, ArrowRight } from 'lucide-react';
 
 const TrendingOOTDSection: React.FC = () => {

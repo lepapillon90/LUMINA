@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Image as ImageIcon, Tag, Loader, Search, Trash2, ShoppingBag, Globe } from 'lucide-react';
-import { PRODUCTS } from '../constants';
-import { OOTDPost, Product } from '../types';
-import { uploadImage } from '../services/storageService';
-import { useAuth } from '../contexts';
-import { getPurchasedProducts } from '../services/orderService';
-import { useGlobalModal } from '../contexts/GlobalModalContext';
+import { PRODUCTS } from '../../../constants';
+import { OOTDPost, Product } from '../../../types';
+import { uploadImage } from '../../../services/storageService';
+import { useAuth } from '../../../contexts';
+import { getPurchasedProducts } from '../../../services/orderService';
+import { useGlobalModal } from '../../../contexts/GlobalModalContext';
 
 interface CreatePostModalProps {
     onClose: () => void;

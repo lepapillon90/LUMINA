@@ -1,9 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Product } from '../types';
+import { Product } from '../../../types';
 import { Eye, Heart } from 'lucide-react';
-import { useAuth } from '../contexts';
-import { useGlobalModal } from '../contexts/GlobalModalContext';
+import { useAuth } from '../../../contexts';
+import { useGlobalModal } from '../../../contexts/GlobalModalContext';
 
 interface ProductCardProps {
     product: Product;

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { PRODUCTS } from '../constants';
-import ProductCard from './ProductCard';
+import { PRODUCTS } from '../../../constants';
+import ProductCard from '../products/ProductCard';
 
 const tags = ["#베스트셀러", "#선물추천", "#데일리 아이템", "#MD's PICK"];
 

@@ -2,11 +2,11 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getProducts } from '../services/productService';
 import { Product } from '../types';
-import RecommendedSection from '../components/RecommendedSection';
+import RecommendedSection from '../components/features/home/RecommendedSection';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import SEO from '../components/SEO';
+import SEO from '../components/common/SEO';
 
-import TrendingOOTDSection from '../components/TrendingOOTDSection';
+import TrendingOOTDSection from '../components/features/home/TrendingOOTDSection';
 
 const Home: React.FC = () => {
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);

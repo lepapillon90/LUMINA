@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Sparkles, Send, X } from 'lucide-react';
-import { getStylistAdvice } from '../services/geminiService';
-import { PRODUCTS } from '../constants';
+import { getStylistAdvice } from '../../../services/geminiService';
+import { PRODUCTS } from '../../../constants';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -35,7 +35,7 @@ const AIStylist: React.FC = () => {
 
     // Create a simple string context of available products
     const productContext = PRODUCTS.map(p => `${p.name} (${p.category}): ₩${p.price}`).join(', ');
-    
+
     const advice = await getStylistAdvice(userMsg, productContext);
 
     setMessages(prev => [...prev, { role: 'assistant', text: advice }]);
@@ -45,7 +45,7 @@ const AIStylist: React.FC = () => {
   return (
     <div className="fixed bottom-6 right-6 z-40">
       {!isOpen && (
-        <button 
+        <button
           onClick={() => setIsOpen(true)}
           className="bg-primary text-white p-4 rounded-full shadow-xl hover:bg-accent transition-colors flex items-center justify-center animate-bounce"
         >
@@ -69,46 +69,45 @@ const AIStylist: React.FC = () => {
           {/* Messages */}
           <div className="h-80 overflow-y-auto p-4 bg-gray-50 space-y-3">
             {messages.map((msg, idx) => (
-              <div 
-                key={idx} 
+              <div
+                key={idx}
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div 
-                  className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${
-                    msg.role === 'user' 
-                      ? 'bg-primary text-white rounded-br-none' 
+                <div
+                  className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${msg.role === 'user'
+                      ? 'bg-primary text-white rounded-br-none'
                       : 'bg-white border border-gray-200 text-gray-700 rounded-bl-none shadow-sm'
-                  }`}
+                    }`}
                 >
                   {msg.text}
                 </div>
               </div>
             ))}
             {isLoading && (
-               <div className="flex justify-start">
-                 <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-none px-4 py-2 shadow-sm">
-                   <div className="flex space-x-1">
-                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-75"></div>
-                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-150"></div>
-                   </div>
-                 </div>
-               </div>
+              <div className="flex justify-start">
+                <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-none px-4 py-2 shadow-sm">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-75"></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-150"></div>
+                  </div>
+                </div>
+              </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
           {/* Input */}
           <div className="p-3 bg-white border-t border-gray-100 flex items-center space-x-2">
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="스타일 추천을 물어보세요..."
               className="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
             />
-            <button 
+            <button
               onClick={handleSend}
               disabled={isLoading || !input.trim()}
               className="p-2 bg-primary text-white rounded-full hover:bg-accent disabled:bg-gray-300 transition-colors"

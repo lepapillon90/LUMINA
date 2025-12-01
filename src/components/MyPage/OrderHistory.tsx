@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Order } from '../../types';
 import { Package, ChevronRight } from 'lucide-react';
-import ConfirmModal from '../ConfirmModal';
+import ConfirmModal from '../common/ConfirmModal';
 
 interface OrderHistoryProps {
     orders: Order[];

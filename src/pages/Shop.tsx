@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { getProducts } from '../services/productService';
 import { Product } from '../types';
-import ProductCard from '../components/ProductCard';
-import SEO from '../components/SEO';
-import Loading from '../components/Loading';
+import ProductCard from '../components/features/products/ProductCard';
+import SEO from '../components/common/SEO';
+import Loading from '../components/common/Loading';
 import Fuse from 'fuse.js';
-import SearchBar from '../components/SearchBar';
-import QuickViewModal from '../components/QuickViewModal';
+import SearchBar from '../components/common/SearchBar';
+import QuickViewModal from '../components/features/products/QuickViewModal';
 import { useLocation } from 'react-router-dom';
 
 const Shop: React.FC = () => {

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { auth } from '../firebase';
+import { auth } from '../../firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { getQuery, set } from '../services/db';
+import { getQuery, set } from '../../services/db';
 import { where } from 'firebase/firestore';
-import { useGlobalModal } from '../contexts/GlobalModalContext';
+import { useGlobalModal } from '../../contexts/GlobalModalContext';
 
 const Signup: React.FC = () => {
     const navigate = useNavigate();

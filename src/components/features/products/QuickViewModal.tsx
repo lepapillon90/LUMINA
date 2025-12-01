@@ -1,9 +1,9 @@
 import React from 'react';
 import { X, ShoppingBag, Heart } from 'lucide-react';
-import { Product } from '../types';
+import { Product } from '../../../types';
 import { Link } from 'react-router-dom';
-import { useCart, useAuth } from '../contexts';
-import { useGlobalModal } from '../contexts/GlobalModalContext';
+import { useCart, useAuth } from '../../../contexts';
+import { useGlobalModal } from '../../../contexts/GlobalModalContext';
 
 interface QuickViewModalProps {
     product: Product;
