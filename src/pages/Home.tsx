@@ -1,6 +1,7 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { PRODUCTS } from '../constants';
+import { getProducts } from '../services/productService';
+import { Product } from '../types';
 import RecommendedSection from '../components/RecommendedSection';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import SEO from '../components/SEO';
@@ -8,9 +9,24 @@ import SEO from '../components/SEO';
 import TrendingOOTDSection from '../components/TrendingOOTDSection';
 
 const Home: React.FC = () => {
-  // Assuming all products are new based on previous request for the slider
-  const newArrivals = PRODUCTS.filter(p => p.isNew);
+  const [newArrivals, setNewArrivals] = useState<Product[]>([]);
   const sliderRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fetchNewArrivals = async () => {
+      try {
+        const allProducts = await getProducts();
+        // Filter for new products. If none, maybe show latest 5? 
+        // For now, strictly following "isNew" as requested.
+        const newProducts = allProducts.filter(p => p.isNew);
+        setNewArrivals(newProducts);
+      } catch (error) {
+        console.error("Failed to fetch products:", error);
+      }
+    };
+
+    fetchNewArrivals();
+  }, []);
 
   const scroll = (direction: 'left' | 'right') => {
     if (sliderRef.current) {
@@ -85,38 +101,40 @@ const Home: React.FC = () => {
             className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory px-6 pb-10 gap-4"
             style={{ scrollBehavior: 'smooth' }}
           >
-            {newArrivals.map((product) => (
-              <div
-                key={product.id}
-                className="flex-none w-[45%] md:w-[30%] lg:w-[22%] xl:w-[18%] snap-start group cursor-pointer"
-              >
-                <Link to={`/product/${product.id}`} className="block relative">
-                  {/* Using Padding Hack (pt-[125%]) to enforce strict 4:5 Aspect Ratio */}
-                  <div className="relative w-full pt-[125%] bg-gray-100 overflow-hidden">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      onError={(e) => {
-                        e.currentTarget.src = "https://via.placeholder.com/400x500?text=No+Image";
-                      }}
-                      className="absolute top-0 left-0 w-full h-full object-cover transition duration-700 group-hover:scale-110"
-                    />
-                    {/* Overlay Text */}
-                    <div className="absolute bottom-4 right-4 text-[10px] text-white/70 font-light tracking-wider opacity-80">
-                      실제 판매되지 않는 상품입니다
+            {newArrivals.length > 0 ? (
+              newArrivals.map((product) => (
+                <div
+                  key={product.id}
+                  className="flex-none w-[45%] md:w-[30%] lg:w-[22%] xl:w-[18%] snap-start group cursor-pointer"
+                >
+                  <Link to={`/product/${product.id}`} className="block relative">
+                    {/* 1:1 Aspect Ratio (Square) */}
+                    <div className="relative w-full pt-[100%] bg-gray-100 overflow-hidden">
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        onError={(e) => {
+                          e.currentTarget.src = "https://via.placeholder.com/400x400?text=No+Image";
+                        }}
+                        className="absolute top-0 left-0 w-full h-full object-cover transition duration-700 group-hover:scale-110"
+                      />
                     </div>
-                  </div>
-                  <div className="mt-4">
-                    <h3 className="text-sm text-gray-900 font-medium group-hover:text-gray-600 transition truncate">
-                      {product.name}
-                    </h3>
-                    <p className="mt-1 text-sm font-serif text-gray-900">
-                      ₩{product.price.toLocaleString()}
-                    </p>
-                  </div>
-                </Link>
+                    <div className="mt-4">
+                      <h3 className="text-sm text-gray-900 font-medium group-hover:text-gray-600 transition truncate">
+                        {product.name}
+                      </h3>
+                      <p className="mt-1 text-sm font-serif text-gray-900">
+                        ₩{product.price.toLocaleString()}
+                      </p>
+                    </div>
+                  </Link>
+                </div>
+              ))
+            ) : (
+              <div className="w-full text-center py-10 text-gray-400">
+                신상품이 준비 중입니다.
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>

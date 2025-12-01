@@ -7,16 +7,18 @@ import Loading from '../components/Loading';
 import Fuse from 'fuse.js';
 import SearchBar from '../components/SearchBar';
 import QuickViewModal from '../components/QuickViewModal';
+import { useLocation } from 'react-router-dom';
 
 const Shop: React.FC = () => {
   const [category, setCategory] = useState<'all' | 'earring' | 'necklace' | 'ring' | 'bracelet'>('all');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const location = useLocation();
 
   // Detailed Filters
   const [maxPrice, setMaxPrice] = useState<number>(100000);
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
-  const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  // Color filter removed
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
 
   // Search & Sort
@@ -25,6 +27,12 @@ const Shop: React.FC = () => {
 
   // Quick View
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  useEffect(() => {
+    if (location.state?.category) {
+      setCategory(location.state.category);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -42,6 +50,9 @@ const Shop: React.FC = () => {
   }, []);
 
   const fuse = useMemo(() => new Fuse(products, {
+    // Removed 'colors' from search keys if desired, but keeping it might be useful. 
+    // User asked to remove filter, usually implies removing UI control. 
+    // I'll keep 'colors' in search keys just in case they type "Gold".
     keys: ['name', 'description', 'tags', 'category', 'material', 'colors'],
     threshold: 0.3,
   }), [products]);
@@ -70,7 +81,7 @@ const Shop: React.FC = () => {
     // 3. Detailed Filters
     result = result.filter(p => p.price <= maxPrice)
       .filter(p => selectedMaterials.length === 0 || (p.material && selectedMaterials.includes(p.material)))
-      .filter(p => selectedColors.length === 0 || (p.colors && p.colors.some(c => selectedColors.includes(c))))
+      // Color filter logic removed
       .filter(p => selectedSizes.length === 0 || (p.sizes && p.sizes.some(s => selectedSizes.includes(s))));
 
     // 4. Sort
@@ -107,7 +118,7 @@ const Shop: React.FC = () => {
   ];
 
   const materials = ["Gold", "Silver", "Rose Gold", "Pearl", "Gemstone", "Beads", "Crystal"];
-  const colors = ["Gold", "Silver", "Rose Gold", "White", "Red", "Blue", "Clear"];
+  // Colors array removed
   const sizes = ["Free", "11호", "13호", "15호", "40cm", "45cm", "16cm", "18cm"];
 
   if (loading) return <Loading />;
@@ -186,23 +197,7 @@ const Shop: React.FC = () => {
               </div>
             </div>
 
-            {/* Color */}
-            <div>
-              <h3 className="font-serif font-bold text-lg mb-4">Color</h3>
-              <div className="flex flex-wrap gap-2">
-                {colors.map(col => (
-                  <button
-                    key={col}
-                    onClick={() => toggleFilter(col, selectedColors, setSelectedColors)}
-                    className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition ${selectedColors.includes(col) ? 'border-primary scale-110' : 'border-transparent hover:scale-105'}`}
-                    style={{ backgroundColor: col.toLowerCase().replace(' ', '') === 'clear' ? '#f0f0f0' : col.toLowerCase().replace(' ', '') }}
-                    title={col}
-                  >
-                    {selectedColors.includes(col) && <div className="w-2 h-2 bg-white rounded-full shadow-sm" />}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* Color Filter Removed */}
 
             {/* Size */}
             <div>
@@ -261,7 +256,7 @@ const Shop: React.FC = () => {
                     setCategory('all');
                     setMaxPrice(100000);
                     setSelectedMaterials([]);
-                    setSelectedColors([]);
+                    // Color reset removed
                     setSelectedSizes([]);
                     setSearchQuery('');
                   }}

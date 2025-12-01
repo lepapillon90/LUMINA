@@ -19,7 +19,14 @@ const Signup: React.FC = () => {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+
+        // 아이디는 영문 소문자와 숫자만 입력 가능하도록 제한
+        if (name === 'username') {
+            const sanitizedValue = value.replace(/[^a-z0-9]/g, '');
+            setFormData(prev => ({ ...prev, [name]: sanitizedValue }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -71,6 +78,14 @@ const Signup: React.FC = () => {
                 return;
             }
 
+            // Check if email exists in Firestore
+            const existingEmails = await getQuery('users', where('email', '==', formData.email));
+            if (existingEmails.length > 0) {
+                setError('이미 가입된 이메일입니다.');
+                setIsLoading(false);
+                return;
+            }
+
             // Create user in Firebase Auth
             const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
 
@@ -115,13 +130,15 @@ const Signup: React.FC = () => {
                 {error && <div className="mb-4 text-red-500 text-sm text-center">{error}</div>}
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label className="block text-xs uppercase text-gray-500 mb-1">이름 (실명/닉네임)</label>
+                        <label className="block text-xs uppercase text-gray-500 mb-1">이름</label>
                         <input
                             type="text"
                             name="name"
                             value={formData.name}
                             onChange={handleChange}
-                            className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition"
+                            maxLength={20}
+                            className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition placeholder-gray-300 text-sm"
+                            placeholder="실명을 입력해주세요"
                         />
                     </div>
                     <div>
@@ -131,8 +148,9 @@ const Signup: React.FC = () => {
                             name="username"
                             value={formData.username}
                             onChange={handleChange}
-                            className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition"
-                            placeholder="영문, 숫자 3자 이상"
+                            maxLength={20}
+                            className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition placeholder-gray-300 text-sm"
+                            placeholder="영문 소문자, 숫자 조합 3~20자"
                         />
                     </div>
                     <div>
@@ -142,17 +160,21 @@ const Signup: React.FC = () => {
                             name="email"
                             value={formData.email}
                             onChange={handleChange}
-                            className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition"
+                            maxLength={50}
+                            className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition placeholder-gray-300 text-sm"
+                            placeholder="example@email.com"
                         />
                     </div>
                     <div>
-                        <label className="block text-xs uppercase text-gray-500 mb-1">비밀번호 (6자 이상)</label>
+                        <label className="block text-xs uppercase text-gray-500 mb-1">비밀번호</label>
                         <input
                             type="password"
                             name="password"
                             value={formData.password}
                             onChange={handleChange}
-                            className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition"
+                            maxLength={20}
+                            className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition placeholder-gray-300 text-sm"
+                            placeholder="영문, 숫자, 특수문자 포함 6~20자"
                         />
                     </div>
                     <div>
@@ -162,7 +184,9 @@ const Signup: React.FC = () => {
                             name="confirmPassword"
                             value={formData.confirmPassword}
                             onChange={handleChange}
-                            className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition"
+                            maxLength={20}
+                            className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition placeholder-gray-300 text-sm"
+                            placeholder="비밀번호를 다시 입력해주세요"
                         />
                     </div>
                     <button

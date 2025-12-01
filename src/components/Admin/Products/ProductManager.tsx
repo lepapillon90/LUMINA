@@ -108,6 +108,17 @@ const ProductManager: React.FC<ProductManagerProps> = ({ products, setProducts }
                 }
             }
 
+            // Delete additional images from Storage
+            if (productToDelete?.images && productToDelete.images.length > 0) {
+                for (const imageUrl of productToDelete.images) {
+                    try {
+                        await deleteImage(imageUrl);
+                    } catch (imgError) {
+                        console.warn('Failed to delete additional image:', imgError);
+                    }
+                }
+            }
+
             // Delete description images from Storage
             if (productToDelete?.description) {
                 const descriptionImageUrls = extractImageUrls(productToDelete.description);

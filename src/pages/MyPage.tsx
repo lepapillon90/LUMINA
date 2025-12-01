@@ -111,7 +111,7 @@ const MyPage: React.FC = () => {
                                     </label>
                                 </div>
                                 <div>
-                                    <h2 className="text-lg font-serif font-bold text-primary">{user?.username || 'Guest User'}</h2>
+                                    <h2 className="text-lg font-serif font-bold text-primary">{user?.displayName || user?.username || 'Guest User'}</h2>
                                     <p className="text-sm text-gray-500">{user?.role === 'ADMIN' ? 'Administrator' : 'Member'}</p>
                                 </div>
                             </div>

@@ -15,6 +15,7 @@ export interface User {
     uid: string;
     email: string;
     username: string;
+    displayName?: string;
     displayId?: string;
     phoneNumber?: string;
     jobTitle?: string;
@@ -43,6 +44,7 @@ export interface Product {
     discount?: number;
     stock?: number;
     images?: string[];
+    shortDescription?: string;
 }
 
 export interface CartItem extends Product {

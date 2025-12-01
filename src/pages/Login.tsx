@@ -94,8 +94,8 @@ const Login: React.FC = () => {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition"
-              placeholder="Username"
+              className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition placeholder-gray-300 text-sm"
+              placeholder="아이디를 입력해주세요"
             />
           </div>
           <div>
@@ -104,7 +104,8 @@ const Login: React.FC = () => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition"
+              className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition placeholder-gray-300 text-sm"
+              placeholder="비밀번호를 입력해주세요"
             />
           </div>
           <button

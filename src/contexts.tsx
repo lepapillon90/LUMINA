@@ -12,6 +12,9 @@ interface CartContextType {
     removeFromCart: (id: number) => void;
     updateQuantity: (id: number, quantity: number) => void;
     clearCart: () => void;
+    isCartOpen: boolean;
+    openCart: () => void;
+    closeCart: () => void;
 }
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
@@ -30,6 +33,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const Providers: React.FC<{ children: ReactNode }> = ({ children }) => {
     // Cart State
     const [cart, setCart] = useState<CartItem[]>([]);
+    const [isCartOpen, setIsCartOpen] = useState(false);
+
+    const openCart = () => setIsCartOpen(true);
+    const closeCart = () => setIsCartOpen(false);
 
     const addToCart = (product: Product, quantity: number = 1) => {
         setCart(prev => {
@@ -39,6 +46,7 @@ export const Providers: React.FC<{ children: ReactNode }> = ({ children }) => {
             }
             return [...prev, { ...product, quantity }];
         });
+        openCart(); // Automatically open cart when adding item
     };
 
     const removeFromCart = (id: number) => {
@@ -98,6 +106,7 @@ export const Providers: React.FC<{ children: ReactNode }> = ({ children }) => {
                     uid: firebaseUser.uid,
                     email: firebaseUser.email || '',
                     username: username,
+                    displayName: (userDoc as any)?.displayName || firebaseUser.displayName || undefined,
                     role: role,
                     createdAt: (userDoc as any)?.createdAt || new Date(),
                     permissions: (userDoc as any)?.permissions,
@@ -219,7 +228,7 @@ export const Providers: React.FC<{ children: ReactNode }> = ({ children }) => {
 
     return (
         <AuthContext.Provider value={{ user, loading, logout, toggleWishlist }}>
-            <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, clearCart }}>
+            <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, clearCart, isCartOpen, openCart, closeCart }}>
                 {loading ? <div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div></div> : children}
             </CartContext.Provider>
         </AuthContext.Provider>

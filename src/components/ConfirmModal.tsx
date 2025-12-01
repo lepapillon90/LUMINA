@@ -51,8 +51,8 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                             onClose();
                         }}
                         className={`px-4 py-2 text-sm font-medium text-white rounded-md transition shadow-sm ${isDestructive
-                                ? 'bg-red-500 hover:bg-red-600'
-                                : 'bg-blue-600 hover:bg-blue-700'
+                            ? 'bg-red-500 hover:bg-red-600'
+                            : 'bg-black hover:bg-gray-800'
                             }`}
                     >
                         {confirmLabel}

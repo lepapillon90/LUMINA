@@ -27,7 +27,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
         <div className="group relative">
             <Link to={`/product/${product.id}`} className="block relative">
                 {/* Image Container with Aspect Ratio */}
-                <div className="relative w-full pt-[125%] bg-gray-100 overflow-hidden mb-4">
+                <div className="relative w-full pt-[100%] bg-gray-100 overflow-hidden mb-4">
                     <img
                         src={product.image}
                         alt={product.name}

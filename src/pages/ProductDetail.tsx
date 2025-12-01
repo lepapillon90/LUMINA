@@ -7,6 +7,8 @@ import { ChevronRight, Star, Truck, ShieldCheck, Heart } from 'lucide-react';
 import SEO from '../components/SEO';
 import Loading from '../components/Loading';
 
+import ConfirmModal from '../components/ConfirmModal';
+
 const ProductDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const [product, setProduct] = useState<Product | null>(null);
@@ -14,6 +16,7 @@ const ProductDetail: React.FC = () => {
     const [quantity, setQuantity] = useState(1);
     const [activeTab, setActiveTab] = useState<'details' | 'reviews' | 'ootd'>('details');
     const [selectedImage, setSelectedImage] = useState<string>('');
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const { addToCart } = useCart();
 
     useEffect(() => {
@@ -38,8 +41,14 @@ const ProductDetail: React.FC = () => {
 
     const handleAddToCart = () => {
         if (product) {
+            setIsConfirmModalOpen(true);
+        }
+    };
+
+    const confirmAddToCart = () => {
+        if (product) {
             addToCart(product, quantity);
-            alert(`${product.name}이(가) 장바구니에 담겼습니다.`);
+            setIsConfirmModalOpen(false);
         }
     };
 
@@ -67,6 +76,14 @@ const ProductDetail: React.FC = () => {
                     <Link to="/" className="hover:text-black">Home</Link>
                     <ChevronRight size={14} className="mx-2" />
                     <Link to="/shop" className="hover:text-black">Shop</Link>
+                    <ChevronRight size={14} className="mx-2" />
+                    <Link
+                        to="/shop"
+                        state={{ category: product.category }}
+                        className="hover:text-black capitalize"
+                    >
+                        {product.category}
+                    </Link>
                     <ChevronRight size={14} className="mx-2" />
                     <span className="text-black font-medium">{product.name}</span>
                 </div>
@@ -119,12 +136,18 @@ const ProductDetail: React.FC = () => {
 
                         <p className="text-2xl font-medium text-gray-900 mb-8">₩{product.price.toLocaleString()}</p>
 
-                        {/* Short Description or Key Features could go here */}
-                        <div className="text-sm text-gray-600 mb-8 space-y-2">
-                            <p>• 모던하고 심플한 디자인</p>
-                            <p>• 데일리 아이템으로 추천</p>
-                            <p>• 알러지 방지 처리 완료</p>
-                        </div>
+                        {/* Short Description */}
+                        {product.shortDescription ? (
+                            <div className="text-sm text-gray-600 mb-8 whitespace-pre-wrap leading-relaxed">
+                                {product.shortDescription}
+                            </div>
+                        ) : (
+                            <div className="text-sm text-gray-600 mb-8 space-y-2">
+                                <p>• 모던하고 심플한 디자인</p>
+                                <p>• 데일리 아이템으로 추천</p>
+                                <p>• 알러지 방지 처리 완료</p>
+                            </div>
+                        )}
 
                         {/* Options & Quantity */}
                         <div className="border-t border-b border-gray-100 py-6 mb-8">
@@ -217,6 +240,16 @@ const ProductDetail: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            <ConfirmModal
+                isOpen={isConfirmModalOpen}
+                onClose={() => setIsConfirmModalOpen(false)}
+                onConfirm={confirmAddToCart}
+                title="장바구니 담기"
+                message={`${product.name}을(를) 장바구니에 담으시겠습니까?`}
+                confirmLabel="담기"
+                isDestructive={false}
+            />
         </div>
     );
 };

@@ -96,11 +96,11 @@ const Cart: React.FC = () => {
   return (
     <div className="pt-24 pb-20 min-h-screen bg-white">
       <div className="container mx-auto px-6 max-w-6xl">
-        <h1 className="text-3xl font-serif mb-10">쇼핑백 ({cart.length})</h1>
+        <h1 className="text-3xl font-serif mb-10">장바구니 ({cart.length})</h1>
 
         {cart.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-gray-500 mb-6">쇼핑백이 비어있습니다.</p>
+            <p className="text-gray-500 mb-6">장바구니가 비어있습니다.</p>
             <Link to="/shop" className="text-primary border-b border-primary hover:text-accent hover:border-accent">
               컬렉션 둘러보기
             </Link>

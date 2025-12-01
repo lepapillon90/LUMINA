@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ImageIcon, Plus, FileText, Loader2 } from 'lucide-react';
 import { Product } from '../../../types';
 import { uploadImage } from '../../../services/storageService';
+import { compressImage } from '../../../utils/imageOptimizer';
 
 interface ProductModalProps {
     isOpen: boolean;
@@ -26,13 +27,48 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
             setMainImageFile(null);
 
             if (product?.description) {
-                // Simple heuristic to parse existing description
-                setDescriptionBlocks([{ id: Date.now().toString(), type: 'text', content: product.description.replace(/<[^>]*>?/gm, '') }]);
+                const parsedBlocks = parseDescription(product.description);
+                setDescriptionBlocks(parsedBlocks);
             } else {
                 setDescriptionBlocks([{ id: Date.now().toString(), type: 'text', content: '' }]);
             }
         }
     }, [isOpen, product]);
+
+    const parseDescription = (html: string): DescriptionBlock[] => {
+        const blocks: DescriptionBlock[] = [];
+        const imgRegex = /<img[^>]+src="([^">]+)"[^>]*>/g;
+        let lastIndex = 0;
+        let match;
+
+        while ((match = imgRegex.exec(html)) !== null) {
+            // Text before image
+            const textContent = html.substring(lastIndex, match.index).replace(/<[^>]*>?/gm, '').trim();
+            if (textContent) {
+                blocks.push({ id: Date.now().toString() + Math.random(), type: 'text', content: textContent });
+            }
+
+            // Image
+            const imgSrc = match[1];
+            if (imgSrc) {
+                blocks.push({ id: Date.now().toString() + Math.random(), type: 'image', content: imgSrc });
+            }
+
+            lastIndex = match.index + match[0].length;
+        }
+
+        // Remaining text
+        const remainingText = html.substring(lastIndex).replace(/<[^>]*>?/gm, '').trim();
+        if (remainingText) {
+            blocks.push({ id: Date.now().toString() + Math.random(), type: 'text', content: remainingText });
+        }
+
+        if (blocks.length === 0) {
+            return [{ id: Date.now().toString(), type: 'text', content: '' }];
+        }
+
+        return blocks;
+    };
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -85,7 +121,8 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
             // 1. Upload main image if a new file was selected
             let mainImageUrl = previewImage;
             if (mainImageFile) {
-                mainImageUrl = await uploadImage(mainImageFile, 'products');
+                const compressedFile = await compressImage(mainImageFile);
+                mainImageUrl = await uploadImage(compressedFile, 'products');
             }
 
             // 2. Upload additional images
@@ -96,7 +133,8 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                         const response = await fetch(url);
                         const blob = await response.blob();
                         const file = new File([blob], 'additional-image.jpg', { type: blob.type });
-                        return await uploadImage(file, 'products/additional');
+                        const compressedFile = await compressImage(file);
+                        return await uploadImage(compressedFile, 'products/additional');
                     }
                     return url;
                 })
@@ -109,7 +147,8 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                         const response = await fetch(block.content);
                         const blob = await response.blob();
                         const file = new File([blob], 'description-image.jpg', { type: blob.type });
-                        const uploadedUrl = await uploadImage(file, 'products/descriptions');
+                        const compressedFile = await compressImage(file);
+                        const uploadedUrl = await uploadImage(compressedFile, 'products/descriptions');
                         return { ...block, content: uploadedUrl };
                     }
                     return block;
@@ -127,12 +166,13 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                 name: formData.get('name') as string,
                 price: parseInt(formData.get('price') as string),
                 image: mainImageUrl,
-                images: finalAdditionalImages, // Add this line
+                images: finalAdditionalImages,
                 category: formData.get('category') as string,
                 description: descriptionHtml,
                 stock: parseInt(formData.get('stock') as string),
                 isNew: formData.get('isNew') === 'on',
                 tags: product ? product.tags : [],
+                shortDescription: formData.get('shortDescription') as string,
             };
 
             await onSave(newProduct);
@@ -263,6 +303,18 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                                     required
                                     className="w-full text-3xl md:text-4xl font-serif text-primary border-b border-gray-200 focus:border-black outline-none py-2 placeholder-gray-200 transition"
                                     placeholder="Product Name"
+                                />
+                            </div>
+
+                            {/* Short Description */}
+                            <div>
+                                <label className="block text-xs font-bold text-gray-400 mb-1">간단한 소개 (리스트 형태 권장)</label>
+                                <textarea
+                                    name="shortDescription"
+                                    defaultValue={product?.shortDescription}
+                                    rows={3}
+                                    className="w-full text-sm text-gray-600 border-b border-gray-200 focus:border-black outline-none py-2 placeholder-gray-300 transition resize-none"
+                                    placeholder="• 모던하고 심플한 디자인&#13;&#10;• 데일리 아이템으로 추천&#13;&#10;• 알러지 방지 처리 완료"
                                 />
                             </div>
 
