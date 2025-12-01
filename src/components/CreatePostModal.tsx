@@ -5,6 +5,7 @@ import { OOTDPost, Product } from '../types';
 import { uploadImage } from '../services/storageService';
 import { useAuth } from '../contexts';
 import { getPurchasedProducts } from '../services/orderService';
+import { useGlobalModal } from '../contexts/GlobalModalContext';
 
 interface CreatePostModalProps {
     onClose: () => void;
@@ -13,6 +14,7 @@ interface CreatePostModalProps {
 
 const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onSubmit }) => {
     const { user } = useAuth();
+    const { showAlert } = useGlobalModal();
     const [caption, setCaption] = useState('');
     const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
     const [imageUrl, setImageUrl] = useState('');
@@ -77,7 +79,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onSubmit }) 
 
     const processFile = async (file: File) => {
         if (!file.type.startsWith('image/')) {
-            alert('이미지 파일만 업로드 가능합니다.');
+            await showAlert('이미지 파일만 업로드 가능합니다.', '오류');
             return;
         }
 
@@ -87,7 +89,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onSubmit }) 
             setImageUrl(url);
         } catch (error) {
             console.error("Upload failed:", error);
-            alert("이미지 업로드에 실패했습니다.");
+            await showAlert("이미지 업로드에 실패했습니다.", "오류");
         } finally {
             setIsUploading(false);
         }

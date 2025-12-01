@@ -1,5 +1,5 @@
 import { db } from '../firebase';
-import { collection, addDoc, query, where, getDocs, orderBy, writeBatch, doc } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, orderBy, writeBatch, doc, deleteDoc } from 'firebase/firestore';
 import { Order, Product } from '../types';
 
 const ORDERS_COLLECTION = 'orders';
@@ -49,6 +49,28 @@ export const getPurchasedProducts = async (userId: string): Promise<Product[]> =
     }
 };
 
+export const getAllOrders = async (): Promise<Order[]> => {
+    console.log("Fetching all orders for admin");
+    try {
+        const q = query(
+            collection(db, ORDERS_COLLECTION),
+            orderBy("createdAt", "desc")
+        );
+
+        const querySnapshot = await getDocs(q);
+        const orders: Order[] = [];
+
+        querySnapshot.forEach((doc) => {
+            orders.push({ id: doc.id, ...doc.data() } as Order);
+        });
+
+        return orders;
+    } catch (error) {
+        console.error("Error fetching all orders: ", error);
+        return [];
+    }
+};
+
 export const getOrders = async (userId: string): Promise<Order[]> => {
     console.log("Fetching orders for user:", userId);
     try {
@@ -86,6 +108,17 @@ export const updateOrderStatuses = async (orderIds: string[], status: string): P
         console.log("Batch update successful");
     } catch (error) {
         console.error("Error updating order statuses: ", error);
+        throw error;
+    }
+};
+
+export const deleteOrder = async (orderId: string): Promise<void> => {
+    console.log("Deleting order:", orderId);
+    try {
+        await deleteDoc(doc(db, ORDERS_COLLECTION, orderId));
+        console.log("Order deleted successfully");
+    } catch (error) {
+        console.error("Error deleting order: ", error);
         throw error;
     }
 };

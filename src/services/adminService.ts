@@ -21,7 +21,41 @@ export const getAdminUsers = async (): Promise<User[]> => {
     }
 };
 
-export const promoteToAdmin = async (email: string, username: string, permissions: UserPermissions, displayId?: string, phoneNumber?: string, jobTitle?: string): Promise<void> => {
+export const getAllUsers = async (): Promise<User[]> => {
+    try {
+        const querySnapshot = await getDocs(collection(db, USERS_COLLECTION));
+        const users: User[] = [];
+        querySnapshot.forEach((doc) => {
+            users.push({ uid: doc.id, ...doc.data() } as User);
+        });
+        return users;
+    } catch (error) {
+        console.error('Error fetching all users:', error);
+        return [];
+    }
+};
+
+export const promoteUserToAdmin = async (uid: string, permissions: UserPermissions, displayId?: string, phoneNumber?: string, jobTitle?: string, department?: string, displayName?: string): Promise<void> => {
+    try {
+        const updateData: any = {
+            role: UserRole.ADMIN,
+            permissions,
+            isActive: true
+        };
+        if (displayId) updateData.displayId = displayId;
+        if (phoneNumber) updateData.phoneNumber = phoneNumber;
+        if (jobTitle) updateData.jobTitle = jobTitle;
+        if (department) updateData.department = department;
+        if (displayName) updateData.displayName = displayName;
+
+        await updateDoc(doc(db, USERS_COLLECTION, uid), updateData);
+    } catch (error) {
+        console.error('Error promoting user to admin:', error);
+        throw error;
+    }
+};
+
+export const promoteToAdmin = async (email: string, username: string, permissions: UserPermissions, displayId?: string, phoneNumber?: string, jobTitle?: string, department?: string, displayName?: string): Promise<void> => {
     try {
         const q = query(collection(db, USERS_COLLECTION), where("email", "==", email));
         const querySnapshot = await getDocs(q);
@@ -31,29 +65,21 @@ export const promoteToAdmin = async (email: string, username: string, permission
         }
 
         const userDoc = querySnapshot.docs[0];
-        const updateData: any = {
-            role: UserRole.ADMIN,
-            permissions,
-            username: username || userDoc.data().username,
-            isActive: true
-        };
-        if (displayId) updateData.displayId = displayId;
-        if (phoneNumber) updateData.phoneNumber = phoneNumber;
-        if (jobTitle) updateData.jobTitle = jobTitle;
-
-        await updateDoc(doc(db, USERS_COLLECTION, userDoc.id), updateData);
+        await promoteUserToAdmin(userDoc.id, permissions, displayId, phoneNumber, jobTitle, department, displayName);
     } catch (error) {
         console.error('Error promoting user to admin:', error);
         throw error;
     }
 };
 
-export const updateAdminUser = async (uid: string, permissions: UserPermissions, displayId?: string, phoneNumber?: string, jobTitle?: string): Promise<void> => {
+export const updateAdminUser = async (uid: string, permissions: UserPermissions, displayId?: string, phoneNumber?: string, jobTitle?: string, department?: string, displayName?: string): Promise<void> => {
     try {
         const updateData: any = { permissions };
         if (displayId !== undefined) updateData.displayId = displayId;
         if (phoneNumber !== undefined) updateData.phoneNumber = phoneNumber;
         if (jobTitle !== undefined) updateData.jobTitle = jobTitle;
+        if (department !== undefined) updateData.department = department;
+        if (displayName !== undefined) updateData.displayName = displayName;
 
         await updateDoc(doc(db, USERS_COLLECTION, uid), updateData);
     } catch (error) {
@@ -80,7 +106,7 @@ export const deleteAdminUser = async (uid: string): Promise<void> => {
     }
 };
 
-export const createAdminUser = async (email: string, password: string, username: string, permissions: UserPermissions, displayId?: string, phoneNumber?: string, jobTitle?: string): Promise<void> => {
+export const createAdminUser = async (email: string, password: string, username: string, permissions: UserPermissions, displayId?: string, phoneNumber?: string, jobTitle?: string, department?: string, displayName?: string): Promise<void> => {
     let secondaryApp;
     try {
         // 1. Initialize a secondary app instance to create user without logging out current admin
@@ -105,6 +131,8 @@ export const createAdminUser = async (email: string, password: string, username:
         if (displayId) userData.displayId = displayId;
         if (phoneNumber) userData.phoneNumber = phoneNumber;
         if (jobTitle) userData.jobTitle = jobTitle;
+        if (department) userData.department = department;
+        if (displayName) userData.displayName = displayName;
 
         await setDoc(doc(db, USERS_COLLECTION, uid), userData);
 

@@ -4,10 +4,12 @@ import { createOrder } from '../services/orderService';
 import { BANK_INFO } from '../constants';
 import { Trash2, ArrowRight, Minus, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useGlobalModal } from '../contexts/GlobalModalContext';
 
 const Cart: React.FC = () => {
   const { cart, removeFromCart, updateQuantity, clearCart } = useCart();
   const { user } = useAuth();
+  const { showAlert } = useGlobalModal();
   const [step, setStep] = useState<'cart' | 'payment' | 'success'>('cart');
   const [formData, setFormData] = useState({ name: 'Test User', email: 'test@example.com', address: 'Test Address' });
   const [error, setError] = useState('');
@@ -42,12 +44,12 @@ const Cart: React.FC = () => {
             items: cart,
             customerName: formData.name,
             total: finalTotal,
-            status: '결제완료',
+            status: '입금대기',
             date: new Date().toISOString().split('T')[0]
           });
         } catch (err) {
           console.error("Failed to save order:", err);
-          alert(`주문 저장 실패: ${err}`);
+          await showAlert(`주문 저장 실패: ${err}`, "오류");
           return; // Stop if order creation fails
         }
       }

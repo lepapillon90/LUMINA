@@ -4,9 +4,11 @@ import { auth } from '../firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { getQuery, set } from '../services/db';
 import { where } from 'firebase/firestore';
+import { useGlobalModal } from '../contexts/GlobalModalContext';
 
 const Signup: React.FC = () => {
     const navigate = useNavigate();
+    const { showAlert } = useGlobalModal();
     const [formData, setFormData] = useState({
         username: '',
         password: '',
@@ -105,7 +107,7 @@ const Signup: React.FC = () => {
                 createdAt: new Date().toISOString()
             });
 
-            // alert('회원가입이 완료되었습니다! 자동으로 로그인됩니다.'); // Removed blocking alert
+            await showAlert('회원가입이 완료되었습니다! 자동으로 로그인됩니다.', '환영합니다');
             navigate('/');
         } catch (err: any) {
             console.error("Signup error:", err);

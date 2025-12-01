@@ -3,6 +3,7 @@ import { X, ShoppingBag, Heart } from 'lucide-react';
 import { Product } from '../types';
 import { Link } from 'react-router-dom';
 import { useCart, useAuth } from '../contexts';
+import { useGlobalModal } from '../contexts/GlobalModalContext';
 
 interface QuickViewModalProps {
     product: Product;
@@ -12,6 +13,7 @@ interface QuickViewModalProps {
 const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, onClose }) => {
     const { addToCart } = useCart();
     const { user, toggleWishlist } = useAuth();
+    const { showAlert } = useGlobalModal();
     const isWishlisted = user?.wishlist?.includes(product.id);
 
     return (
@@ -81,17 +83,17 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, onClose }) => 
                                 }}
                                 disabled={product.stock === 0}
                                 className={`flex-1 py-3 px-6 flex items-center justify-center space-x-2 transition-colors ${product.stock === 0
-                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                        : 'bg-black text-white hover:bg-gray-800'
+                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    : 'bg-black text-white hover:bg-gray-800'
                                     }`}
                             >
                                 <ShoppingBag className="w-5 h-5" />
                                 <span>{product.stock === 0 ? 'Sold Out' : 'Add to Cart'}</span>
                             </button>
                             <button
-                                onClick={() => {
+                                onClick={async () => {
                                     if (!user) {
-                                        alert("로그인이 필요한 서비스입니다.");
+                                        await showAlert("로그인이 필요한 서비스입니다.", "알림");
                                         return;
                                     }
                                     toggleWishlist(product.id);

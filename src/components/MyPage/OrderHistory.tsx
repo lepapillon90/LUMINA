@@ -1,13 +1,31 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Order } from '../../types';
 import { Package, ChevronRight } from 'lucide-react';
+import ConfirmModal from '../ConfirmModal';
 
 interface OrderHistoryProps {
     orders: Order[];
     loading: boolean;
+    onCancelOrder: (orderId: string) => void;
 }
 
-const OrderHistory: React.FC<OrderHistoryProps> = ({ orders, loading }) => {
+const OrderHistory: React.FC<OrderHistoryProps> = ({ orders, loading, onCancelOrder }) => {
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+
+    const handleCancelClick = (orderId: string) => {
+        setSelectedOrderId(orderId);
+        setIsConfirmModalOpen(true);
+    };
+
+    const handleConfirmCancel = () => {
+        if (selectedOrderId) {
+            onCancelOrder(selectedOrderId);
+        }
+        setIsConfirmModalOpen(false);
+        setSelectedOrderId(null);
+    };
+
     if (loading) {
         return <div className="text-center py-10 text-gray-500">주문 내역을 불러오는 중...</div>;
     }
@@ -30,14 +48,24 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ orders, loading }) => {
                             <span className="font-bold text-gray-900 mr-3">{order.date}</span>
                             <span className="text-sm text-gray-500">주문번호 {order.id.substring(0, 8)}</span>
                         </div>
-                        <div className="flex items-center">
+                        <div className="flex items-center gap-3">
                             <span className={`text-sm font-medium px-3 py-1 rounded-full ${order.status === '결제완료' ? 'bg-green-100 text-green-700' :
-                                    order.status === '배송중' ? 'bg-blue-100 text-blue-700' :
-                                        'bg-gray-100 text-gray-700'
+                                order.status === '배송중' ? 'bg-blue-100 text-blue-700' :
+                                    order.status === '주문취소' ? 'bg-red-100 text-red-700' :
+                                        order.status === '취소요청' ? 'bg-orange-100 text-orange-700' :
+                                            'bg-gray-100 text-gray-700'
                                 }`}>
                                 {order.status}
                             </span>
-                            <button className="ml-4 text-gray-400 hover:text-gray-600">
+                            {(order.status === '입금대기' || order.status === '결제완료') && (
+                                <button
+                                    onClick={() => handleCancelClick(order.id)}
+                                    className="text-xs border border-gray-300 px-2 py-1 rounded hover:bg-gray-100 text-gray-600 transition-colors"
+                                >
+                                    주문취소
+                                </button>
+                            )}
+                            <button className="text-gray-400 hover:text-gray-600">
                                 <ChevronRight size={20} />
                             </button>
                         </div>
@@ -67,6 +95,16 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ orders, loading }) => {
                     </div>
                 </div>
             ))}
+
+            <ConfirmModal
+                isOpen={isConfirmModalOpen}
+                onClose={() => setIsConfirmModalOpen(false)}
+                onConfirm={handleConfirmCancel}
+                title="주문 취소 확인"
+                message="정말로 이 주문을 취소하시겠습니까? 취소 후에는 되돌릴 수 없습니다."
+                confirmLabel="주문 취소"
+                isDestructive={true}
+            />
         </div>
     );
 };

@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
-import { ShoppingCart, Search, Printer, MoreHorizontal } from 'lucide-react';
+import { ShoppingCart, Search, Printer, MoreHorizontal, Download, Trash2 } from 'lucide-react';
 import { Order } from '../../../types';
 import InvoiceModal from './InvoiceModal';
+import OrderDetailModal from './OrderDetailModal';
+import { updateOrderStatuses, deleteOrder } from '../../../services/orderService';
+import ConfirmModal from '../Shared/ConfirmModal';
+import { useGlobalModal } from '../../../contexts/GlobalModalContext';
 
 interface OrderManagerProps {
     orders: Order[];
@@ -11,12 +15,19 @@ interface OrderManagerProps {
 const OrderManager: React.FC<OrderManagerProps> = ({ orders, setOrders }) => {
     const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
     const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+    const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+    const [selectedBatchStatus, setSelectedBatchStatus] = useState<string>('');
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const { showConfirm, showAlert } = useGlobalModal();
 
     const statusColors: Record<string, string> = {
         '입금대기': 'bg-yellow-50 border border-yellow-100 text-yellow-700',
         '결제완료': 'bg-blue-50 border border-blue-100 text-blue-600',
+        '배송준비': 'bg-purple-50 border border-purple-100 text-purple-600',
         '배송중': 'bg-indigo-50 border border-indigo-100 text-indigo-600',
-        '배송완료': 'bg-gray-100 border border-gray-200 text-gray-500'
+        '배송완료': 'bg-gray-100 border border-gray-200 text-gray-500',
+        '주문취소': 'bg-red-50 border border-red-100 text-red-600',
+        '취소요청': 'bg-orange-50 border border-orange-100 text-orange-600'
     };
 
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,18 +44,72 @@ const OrderManager: React.FC<OrderManagerProps> = ({ orders, setOrders }) => {
         );
     };
 
-    const handleBatchStatusChange = (newStatus: string) => {
-        if (selectedOrderIds.length === 0) return;
-        if (window.confirm(`선택한 ${selectedOrderIds.length}개의 주문 상태를 '${newStatus}'(으)로 변경하시겠습니까?`)) {
-            setOrders(prev => prev.map(o => selectedOrderIds.includes(o.id) ? { ...o, status: newStatus } : o));
+    const handleBatchStatusClick = () => {
+        if (selectedOrderIds.length === 0 || !selectedBatchStatus) return;
+        setIsConfirmModalOpen(true);
+    };
+
+    const executeBatchStatusChange = async () => {
+        try {
+            await updateOrderStatuses(selectedOrderIds, selectedBatchStatus);
+            setOrders(prev => prev.map(o => selectedOrderIds.includes(o.id) ? { ...o, status: selectedBatchStatus } : o));
             setSelectedOrderIds([]); // Clear selection after update
-            // TODO: Call API/Service here
+            setSelectedBatchStatus(''); // Reset status selection
+            setIsConfirmModalOpen(false);
+            await showAlert('주문 상태가 변경되었습니다.', '알림');
+        } catch (error) {
+            console.error("Failed to update order status:", error);
+            await showAlert('주문 상태 변경에 실패했습니다.', '오류');
+            setIsConfirmModalOpen(false);
+        }
+    };
+
+    const handleDeleteOrder = async (orderId: string) => {
+        const confirmed = await showConfirm(
+            '정말로 이 주문 내역을 삭제하시겠습니까? 삭제 후에는 복구할 수 없습니다.',
+            '주문 내역 삭제',
+            true
+        );
+
+        if (confirmed) {
+            try {
+                await deleteOrder(orderId);
+                setOrders(prev => prev.filter(o => o.id !== orderId));
+                await showAlert('주문 내역이 삭제되었습니다.', '삭제 완료');
+            } catch (error) {
+                console.error("Failed to delete order:", error);
+                await showAlert('주문 내역 삭제에 실패했습니다.', '오류');
+            }
         }
     };
 
     const handlePrintInvoice = () => {
         if (selectedOrderIds.length === 0) return;
         setIsInvoiceModalOpen(true);
+    };
+
+    const handleExcelDownload = () => {
+        const headers = ['Order ID', 'Date', 'Customer Name', 'Total Amount', 'Status', 'Items Count'];
+        const rows = orders.map(order => [
+            order.id,
+            order.date,
+            order.customerName,
+            order.total,
+            order.status,
+            order.items.length
+        ]);
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(row => row.join(','))
+        ].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `orders_export_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     return (
@@ -64,33 +129,47 @@ const OrderManager: React.FC<OrderManagerProps> = ({ orders, setOrders }) => {
                                 className="bg-transparent border-none focus:outline-none text-sm w-full"
                             />
                         </div>
-                        {selectedOrderIds.length > 0 && (
-                            <div className="flex items-center gap-2 animate-fadeIn">
-                                <span className="text-sm text-blue-600 font-bold">{selectedOrderIds.length}개 선택됨</span>
-                                <div className="h-4 w-px bg-gray-300 mx-2"></div>
-                                <select
-                                    onChange={(e) => handleBatchStatusChange(e.target.value)}
-                                    className="px-3 py-1.5 border border-blue-200 rounded-sm text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 cursor-pointer outline-none"
-                                    value=""
-                                >
-                                    <option value="" disabled>상태 일괄 변경</option>
-                                    <option value="입금대기">입금대기</option>
-                                    <option value="결제완료">결제완료</option>
-                                    <option value="배송중">배송중</option>
-                                    <option value="배송완료">배송완료</option>
-                                </select>
-                                <button
-                                    onClick={handlePrintInvoice}
-                                    className="flex items-center gap-1 px-3 py-1.5 border border-gray-300 rounded-sm text-xs font-medium hover:bg-white text-gray-700"
-                                >
-                                    <Printer size={14} />
-                                    <span>송장 출력</span>
-                                </button>
-                            </div>
-                        )}
+                        <select
+                            value={selectedBatchStatus}
+                            onChange={(e) => setSelectedBatchStatus(e.target.value)}
+                            className="bg-white border border-gray-300 text-gray-700 text-sm rounded-sm focus:ring-blue-500 focus:border-blue-500 block p-1.5"
+                        >
+                            <option value="">상태 변경 선택</option>
+                            <option value="입금대기">입금대기</option>
+                            <option value="결제완료">결제완료</option>
+                            <option value="배송준비">배송준비</option>
+                            <option value="배송중">배송중</option>
+                            <option value="배송완료">배송완료</option>
+                            <option value="취소요청">취소요청</option>
+                            <option value="주문취소">주문취소</option>
+                        </select>
+                        <button
+                            onClick={handleBatchStatusClick}
+                            disabled={!selectedBatchStatus}
+                            className={`px-3 py-1.5 rounded-sm text-xs font-bold transition
+                                        ${selectedBatchStatus
+                                    ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
+                                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                        >
+                            변경
+                        </button>
+                        <div className="h-4 w-px bg-gray-300 mx-2"></div>
+                        <button
+                            onClick={handlePrintInvoice}
+                            className="flex items-center gap-1 px-3 py-1.5 border border-gray-300 rounded-sm text-xs font-medium hover:bg-white text-gray-700"
+                        >
+                            <Printer size={14} />
+                            <span>송장 출력</span>
+                        </button>
                     </div>
                     <div className="space-x-2">
-                        <button className="px-3 py-1.5 bg-white border border-gray-300 text-xs rounded-sm hover:bg-gray-50">엑셀 다운로드</button>
+                        <button
+                            onClick={handleExcelDownload}
+                            className="flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-300 text-xs rounded-sm hover:bg-gray-50 transition"
+                        >
+                            <Download size={14} />
+                            엑셀 다운로드
+                        </button>
                     </div>
                 </div>
                 <div className="overflow-x-auto">
@@ -133,8 +212,20 @@ const OrderManager: React.FC<OrderManagerProps> = ({ orders, setOrders }) => {
                                             {order.status}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <button className="text-gray-400 hover:text-blue-600 transition">
+                                    <td className="px-6 py-4 text-right flex justify-end gap-2">
+                                        {order.status === '주문취소' && (
+                                            <button
+                                                onClick={() => handleDeleteOrder(order.id)}
+                                                className="text-gray-400 hover:text-red-600 transition"
+                                                title="주문 내역 삭제"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={() => setSelectedOrder(order)}
+                                            className="text-gray-400 hover:text-blue-600 transition"
+                                        >
                                             <MoreHorizontal size={18} />
                                         </button>
                                     </td>
@@ -151,6 +242,23 @@ const OrderManager: React.FC<OrderManagerProps> = ({ orders, setOrders }) => {
                     onClose={() => setIsInvoiceModalOpen(false)}
                 />
             )}
+
+            {selectedOrder && (
+                <OrderDetailModal
+                    order={selectedOrder}
+                    onClose={() => setSelectedOrder(null)}
+                />
+            )}
+
+            <ConfirmModal
+                isOpen={isConfirmModalOpen}
+                onClose={() => setIsConfirmModalOpen(false)}
+                onConfirm={executeBatchStatusChange}
+                title="주문 상태 변경"
+                message={`선택한 ${selectedOrderIds.length}개의 주문 상태를 '${selectedBatchStatus}'(으)로 변경하시겠습니까?`}
+                confirmLabel="변경"
+                isDestructive={false}
+            />
         </div>
     );
 };

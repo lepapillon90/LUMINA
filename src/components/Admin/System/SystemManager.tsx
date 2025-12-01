@@ -1,28 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, Plus, Settings, Trash2 } from 'lucide-react';
-import { User, UserPermissions } from '../../../types';
+import { User, UserPermissions, UserRole } from '../../../types';
 import {
     getAdminUsers, toggleAdminStatus, deleteAdminUser,
-    updateAdminUser, createAdminUser, promoteToAdmin, sendAdminPasswordReset
+    updateAdminUser, createAdminUser, promoteToAdmin, sendAdminPasswordReset,
+    getAllUsers, promoteUserToAdmin
 } from '../../../services/adminService';
+import { useGlobalModal } from '../../../contexts/GlobalModalContext';
 
 interface SystemManagerProps {
     user: User | null;
-    onConfirm: (config: {
-        title: string;
-        message: string;
-        onConfirm: () => void;
-        isDestructive?: boolean;
-    }) => void;
 }
 
-const SystemManager: React.FC<SystemManagerProps> = ({ user, onConfirm }) => {
+const SystemManager: React.FC<SystemManagerProps> = ({ user }) => {
+    const { showConfirm, showAlert } = useGlobalModal();
     const [adminUsers, setAdminUsers] = useState<User[]>([]);
+    const [allUsers, setAllUsers] = useState<User[]>([]);
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
+    const [addMode, setAddMode] = useState<'new' | 'existing'>('new');
+    const [selectedExistingUser, setSelectedExistingUser] = useState<string>('');
 
     useEffect(() => {
         fetchAdminUsers();
+        fetchAllUsers();
     }, []);
 
     const fetchAdminUsers = async () => {
@@ -30,50 +31,59 @@ const SystemManager: React.FC<SystemManagerProps> = ({ user, onConfirm }) => {
         setAdminUsers(users);
     };
 
-    const handleToggleStatus = (uid: string, currentStatus: boolean) => {
-        onConfirm({
-            title: '관리자 상태 변경',
-            message: `이 관리자 계정을 ${currentStatus ? '비활성화' : '활성화'} 하시겠습니까?`,
-            onConfirm: async () => {
-                try {
-                    await toggleAdminStatus(uid, !currentStatus);
-                    await fetchAdminUsers();
-                } catch (error) {
-                    console.error(error);
-                    alert('상태 변경 중 오류가 발생했습니다.');
-                }
-            },
-            isDestructive: currentStatus
-        });
+    const fetchAllUsers = async () => {
+        const users = await getAllUsers();
+        setAllUsers(users);
     };
 
-    const handleRemoveAdmin = (uid: string) => {
-        onConfirm({
-            title: '관리자 삭제',
-            message: '정말로 이 관리자를 삭제하시겠습니까? 이 작업은 되돌릴 수 없으며, 해당 사용자의 모든 데이터가 영구적으로 삭제됩니다.',
-            onConfirm: async () => {
-                try {
-                    await deleteAdminUser(uid);
-                    setAdminUsers(prev => prev.filter(user => user.uid !== uid));
-                    alert('관리자가 삭제되었습니다.');
-                } catch (error) {
-                    console.error('Error deleting admin:', error);
-                    alert('관리자 삭제 중 오류가 발생했습니다.');
-                }
-            },
-            isDestructive: true
-        });
+    const handleToggleStatus = async (uid: string, currentStatus: boolean) => {
+        const confirmed = await showConfirm(
+            '관리자 상태 변경',
+            `이 관리자 계정을 ${currentStatus ? '비활성화' : '활성화'} 하시겠습니까?`,
+            currentStatus
+        );
+
+        if (confirmed) {
+            try {
+                await toggleAdminStatus(uid, !currentStatus);
+                await fetchAdminUsers();
+            } catch (error) {
+                console.error(error);
+                await showAlert('상태 변경 중 오류가 발생했습니다.', '오류');
+            }
+        }
+    };
+
+    const handleRemoveAdmin = async (uid: string) => {
+        const confirmed = await showConfirm(
+            '관리자 삭제',
+            '정말로 이 관리자를 삭제하시겠습니까? 이 작업은 되돌릴 수 없으며, 해당 사용자의 모든 데이터가 영구적으로 삭제됩니다.',
+            true
+        );
+
+        if (confirmed) {
+            try {
+                await deleteAdminUser(uid);
+                setAdminUsers(prev => prev.filter(user => user.uid !== uid));
+                await showAlert('관리자가 삭제되었습니다.', '알림');
+            } catch (error) {
+                console.error('Error deleting admin:', error);
+                await showAlert('관리자 삭제 중 오류가 발생했습니다.', '오류');
+            }
+        }
     };
 
     const handleSaveUser = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
         const email = formData.get('email') as string;
-        const username = formData.get('username') as string;
+        const username = formData.get('username') as string; // This is now the ID
+        const displayName = formData.get('displayName') as string; // This is now the Name
         const password = formData.get('password') as string;
-        const displayId = formData.get('displayId') as string;
+        const displayId = formData.get('displayId') as string; // Keeping for compatibility if needed, but username is main ID
         const phoneNumber = formData.get('phoneNumber') as string;
         const jobTitle = formData.get('jobTitle') as string;
+        const department = formData.get('department') as string;
 
         const permissions: UserPermissions = {
             orders: formData.get('perm_orders') === 'on',
@@ -85,21 +95,32 @@ const SystemManager: React.FC<SystemManagerProps> = ({ user, onConfirm }) => {
 
         try {
             if (editingUser) {
-                await updateAdminUser(editingUser.uid, permissions, displayId, phoneNumber, jobTitle);
-                alert('관리자 정보가 수정되었습니다.');
+                await updateAdminUser(editingUser.uid, permissions, displayId, phoneNumber, jobTitle, department, displayName);
+                await showAlert('관리자 정보가 수정되었습니다.', '알림');
             } else {
-                if (password) {
-                    await createAdminUser(email, password, username, permissions, displayId, phoneNumber, jobTitle);
-                    alert('새로운 관리자 계정이 생성되었습니다.');
+                if (addMode === 'existing') {
+                    if (!selectedExistingUser) {
+                        await showAlert('사용자를 선택해주세요.', '오류');
+                        return;
+                    }
+                    await promoteUserToAdmin(selectedExistingUser, permissions, displayId, phoneNumber, jobTitle, department, displayName);
+                    await showAlert('기존 사용자가 관리자로 승격되었습니다.', '알림');
                 } else {
-                    await promoteToAdmin(email, username, permissions, displayId, phoneNumber, jobTitle);
-                    alert('기존 사용자가 관리자로 승격되었습니다.');
+                    if (password) {
+                        await createAdminUser(email, password, username, permissions, displayId, phoneNumber, jobTitle, department, displayName);
+                        await showAlert('새로운 관리자 계정이 생성되었습니다.', '알림');
+                    } else {
+                        // Fallback for direct email promotion if needed, though 'existing' mode covers this better now
+                        await promoteToAdmin(email, username, permissions, displayId, phoneNumber, jobTitle, department, displayName);
+                        await showAlert('기존 사용자가 관리자로 승격되었습니다.', '알림');
+                    }
                 }
             }
             setIsUserModalOpen(false);
             fetchAdminUsers();
+            fetchAllUsers(); // Refresh all users list as roles might have changed
         } catch (error: any) {
-            alert(error.message);
+            await showAlert(error.message, '오류');
         }
     };
 
@@ -124,6 +145,7 @@ const SystemManager: React.FC<SystemManagerProps> = ({ user, onConfirm }) => {
                             <th className="px-6 py-3 font-medium">이름</th>
                             <th className="px-6 py-3 font-medium">아이디</th>
                             <th className="px-6 py-3 font-medium">직급</th>
+                            <th className="px-6 py-3 font-medium">부서</th>
                             <th className="px-6 py-3 font-medium">이메일</th>
                             <th className="px-6 py-3 font-medium">연락처</th>
                             <th className="px-6 py-3 font-medium">상태</th>
@@ -134,9 +156,10 @@ const SystemManager: React.FC<SystemManagerProps> = ({ user, onConfirm }) => {
                     <tbody className="divide-y divide-gray-50">
                         {adminUsers.map(admin => (
                             <tr key={admin.uid} className="hover:bg-gray-50 transition">
-                                <td className="px-6 py-4 font-medium text-gray-800">{admin.username}</td>
-                                <td className="px-6 py-4 text-gray-600">{admin.displayId || '-'}</td>
+                                <td className="px-6 py-4 font-medium text-gray-800">{admin.displayName || admin.username}</td>
+                                <td className="px-6 py-4 text-gray-600">{admin.username}</td>
                                 <td className="px-6 py-4 text-gray-600">{admin.jobTitle || '-'}</td>
+                                <td className="px-6 py-4 text-gray-600">{admin.department || '-'}</td>
                                 <td className="px-6 py-4 text-gray-600">{admin.email}</td>
                                 <td className="px-6 py-4 text-gray-600">{admin.phoneNumber || '-'}</td>
                                 <td className="px-6 py-4">
@@ -187,46 +210,95 @@ const SystemManager: React.FC<SystemManagerProps> = ({ user, onConfirm }) => {
                         <h2 className="text-lg font-bold mb-6 text-gray-800 border-b pb-2">
                             {editingUser ? '관리자 수정' : '관리자 추가'}
                         </h2>
+
+                        {!editingUser && (
+                            <div className="flex mb-4 border-b border-gray-200">
+                                <button
+                                    type="button"
+                                    onClick={() => setAddMode('new')}
+                                    className={`flex-1 py-2 text-sm font-medium transition ${addMode === 'new' ? 'text-black border-b-2 border-black' : 'text-gray-500 hover:text-gray-700'}`}
+                                >
+                                    새 계정 생성
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setAddMode('existing')}
+                                    className={`flex-1 py-2 text-sm font-medium transition ${addMode === 'existing' ? 'text-black border-b-2 border-black' : 'text-gray-500 hover:text-gray-700'}`}
+                                >
+                                    기존 회원 선택
+                                </button>
+                            </div>
+                        )}
+
                         <form onSubmit={handleSaveUser} className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold text-gray-600 mb-1">이메일</label>
-                                <input
-                                    name="email"
-                                    type="email"
-                                    defaultValue={editingUser?.email}
-                                    disabled={!!editingUser}
-                                    required={!editingUser}
-                                    className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none disabled:bg-gray-100"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-600 mb-1">이름</label>
-                                <input
-                                    name="username"
-                                    defaultValue={editingUser?.username}
-                                    disabled={!!editingUser}
-                                    required={!editingUser}
-                                    className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none disabled:bg-gray-100"
-                                />
-                            </div>
-                            {!editingUser && (
+                            {!editingUser && addMode === 'existing' && (
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-600 mb-1">비밀번호</label>
-                                    <input
-                                        name="password"
-                                        type="password"
+                                    <label className="block text-xs font-bold text-gray-600 mb-1">회원 선택</label>
+                                    <select
+                                        value={selectedExistingUser}
+                                        onChange={(e) => {
+                                            const uid = e.target.value;
+                                            setSelectedExistingUser(uid);
+                                        }}
                                         className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none"
-                                    />
+                                    >
+                                        <option value="">회원을 선택하세요</option>
+                                        {allUsers.filter(u => u.role !== UserRole.ADMIN).map(u => (
+                                            <option key={u.uid} value={u.uid}>
+                                                {u.username} ({u.email})
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                             )}
-                            <div>
-                                <label className="block text-xs font-bold text-gray-600 mb-1">아이디</label>
-                                <input
-                                    name="displayId"
-                                    defaultValue={editingUser?.displayId}
-                                    className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none"
-                                />
-                            </div>
+
+                            {/* Only show Email/Name/Password inputs if creating NEW account or Editing */}
+                            {(addMode === 'new' || editingUser) && (
+                                <>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-600 mb-1">이름</label>
+                                        <input
+                                            name="displayName"
+                                            defaultValue={editingUser?.displayName}
+                                            required
+                                            className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-600 mb-1">아이디</label>
+                                        <input
+                                            name="username"
+                                            defaultValue={editingUser?.username}
+                                            disabled={!!editingUser}
+                                            required={!editingUser}
+                                            className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none disabled:bg-gray-100"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-600 mb-1">이메일</label>
+                                        <input
+                                            name="email"
+                                            type="email"
+                                            defaultValue={editingUser?.email}
+                                            disabled={!!editingUser}
+                                            required={!editingUser}
+                                            className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none disabled:bg-gray-100"
+                                        />
+                                    </div>
+                                    {!editingUser && (
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-600 mb-1">비밀번호</label>
+                                            <input
+                                                name="password"
+                                                type="password"
+                                                required
+                                                className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none"
+                                            />
+                                        </div>
+                                    )}
+                                </>
+                            )}
+
                             <div>
                                 <label className="block text-xs font-bold text-gray-600 mb-1">연락처</label>
                                 <input
@@ -237,24 +309,55 @@ const SystemManager: React.FC<SystemManagerProps> = ({ user, onConfirm }) => {
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-gray-600 mb-1">직급</label>
-                                <input
+                                <select
                                     name="jobTitle"
-                                    defaultValue={editingUser?.jobTitle}
+                                    defaultValue={editingUser?.jobTitle || ''}
                                     className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none"
-                                />
+                                >
+                                    <option value="">선택하세요</option>
+                                    <option value="사원">사원</option>
+                                    <option value="대리">대리</option>
+                                    <option value="과장">과장</option>
+                                    <option value="차장">차장</option>
+                                    <option value="부장">부장</option>
+                                    <option value="이사">이사</option>
+                                    <option value="대표">대표</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-600 mb-1">부서</label>
+                                <select
+                                    name="department"
+                                    defaultValue={editingUser?.department || ''}
+                                    className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none"
+                                >
+                                    <option value="">선택하세요</option>
+                                    <option value="경영지원팀">경영지원팀</option>
+                                    <option value="개발팀">개발팀</option>
+                                    <option value="디자인팀">디자인팀</option>
+                                    <option value="마케팅팀">마케팅팀</option>
+                                    <option value="영업팀">영업팀</option>
+                                    <option value="CS팀">CS팀</option>
+                                </select>
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-gray-600 mb-2">권한</label>
                                 <div className="space-y-2">
-                                    {['orders', 'products', 'customers', 'analytics', 'system'].map(perm => (
-                                        <label key={perm} className="flex items-center gap-2">
+                                    {[
+                                        { key: 'orders', label: '주문 관리' },
+                                        { key: 'products', label: '상품 관리' },
+                                        { key: 'customers', label: '고객 관리' },
+                                        { key: 'analytics', label: '통계/분석' },
+                                        { key: 'system', label: '시스템 설정' }
+                                    ].map(({ key, label }) => (
+                                        <label key={key} className="flex items-center gap-2">
                                             <input
                                                 type="checkbox"
-                                                name={`perm_${perm}`}
-                                                defaultChecked={editingUser?.permissions?.[perm as keyof UserPermissions]}
+                                                name={`perm_${key}`}
+                                                defaultChecked={editingUser?.permissions?.[key as keyof UserPermissions]}
                                                 className="rounded"
                                             />
-                                            <span className="text-sm text-gray-700 capitalize">{perm}</span>
+                                            <span className="text-sm text-gray-700">{label}</span>
                                         </label>
                                     ))}
                                 </div>

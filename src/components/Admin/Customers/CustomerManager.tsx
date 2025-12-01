@@ -3,6 +3,7 @@ import { Users, Plus, Search, Maximize2, FileText } from 'lucide-react';
 import { Customer } from '../../../types';
 import CustomerDetailModal from './CustomerDetailModal';
 import CustomerMemoModal from './CustomerMemoModal';
+import { useGlobalModal } from '../../../contexts/GlobalModalContext';
 
 interface CustomerManagerProps {
     customers: Customer[];
@@ -10,6 +11,7 @@ interface CustomerManagerProps {
 }
 
 const CustomerManager: React.FC<CustomerManagerProps> = ({ customers, setCustomers }) => {
+    const { showAlert } = useGlobalModal();
     const [customerFilter, setCustomerFilter] = useState<'all' | 'vip' | 'at_risk' | 'potential'>('all');
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -44,9 +46,9 @@ const CustomerManager: React.FC<CustomerManagerProps> = ({ customers, setCustome
         setIsMemoModalOpen(true);
     };
 
-    const handleSaveMemo = (customerId: string, memo: string) => {
+    const handleSaveMemo = async (customerId: string, memo: string) => {
         setCustomers(prev => prev.map(c => c.id === customerId ? { ...c, memo } : c));
-        alert('메모가 저장되었습니다.');
+        await showAlert('메모가 저장되었습니다.', '알림');
     };
 
     return (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Home, ShoppingCart, Package, Users, MessageCircle, FileText, Palette,
   Percent, LineChart, BarChart2, Grid, Shield, Settings, LogOut
@@ -9,6 +9,8 @@ import {
   User, UserRole, Product, Order, Customer, Banner, Promotion, UserPermissions
 } from '../types';
 
+import { getAllOrders } from '../services/orderService';
+
 // Import extracted components
 import Dashboard from '../components/Admin/Dashboard/Dashboard';
 import OrderManager from '../components/Admin/Orders/OrderManager';
@@ -16,7 +18,6 @@ import ProductManager from '../components/Admin/Products/ProductManager';
 import CustomerManager from '../components/Admin/Customers/CustomerManager';
 import SystemManager from '../components/Admin/System/SystemManager';
 import DesignManager from '../components/Admin/Design/DesignManager';
-import ConfirmModal from '../components/Admin/Shared/ConfirmModal';
 
 // --- Main Admin Component ---
 
@@ -45,6 +46,20 @@ const Admin: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+
+  useEffect(() => {
+    if (activeTab === 'orders') {
+      const fetchOrders = async () => {
+        try {
+          const data = await getAllOrders();
+          setOrders(data);
+        } catch (error) {
+          console.error("Failed to fetch orders:", error);
+        }
+      };
+      fetchOrders();
+    }
+  }, [activeTab]);
 
   // Design & Promotion State
   const [banners, setBanners] = useState<Banner[]>([
@@ -79,48 +94,7 @@ const Admin: React.FC = () => {
     setDraggedItemIndex(null);
   };
 
-  // Confirm Modal State
-  const [confirmModal, setConfirmModal] = useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    onConfirm: () => void;
-    isDestructive?: boolean;
-    confirmLabel?: string;
-    cancelLabel?: string;
-  }>({
-    isOpen: false,
-    title: '',
-    message: '',
-    onConfirm: () => { },
-    isDestructive: false,
-    confirmLabel: '확인',
-    cancelLabel: '취소',
-  });
 
-  const closeConfirmModal = () => {
-    setConfirmModal(prev => ({ ...prev, isOpen: false }));
-  };
-
-  const openConfirmModal = (config: {
-    title: string;
-    message: string;
-    onConfirm: () => void;
-    isDestructive?: boolean;
-  }) => {
-    setConfirmModal({
-      isOpen: true,
-      title: config.title,
-      message: config.message,
-      onConfirm: () => {
-        config.onConfirm();
-        closeConfirmModal();
-      },
-      isDestructive: config.isDestructive,
-      confirmLabel: '확인',
-      cancelLabel: '취소',
-    });
-  };
 
   // Access Control for Inactive Admins
   if (user && user.role === UserRole.ADMIN && user.isActive === false) {
@@ -220,7 +194,7 @@ const Admin: React.FC = () => {
           {activeTab === 'orders' && <OrderManager orders={orders} setOrders={setOrders} />}
           {activeTab === 'products' && <ProductManager products={products} setProducts={setProducts} />}
           {activeTab === 'customers' && <CustomerManager customers={customers} setCustomers={setCustomers} />}
-          {activeTab === 'system' && <SystemManager user={user} onConfirm={openConfirmModal} />}
+          {activeTab === 'system' && <SystemManager user={user} />}
           {activeTab === 'design' && (
             <DesignManager
               banners={banners}
@@ -243,16 +217,7 @@ const Admin: React.FC = () => {
         </div>
       </main>
 
-      <ConfirmModal
-        isOpen={confirmModal.isOpen}
-        onClose={closeConfirmModal}
-        onConfirm={confirmModal.onConfirm}
-        title={confirmModal.title}
-        message={confirmModal.message}
-        isDestructive={confirmModal.isDestructive}
-        confirmLabel={confirmModal.confirmLabel}
-        cancelLabel={confirmModal.cancelLabel}
-      />
+
     </div>
   );
 };

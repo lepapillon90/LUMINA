@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Product } from '../types';
 import { Eye, Heart } from 'lucide-react';
 import { useAuth } from '../contexts';
+import { useGlobalModal } from '../contexts/GlobalModalContext';
 
 interface ProductCardProps {
     product: Product;
@@ -11,13 +12,14 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
     const { user, toggleWishlist } = useAuth();
+    const { showAlert } = useGlobalModal();
     const isWishlisted = user?.wishlist?.includes(product.id);
 
     const handleWishlistClick = async (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
         if (!user) {
-            alert("로그인이 필요한 서비스입니다.");
+            await showAlert("로그인이 필요한 서비스입니다.", "알림");
             return;
         }
         await toggleWishlist(product.id);

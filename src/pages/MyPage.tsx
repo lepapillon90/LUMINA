@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts';
+import { useGlobalModal } from '../contexts/GlobalModalContext';
 import { useNavigate } from 'react-router-dom';
 import OrderHistory from '../components/MyPage/OrderHistory';
 import Wishlist from '../components/MyPage/Wishlist';
@@ -10,7 +11,7 @@ import { User, Package, Heart, Camera, Clock, LogOut, Settings, LayoutDashboard 
 import { Order, Product, OOTDPost } from '../types';
 import { PRODUCTS } from '../constants';
 
-import { getOrders } from '../services/orderService';
+import { getOrders, updateOrderStatuses } from '../services/orderService';
 import { storage, db } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -23,6 +24,7 @@ const mockMyOOTD: OOTDPost[] = [
 const MyPage: React.FC = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const { showAlert } = useGlobalModal();
     const [activeTab, setActiveTab] = useState<'orders' | 'wishlist' | 'ootd' | 'recent'>('orders');
     const [loading, setLoading] = useState(false);
     const [orders, setOrders] = useState<Order[]>([]);
@@ -59,6 +61,34 @@ const MyPage: React.FC = () => {
         navigate('/');
     };
 
+    const handleCancelOrder = async (orderId: string) => {
+        const order = orders.find(o => o.id === orderId);
+        if (!order) return;
+
+        try {
+            let newStatus = '';
+            if (order.status === '입금대기') {
+                newStatus = '주문취소';
+            } else if (order.status === '결제완료') {
+                newStatus = '취소요청';
+            } else {
+                return;
+            }
+
+            await updateOrderStatuses([orderId], newStatus);
+            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+
+            if (newStatus === '주문취소') {
+                await showAlert('주문이 취소되었습니다.', '주문 취소');
+            } else {
+                await showAlert('취소 요청이 접수되었습니다. 관리자 승인 후 처리됩니다.', '취소 요청');
+            }
+        } catch (error) {
+            console.error("Failed to cancel order:", error);
+            await showAlert('주문 취소에 실패했습니다.', '오류');
+        }
+    };
+
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file || !user) return;
@@ -73,11 +103,11 @@ const MyPage: React.FC = () => {
                 profileImage: downloadURL
             });
 
-            alert("프로필 이미지가 변경되었습니다. 새로고침 후 반영됩니다.");
+            await showAlert("프로필 이미지가 변경되었습니다. 새로고침 후 반영됩니다.", "알림");
             window.location.reload();
         } catch (error) {
             console.error("Error uploading image:", error);
-            alert("이미지 업로드 중 오류가 발생했습니다.");
+            await showAlert("이미지 업로드 중 오류가 발생했습니다.", "오류");
         } finally {
             setLoading(false);
         }
@@ -182,7 +212,7 @@ const MyPage: React.FC = () => {
                                 {activeTab === 'recent' && '최근 본 상품'}
                             </h2>
 
-                            {activeTab === 'orders' && <OrderHistory orders={orders} loading={loading} />}
+                            {activeTab === 'orders' && <OrderHistory orders={orders.filter(o => o.status !== '주문취소')} loading={loading} onCancelOrder={handleCancelOrder} />}
                             {activeTab === 'wishlist' && <Wishlist items={wishlistItems} loading={loading} />}
                             {activeTab === 'ootd' && <MyOOTD posts={mockMyOOTD} loading={loading} />}
                             {activeTab === 'recent' && <RecentlyViewed />}

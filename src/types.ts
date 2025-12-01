@@ -19,6 +19,7 @@ export interface User {
     displayId?: string;
     phoneNumber?: string;
     jobTitle?: string;
+    department?: string;
     isActive?: boolean;
     role: UserRole;
     permissions?: UserPermissions;

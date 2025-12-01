@@ -8,6 +8,7 @@ import { OOTDPost } from '../types';
 import { getOOTDPosts, createOOTDPost, toggleLikeOOTDPost, addCommentToOOTDPost } from '../services/ootdService';
 import { useAuth } from '../contexts';
 import Loading from '../components/Loading';
+import { useGlobalModal } from '../contexts/GlobalModalContext';
 
 const OOTD: React.FC = () => {
   const [posts, setPosts] = useState<OOTDPost[]>([]);
@@ -16,6 +17,7 @@ const OOTD: React.FC = () => {
   const [activeCommentId, setActiveCommentId] = useState<number | null>(null);
   const [commentText, setCommentText] = useState('');
   const { user } = useAuth();
+  const { showAlert } = useGlobalModal();
 
   useEffect(() => {
     fetchPosts();
@@ -40,7 +42,7 @@ const OOTD: React.FC = () => {
 
   const handleCreatePost = async (newPostData: Omit<OOTDPost, 'id' | 'likes' | 'user'>) => {
     if (!user) {
-      alert("로그인이 필요합니다.");
+      await showAlert("로그인이 필요합니다.", "알림");
       return;
     }
 
@@ -59,7 +61,7 @@ const OOTD: React.FC = () => {
       setIsModalOpen(false);
     } catch (error) {
       console.error("Failed to create post:", error);
-      alert("게시물 작성에 실패했습니다.");
+      await showAlert("게시물 작성에 실패했습니다.", "오류");
     }
   };
 
@@ -100,7 +102,7 @@ const OOTD: React.FC = () => {
   const handleAddComment = async (postId: number) => {
     if (!commentText.trim()) return;
     if (!user) {
-      alert("로그인이 필요합니다.");
+      await showAlert("로그인이 필요합니다.", "알림");
       return;
     }
 

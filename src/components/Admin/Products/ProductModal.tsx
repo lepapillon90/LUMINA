@@ -3,6 +3,7 @@ import { ImageIcon, Plus, FileText, Loader2 } from 'lucide-react';
 import { Product } from '../../../types';
 import { uploadImage } from '../../../services/storageService';
 import { compressImage } from '../../../utils/imageOptimizer';
+import { useGlobalModal } from '../../../contexts/GlobalModalContext';
 
 interface ProductModalProps {
     isOpen: boolean;
@@ -14,6 +15,7 @@ interface ProductModalProps {
 type DescriptionBlock = { id: string; type: 'text' | 'image'; content: string };
 
 const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, onSave }) => {
+    const { showAlert } = useGlobalModal();
     const [previewImage, setPreviewImage] = useState<string>('');
     const [additionalImages, setAdditionalImages] = useState<string[]>([]);
     const [descriptionBlocks, setDescriptionBlocks] = useState<DescriptionBlock[]>([]);
@@ -179,7 +181,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
             onClose();
         } catch (error) {
             console.error('Error uploading images:', error);
-            alert('이미지 업로드에 실패했습니다. 다시 시도해주세요.');
+            await showAlert('이미지 업로드에 실패했습니다. 다시 시도해주세요.', '오류');
         } finally {
             setUploading(false);
         }
