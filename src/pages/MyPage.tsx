@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts';
-import { useGlobalModal } from '../contexts/GlobalModalContext';
+import { useAuth, useGlobalModal } from '../contexts';
 import { useNavigate } from 'react-router-dom';
 import OrderHistory from '../components/MyPage/OrderHistory';
 import Wishlist from '../components/MyPage/Wishlist';
@@ -10,18 +9,17 @@ import Membership from '../components/MyPage/Membership';
 import Settings from '../components/MyPage/Settings';
 import SEO from '../components/common/SEO';
 import { User, Package, Heart, Camera, Clock, LogOut, Settings as SettingsIcon, LayoutDashboard, Gift } from 'lucide-react';
-import { Order, OOTDPost } from '../types';
-import { PRODUCTS } from '../constants';
+import { Order, OOTDPost, Product } from '../types';
+import { PRODUCTS } from '../constants'; // Keep for fallback or other uses if needed, but we'll use real data for wishlist
 
 import { getOrders, updateOrderStatuses } from '../services/orderService';
+import { getUserOOTDPosts } from '../services/ootdService';
+import { getProducts } from '../services/productService';
 import { storage, db } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, updateDoc } from 'firebase/firestore';
 
-// Mock Data Services (Replace with actual API calls later)
-const mockMyOOTD: OOTDPost[] = [
-    { id: 101, user: "@me", image: "https://picsum.photos/400/600?random=101", likes: 12, caption: "My daily look", productsUsed: [1] }
-];
+
 
 const MyPage: React.FC = () => {
     const { user, logout } = useAuth();
@@ -30,6 +28,8 @@ const MyPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'orders' | 'wishlist' | 'ootd' | 'recent' | 'membership' | 'settings'>('orders');
     const [loading, setLoading] = useState(false);
     const [orders, setOrders] = useState<Order[]>([]);
+    const [ootdPosts, setOotdPosts] = useState<OOTDPost[]>([]);
+    const [wishlistItems, setWishlistItems] = useState<Product[]>([]);
 
     useEffect(() => {
         const fetchOrders = async () => {
@@ -48,6 +48,53 @@ const MyPage: React.FC = () => {
 
         if (activeTab === 'orders') {
             fetchOrders();
+        }
+    }, [user, activeTab]);
+
+    // Fetch OOTD Posts
+    useEffect(() => {
+        const fetchOOTD = async () => {
+            if (user && user.username) {
+                setLoading(true);
+                try {
+                    const posts = await getUserOOTDPosts(user.username);
+                    setOotdPosts(posts);
+                } catch (error) {
+                    console.error("Failed to fetch OOTD posts:", error);
+                } finally {
+                    setLoading(false);
+                }
+            }
+        };
+
+        if (activeTab === 'ootd') {
+            fetchOOTD();
+        }
+    }, [user, activeTab]);
+
+    // Fetch Wishlist Items
+    useEffect(() => {
+        const fetchWishlist = async () => {
+            if (user && user.wishlist && user.wishlist.length > 0) {
+                setLoading(true);
+                try {
+                    // In a real app with many products, we should have a 'getProductsByIds' endpoint.
+                    // For now, we'll fetch all and filter.
+                    const allProducts = await getProducts();
+                    const wished = allProducts.filter(p => user.wishlist?.includes(p.id));
+                    setWishlistItems(wished);
+                } catch (error) {
+                    console.error("Failed to fetch wishlist items:", error);
+                } finally {
+                    setLoading(false);
+                }
+            } else {
+                setWishlistItems([]);
+            }
+        };
+
+        if (activeTab === 'wishlist') {
+            fetchWishlist();
         }
     }, [user, activeTab]);
 
@@ -115,9 +162,7 @@ const MyPage: React.FC = () => {
         }
     };
 
-    const wishlistItems = user?.wishlist
-        ? PRODUCTS.filter(p => user.wishlist?.includes(p.id))
-        : [];
+
 
     return (
         <div className="pt-24 pb-20 bg-gray-50 min-h-screen">
@@ -229,7 +274,7 @@ const MyPage: React.FC = () => {
                             {activeTab === 'orders' && <OrderHistory orders={orders.filter(o => o.status !== '주문취소')} loading={loading} onCancelOrder={handleCancelOrder} />}
                             {activeTab === 'membership' && <Membership />}
                             {activeTab === 'wishlist' && <Wishlist items={wishlistItems} loading={loading} />}
-                            {activeTab === 'ootd' && <MyOOTD posts={mockMyOOTD} loading={loading} />}
+                            {activeTab === 'ootd' && <MyOOTD posts={ootdPosts} loading={loading} />}
                             {activeTab === 'recent' && <RecentlyViewed />}
                             {activeTab === 'settings' && <Settings />}
                         </div>

@@ -26,6 +26,13 @@ service cloud.firestore {
       allow read, write: if isAuthenticated() && isOwner(userId);
     }
 
+    // Users: Public read, Owner write
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if isAuthenticated() && (isOwner(userId) || isAdmin());
+    }
+
     // OOTD Posts: Public read, Authenticated create, Owner/Admin update/delete
     match /ootd_posts/{postId} {
       allow read: if true;
