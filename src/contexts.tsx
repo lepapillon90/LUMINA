@@ -11,10 +11,15 @@ interface CartContextType {
     addToCart: (product: Product, quantity?: number) => void;
     removeFromCart: (id: number) => void;
     updateQuantity: (id: number, quantity: number) => void;
+    updateCartItem: (id: number, updates: Partial<CartItem>) => void;
     clearCart: () => void;
     isCartOpen: boolean;
     openCart: () => void;
     closeCart: () => void;
+    savedItems: CartItem[];
+    saveForLater: (id: number) => void;
+    moveToCart: (id: number) => void;
+    removeFromSaved: (id: number) => void;
 }
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
@@ -70,7 +75,34 @@ export const Providers: React.FC<{ children: ReactNode }> = ({ children }) => {
         }));
     };
 
+    const updateCartItem = (id: number, updates: Partial<CartItem>) => {
+        setCart(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
+    };
+
     const clearCart = () => setCart([]);
+
+    // Saved for Later State
+    const [savedItems, setSavedItems] = useState<CartItem[]>([]);
+
+    const saveForLater = (id: number) => {
+        const itemToSave = cart.find(item => item.id === id);
+        if (itemToSave) {
+            setSavedItems(prev => [...prev, itemToSave]);
+            removeFromCart(id);
+        }
+    };
+
+    const moveToCart = (id: number) => {
+        const itemToMove = savedItems.find(item => item.id === id);
+        if (itemToMove) {
+            addToCart(itemToMove, itemToMove.quantity);
+            setSavedItems(prev => prev.filter(item => item.id !== id));
+        }
+    };
+
+    const removeFromSaved = (id: number) => {
+        setSavedItems(prev => prev.filter(item => item.id !== id));
+    };
 
     // Auth State
     const [user, setUser] = useState<User | null>(null);
@@ -309,7 +341,7 @@ export const Providers: React.FC<{ children: ReactNode }> = ({ children }) => {
 
     return (
         <AuthContext.Provider value={{ user, loading, logout, toggleWishlist }}>
-            <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, clearCart, isCartOpen, openCart, closeCart }}>
+            <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, updateCartItem, clearCart, isCartOpen, openCart, closeCart, savedItems, saveForLater, moveToCart, removeFromSaved }}>
                 <GlobalModalContext.Provider value={{ showAlert, showConfirm: showConfirmWithRef }}>
                     {loading ? <div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div></div> : children}
 

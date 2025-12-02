@@ -193,6 +193,7 @@ const Login: React.FC = () => {
         <div className="mt-6 flex justify-between text-xs text-gray-500">
           <Link to="/forgot-password" className="hover:text-primary hover:underline">비밀번호 찾기</Link>
           <Link to="/signup" className="hover:text-primary hover:underline">회원가입</Link>
+          <Link to="/order-tracking" className="hover:text-primary hover:underline">비회원 주문 조회</Link>
         </div>
         <div className="mt-8 text-center text-xs text-gray-400 border-t pt-4">
           관리자 데모 계정: admin / admin123

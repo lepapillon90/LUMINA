@@ -8,6 +8,8 @@ import SEO from '../components/common/SEO';
 import Loading from '../components/common/Loading';
 import ConfirmModal from '../components/common/ConfirmModal';
 
+import RestockModal from '../components/features/products/RestockModal';
+
 const ProductDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const [product, setProduct] = useState<Product | null>(null);
@@ -18,6 +20,7 @@ const ProductDetail: React.FC = () => {
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
     const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
+    const [isRestockModalOpen, setIsRestockModalOpen] = useState(false);
     const { addToCart } = useCart();
 
     useEffect(() => {
@@ -64,14 +67,6 @@ const ProductDetail: React.FC = () => {
         if (product) {
             addToCart(product, quantity);
             setIsConfirmModalOpen(false);
-        }
-    };
-
-    const handleRestockRequest = () => {
-        const emailInput = prompt("재입고 알림을 받으실 이메일을 입력해주세요:");
-        if (emailInput) {
-            // In a real app, call emailService.sendRestockRequest(emailInput, product.id)
-            alert(`${emailInput}으로 재입고 알림이 신청되었습니다.`);
         }
     };
 
@@ -223,7 +218,7 @@ const ProductDetail: React.FC = () => {
                         <div className="flex gap-4 mb-10">
                             {product.stock === 0 ? (
                                 <button
-                                    onClick={handleRestockRequest}
+                                    onClick={() => setIsRestockModalOpen(true)}
                                     className="flex-1 bg-gray-800 text-white py-4 uppercase tracking-widest text-sm font-medium hover:bg-black transition duration-300"
                                 >
                                     재입고 알림 신청
@@ -372,8 +367,17 @@ const ProductDetail: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* Restock Modal */}
+            <RestockModal
+                isOpen={isRestockModalOpen}
+                onClose={() => setIsRestockModalOpen(false)}
+                productName={product.name}
+            />
         </div>
     );
 };
 
 export default ProductDetail;
+
+

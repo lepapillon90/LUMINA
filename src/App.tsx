@@ -23,6 +23,7 @@ import NotFound from './pages/NotFound';
 
 import Login from './pages/Auth/Login';
 import Signup from './pages/Auth/Signup';
+import GuestOrderTracking from './pages/GuestOrderTracking';
 const ForgotPassword = lazy(() => import('./pages/Auth/ForgotPassword'));
 
 // --- Layout Helper ---
@@ -54,6 +55,7 @@ const Layout: React.FC = () => {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/order-tracking" element={<GuestOrderTracking />} />
             <Route path="/mypage" element={<MyPage />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin/migrate" element={<DataMigration />} />

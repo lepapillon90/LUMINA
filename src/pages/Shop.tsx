@@ -19,6 +19,7 @@ const Shop: React.FC = () => {
   const [maxPrice, setMaxPrice] = useState<number>(100000);
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
   // Color filter removed
+  const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
 
   // Search & Sort
@@ -81,7 +82,8 @@ const Shop: React.FC = () => {
     // 3. Detailed Filters
     result = result.filter(p => p.price <= maxPrice)
       .filter(p => selectedMaterials.length === 0 || (p.material && selectedMaterials.includes(p.material)))
-      // Color filter logic removed
+      .filter(p => selectedMaterials.length === 0 || (p.material && selectedMaterials.includes(p.material)))
+      .filter(p => selectedColors.length === 0 || (p.colors && p.colors.some(c => selectedColors.includes(c))))
       .filter(p => selectedSizes.length === 0 || (p.sizes && p.sizes.some(s => selectedSizes.includes(s))));
 
     // 4. Sort
@@ -197,7 +199,26 @@ const Shop: React.FC = () => {
               </div>
             </div>
 
-            {/* Color Filter Removed */}
+            {/* Color */}
+            <div>
+              <h3 className="font-serif font-bold text-lg mb-4">Color</h3>
+              <div className="flex flex-wrap gap-2">
+                {["Gold", "Silver", "Rose Gold", "White", "Black", "Red", "Blue", "Green", "Pink"].map(color => (
+                  <button
+                    key={color}
+                    onClick={() => toggleFilter(color, selectedColors, setSelectedColors)}
+                    className={`w-6 h-6 rounded-full border transition-all ${selectedColors.includes(color) ? 'ring-2 ring-offset-2 ring-primary border-transparent' : 'border-gray-300 hover:border-gray-400'}`}
+                    style={{ backgroundColor: color.toLowerCase().replace(' ', '') === 'rose gold' ? '#B76E79' : color.toLowerCase() }}
+                    title={color}
+                  >
+                    {/* Checkmark for selected */}
+                    {selectedColors.includes(color) && (
+                      <span className="flex items-center justify-center h-full text-white text-[10px]">✓</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {/* Size */}
             <div>
@@ -256,7 +277,8 @@ const Shop: React.FC = () => {
                     setCategory('all');
                     setMaxPrice(100000);
                     setSelectedMaterials([]);
-                    // Color reset removed
+                    setSelectedMaterials([]);
+                    setSelectedColors([]);
                     setSelectedSizes([]);
                     setSearchQuery('');
                   }}

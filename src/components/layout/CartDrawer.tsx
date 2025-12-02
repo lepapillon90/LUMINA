@@ -37,6 +37,25 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                     </button>
                 </div>
 
+                {/* Free Shipping Gauge */}
+                {cart.length > 0 && (
+                    <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
+                        {total >= 50000 ? (
+                            <p className="text-sm text-green-600 font-medium mb-2">🎉 무료 배송이 적용되었습니다!</p>
+                        ) : (
+                            <p className="text-sm text-gray-600 mb-2">
+                                <span className="font-bold text-black">{(50000 - total).toLocaleString()}원</span> 더 담으면 <span className="text-primary font-bold">무료 배송!</span>
+                            </p>
+                        )}
+                        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-primary transition-all duration-500 ease-out"
+                                style={{ width: `${Math.min((total / 50000) * 100, 100)}%` }}
+                            ></div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Cart Items */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-6">
                     {cart.length === 0 ? (

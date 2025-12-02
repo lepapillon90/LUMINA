@@ -3,6 +3,14 @@ import { Link } from 'react-router-dom';
 import { getProducts } from '../services/productService';
 import { Product } from '../types';
 import RecommendedSection from '../components/features/home/RecommendedSection';
+import LookbookSection from '../components/features/home/LookbookSection';
+import PersonalizedRecommendation from '../components/features/home/PersonalizedRecommendation';
+import NewsletterPopup from '../components/features/home/NewsletterPopup';
+import PurchaseNotification from '../components/features/home/PurchaseNotification';
+import ReviewSlider from '../components/features/home/ReviewSlider';
+import MagazineSection from '../components/features/home/MagazineSection';
+import TimeSale from '../components/features/home/TimeSale';
+import InstagramFeed from '../components/features/home/InstagramFeed';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import SEO from '../components/common/SEO';
 
@@ -41,32 +49,41 @@ const Home: React.FC = () => {
       <SEO />
       {/* Hero Section */}
       <section className="relative h-screen w-full flex items-center justify-center overflow-hidden">
-        {/* Background Image - Updated to match the user request (Woman in white knit, cafe vibe) */}
-        <div
-          className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: 'url("/hero_banner.png")' }}
-        >
-          {/* Overlay - Slightly darkened for text readability */}
+        {/* Background Video */}
+        <div className="absolute inset-0 z-0">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            poster="/hero_poster.png"
+            className="w-full h-full object-cover"
+          >
+            <source src="https://videos.pexels.com/video-files/5359634/5359634-uhd_2560_1440_25fps.mp4" type="video/mp4" />
+            {/* Fallback Image */}
+            <img src="/hero_poster.png" alt="Hero Background" className="w-full h-full object-cover" />
+          </video>
+          {/* Overlay */}
           <div className="absolute inset-0 bg-black/30"></div>
         </div>
 
         {/* Content */}
         <div className="relative z-10 text-center text-white px-4">
-          <p className="text-sm md:text-base tracking-[0.3em] mb-4 uppercase text-[#FFD700] font-bold drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+          <p className="text-sm md:text-base tracking-[0.3em] mb-4 uppercase text-[#FFD700] font-bold drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] animate-fade-in-up">
             Timeless Elegance
           </p>
           <h1
-            className="text-5xl md:text-[64px] font-serif font-bold mb-6 drop-shadow-md"
+            className="text-5xl md:text-[64px] font-serif font-bold mb-6 drop-shadow-md animate-fade-in-up delay-100"
             style={{ fontFamily: "'Cinzel', serif" }}
           >
             LUMINA
           </h1>
-          <p className="text-lg font-light mb-8 max-w-lg mx-auto opacity-95 text-shadow">
+          <p className="text-lg font-light mb-8 max-w-lg mx-auto opacity-95 text-shadow animate-fade-in-up delay-200">
             내면의 빛을 발견하세요. 당신을 위해 수작업으로 완성된 모던 악세서리.
           </p>
           <Link
             to="/shop"
-            className="inline-block px-10 py-4 border border-white text-white hover:bg-white hover:text-black transition duration-300 uppercase tracking-widest text-sm backdrop-blur-sm"
+            className="inline-block px-10 py-4 border border-white text-white hover:bg-white hover:text-black transition duration-300 uppercase tracking-widest text-sm backdrop-blur-sm animate-fade-in-up delay-300"
           >
             컬렉션 보기
           </Link>
@@ -139,6 +156,12 @@ const Home: React.FC = () => {
         </div>
       </section>
 
+      {/* Lookbook Section */}
+      <LookbookSection />
+
+      {/* Time Sale */}
+      <TimeSale />
+
       {/* Mid Banner */}
       <section className="w-full">
         <img
@@ -148,11 +171,23 @@ const Home: React.FC = () => {
         />
       </section>
 
+      {/* Personalized Recommendation */}
+      <PersonalizedRecommendation />
+
       {/* Recommended Section */}
       <RecommendedSection />
 
       {/* Trending OOTD Section */}
       <TrendingOOTDSection />
+
+      {/* Review Slider */}
+      <ReviewSlider />
+
+      {/* Magazine Section */}
+      <MagazineSection />
+
+      {/* Instagram Feed */}
+      <InstagramFeed />
 
       {/* Brand Story Snippet */}
       <section className="bg-secondary py-20">
@@ -164,6 +199,11 @@ const Home: React.FC = () => {
           <img src="/sub_banner.png" alt="Jewelry Detail" className="w-full h-64 object-cover object-center mt-8 grayscale opacity-80 hover:grayscale-0 transition duration-700" />
         </div>
       </section>
+
+      {/* Newsletter Popup */}
+      <NewsletterPopup />
+      {/* Purchase Notification */}
+      <PurchaseNotification />
     </div>
   );
 };
