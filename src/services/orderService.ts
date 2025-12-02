@@ -129,7 +129,7 @@ export const getOrders = async (userId: string): Promise<Order[]> => {
     }
 };
 
-export const updateOrderStatuses = async (orderIds: string[], status: string, adminUser: { uid: string, username: string }): Promise<void> => {
+export const updateOrderStatuses = async (orderIds: string[], status: string, adminUser?: { uid: string, username: string }): Promise<void> => {
     console.log("Updating orders:", orderIds, "to status:", status);
     try {
         const batch = writeBatch(db);
@@ -139,14 +139,16 @@ export const updateOrderStatuses = async (orderIds: string[], status: string, ad
         });
         await batch.commit();
 
-        // Log the action
-        await logAction(
-            adminUser.uid,
-            adminUser.username,
-            'UPDATE_ORDER_STATUS',
-            `${orderIds.length} orders`,
-            `Status changed to ${status} for orders: ${orderIds.join(', ')}`
-        );
+        // Log the action if adminUser is provided
+        if (adminUser) {
+            await logAction(
+                adminUser.uid,
+                adminUser.username,
+                'UPDATE_ORDER_STATUS',
+                `${orderIds.length} orders`,
+                `Status changed to ${status} for orders: ${orderIds.join(', ')}`
+            );
+        }
 
         console.log("Batch update successful");
     } catch (error) {

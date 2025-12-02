@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Order } from '../../types';
-import { Package, ChevronRight } from 'lucide-react';
+import { Order, Product } from '../../types';
+import { Package, ChevronRight, Download, RefreshCw, Truck } from 'lucide-react';
 import ConfirmModal from '../common/ConfirmModal';
+import { useCart } from '../../contexts';
+import { useGlobalModal } from '../../contexts/GlobalModalContext';
 
 interface OrderHistoryProps {
     orders: Order[];
@@ -12,6 +14,8 @@ interface OrderHistoryProps {
 const OrderHistory: React.FC<OrderHistoryProps> = ({ orders, loading, onCancelOrder }) => {
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+    const { addToCart } = useCart();
+    const { showAlert } = useGlobalModal();
 
     const handleCancelClick = (orderId: string) => {
         setSelectedOrderId(orderId);
@@ -24,6 +28,23 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ orders, loading, onCancelOr
         }
         setIsConfirmModalOpen(false);
         setSelectedOrderId(null);
+    };
+
+    const handleBuyAgain = (items: any[]) => {
+        items.forEach(item => addToCart(item, item.quantity || 1));
+        showAlert("상품이 장바구니에 담겼습니다.", "장바구니 추가");
+    };
+
+    const handleDownloadReceipt = (orderId: string) => {
+        // Simulate PDF download
+        showAlert(`영수증(PDF)이 다운로드되었습니다. (주문번호: ${orderId})`, "다운로드 완료");
+    };
+
+    const getDeliveryProgress = (status: string) => {
+        const steps = ['입금대기', '결제완료', '배송준비', '배송중', '배송완료'];
+        const currentIdx = steps.indexOf(status);
+        if (currentIdx === -1) return 0;
+        return ((currentIdx + 1) / steps.length) * 100;
     };
 
     if (loading) {
@@ -70,6 +91,25 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ orders, loading, onCancelOr
                             </button>
                         </div>
                     </div>
+
+                    {/* Delivery Tracking Bar */}
+                    {['결제완료', '배송준비', '배송중', '배송완료'].includes(order.status) && (
+                        <div className="px-6 py-4 border-b border-gray-100">
+                            <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+                                <span>결제완료</span>
+                                <span>배송준비</span>
+                                <span>배송중</span>
+                                <span>배송완료</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div
+                                    className="bg-primary h-2 rounded-full transition-all duration-500"
+                                    style={{ width: `${getDeliveryProgress(order.status)}%` }}
+                                ></div>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="p-6">
                         <div className="space-y-4">
                             {order.items && order.items.map((item, idx) => (
@@ -89,8 +129,24 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ orders, loading, onCancelOr
                             ))}
                         </div>
                         <div className="mt-6 flex justify-between items-center pt-4 border-t border-gray-100">
-                            <span className="text-sm font-medium text-gray-900">총 결제금액</span>
-                            <span className="text-lg font-bold text-primary">₩{order.total.toLocaleString()}</span>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => handleDownloadReceipt(order.id)}
+                                    className="flex items-center gap-1 text-xs text-gray-500 hover:text-black border border-gray-200 px-3 py-1.5 rounded transition"
+                                >
+                                    <Download size={14} /> 영수증
+                                </button>
+                                <button
+                                    onClick={() => handleBuyAgain(order.items)}
+                                    className="flex items-center gap-1 text-xs text-primary hover:text-primary-dark border border-primary/30 px-3 py-1.5 rounded transition bg-primary/5"
+                                >
+                                    <RefreshCw size={14} /> 재구매
+                                </button>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium text-gray-900">총 결제금액</span>
+                                <span className="text-lg font-bold text-primary">₩{order.total.toLocaleString()}</span>
+                            </div>
                         </div>
                     </div>
                 </div>

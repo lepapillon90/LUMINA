@@ -6,9 +6,11 @@ import OrderHistory from '../components/MyPage/OrderHistory';
 import Wishlist from '../components/MyPage/Wishlist';
 import MyOOTD from '../components/MyPage/MyOOTD';
 import RecentlyViewed from '../components/MyPage/RecentlyViewed';
+import Membership from '../components/MyPage/Membership';
+import Settings from '../components/MyPage/Settings';
 import SEO from '../components/common/SEO';
-import { User, Package, Heart, Camera, Clock, LogOut, Settings, LayoutDashboard } from 'lucide-react';
-import { Order, Product, OOTDPost } from '../types';
+import { User, Package, Heart, Camera, Clock, LogOut, Settings as SettingsIcon, LayoutDashboard, Gift } from 'lucide-react';
+import { Order, OOTDPost } from '../types';
 import { PRODUCTS } from '../constants';
 
 import { getOrders, updateOrderStatuses } from '../services/orderService';
@@ -25,7 +27,7 @@ const MyPage: React.FC = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const { showAlert } = useGlobalModal();
-    const [activeTab, setActiveTab] = useState<'orders' | 'wishlist' | 'ootd' | 'recent'>('orders');
+    const [activeTab, setActiveTab] = useState<'orders' | 'wishlist' | 'ootd' | 'recent' | 'membership' | 'settings'>('orders');
     const [loading, setLoading] = useState(false);
     const [orders, setOrders] = useState<Order[]>([]);
 
@@ -164,6 +166,13 @@ const MyPage: React.FC = () => {
                                     <span className="font-medium">주문 내역</span>
                                 </button>
                                 <button
+                                    onClick={() => setActiveTab('membership')}
+                                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-md transition-colors ${activeTab === 'membership' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                                >
+                                    <Gift size={18} />
+                                    <span className="font-medium">멤버십 & 혜택</span>
+                                </button>
+                                <button
                                     onClick={() => setActiveTab('wishlist')}
                                     className={`w-full flex items-center space-x-3 px-4 py-3 rounded-md transition-colors ${activeTab === 'wishlist' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-50'}`}
                                 >
@@ -187,8 +196,11 @@ const MyPage: React.FC = () => {
                             </nav>
 
                             <div className="border-t border-gray-100 mt-6 pt-6 space-y-1">
-                                <button className="w-full flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-md transition-colors">
-                                    <Settings size={18} />
+                                <button
+                                    onClick={() => setActiveTab('settings')}
+                                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-md transition-colors ${activeTab === 'settings' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                                >
+                                    <SettingsIcon size={18} />
                                     <span className="font-medium">계정 설정</span>
                                 </button>
                                 <button
@@ -207,15 +219,19 @@ const MyPage: React.FC = () => {
                         <div className="bg-white rounded-lg shadow-sm p-8 min-h-[600px]">
                             <h2 className="text-2xl font-serif text-primary mb-8 pb-4 border-b border-gray-100">
                                 {activeTab === 'orders' && '주문 내역'}
+                                {activeTab === 'membership' && '멤버십 & 혜택'}
                                 {activeTab === 'wishlist' && '위시리스트'}
                                 {activeTab === 'ootd' && 'My OOTD'}
                                 {activeTab === 'recent' && '최근 본 상품'}
+                                {activeTab === 'settings' && '계정 설정'}
                             </h2>
 
                             {activeTab === 'orders' && <OrderHistory orders={orders.filter(o => o.status !== '주문취소')} loading={loading} onCancelOrder={handleCancelOrder} />}
+                            {activeTab === 'membership' && <Membership />}
                             {activeTab === 'wishlist' && <Wishlist items={wishlistItems} loading={loading} />}
                             {activeTab === 'ootd' && <MyOOTD posts={mockMyOOTD} loading={loading} />}
                             {activeTab === 'recent' && <RecentlyViewed />}
+                            {activeTab === 'settings' && <Settings />}
                         </div>
                     </div>
                 </div>
