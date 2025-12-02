@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Plus, Edit3, Trash2 } from 'lucide-react';
-import { Product } from '../../../types';
+import { Package, Plus, Edit3, Trash2, Settings } from 'lucide-react';
+import { Product, User } from '../../../types';
 import ProductModal from './ProductModal';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
 import { getProducts, createProduct, updateProduct, deleteProduct } from '../../../services/productService';
@@ -10,9 +10,10 @@ import { useToast } from '../../../contexts/ToastContext';
 interface ProductManagerProps {
     products: Product[];
     setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
+    user: User | null;
 }
 
-const ProductManager: React.FC<ProductManagerProps> = ({ products, setProducts }) => {
+const ProductManager: React.FC<ProductManagerProps> = ({ products, setProducts, user }) => {
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(false);
@@ -20,6 +21,9 @@ const ProductManager: React.FC<ProductManagerProps> = ({ products, setProducts }
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [deletingProductId, setDeletingProductId] = useState<number | null>(null);
     const { showToast } = useToast();
+
+    const [lowStockThreshold, setLowStockThreshold] = useState(10);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     // Fetch products from Firestore on component mount
     useEffect(() => {
@@ -41,6 +45,10 @@ const ProductManager: React.FC<ProductManagerProps> = ({ products, setProducts }
     };
 
     const handleSaveProduct = async (product: Product) => {
+        if (!user) {
+            showToast('사용자 정보를 찾을 수 없습니다.', 'error');
+            return;
+        }
         try {
             if (editingProduct) {
                 // Update existing product
@@ -55,13 +63,13 @@ const ProductManager: React.FC<ProductManagerProps> = ({ products, setProducts }
                     }
                 }
 
-                await updateProduct(product.id, product);
+                await updateProduct(product.id, product, { uid: user.uid, username: user.username });
                 setProducts(prev => prev.map(p => p.id === product.id ? product : p));
                 showToast('상품이 수정되었습니다.', 'success');
             } else {
                 // Create new product
                 const { id, ...productData } = product;
-                const newProduct = await createProduct(productData);
+                const newProduct = await createProduct(productData, { uid: user.uid, username: user.username });
                 setProducts(prev => [...prev, newProduct]);
                 showToast('상품이 등록되었습니다.', 'success');
             }
@@ -91,13 +99,17 @@ const ProductManager: React.FC<ProductManagerProps> = ({ products, setProducts }
 
     const confirmDelete = async () => {
         if (deletingProductId === null) return;
+        if (!user) {
+            showToast('사용자 정보를 찾을 수 없습니다.', 'error');
+            return;
+        }
 
         try {
             // Find the product to get its image URLs
             const productToDelete = products.find(p => p.id === deletingProductId);
 
             // Delete from Firestore first
-            await deleteProduct(deletingProductId);
+            await deleteProduct(deletingProductId, { uid: user.uid, username: user.username });
 
             // Delete main image from Storage
             if (productToDelete?.image) {
@@ -170,15 +182,59 @@ const ProductManager: React.FC<ProductManagerProps> = ({ products, setProducts }
                 <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                     <Package size={20} /> 상품 관리
                 </h2>
-                <button
-                    onClick={() => { setEditingProduct(null); setIsProductModalOpen(true); }}
-                    className="bg-black text-white px-4 py-2 rounded-sm text-sm hover:bg-gray-800 transition flex items-center gap-2"
-                >
-                    <Plus size={16} /> 상품 등록
-                </button>
+                <div className="flex gap-2">
+                    <div className="relative">
+                        <button
+                            onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                            className="bg-white border border-gray-300 text-gray-700 px-3 py-2 rounded-sm text-sm hover:bg-gray-50 transition flex items-center gap-2"
+                        >
+                            <Settings size={16} /> 설정
+                        </button>
+                        {isSettingsOpen && (
+                            <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-xl z-20 p-4">
+                                <h3 className="font-bold text-gray-800 mb-2 text-sm">재고 알림 설정</h3>
+                                <div className="flex items-center justify-between gap-2">
+                                    <label className="text-xs text-gray-600">품절 임박 기준:</label>
+                                    <div className="flex items-center gap-1">
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            value={lowStockThreshold}
+                                            onChange={(e) => setLowStockThreshold(Math.max(1, parseInt(e.target.value) || 1))}
+                                            className="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-right"
+                                        />
+                                        <span className="text-xs text-gray-500">개 이하</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    <button
+                        onClick={() => { setEditingProduct(null); setIsProductModalOpen(true); }}
+                        className="bg-black text-white px-4 py-2 rounded-sm text-sm hover:bg-gray-800 transition flex items-center gap-2"
+                    >
+                        <Plus size={16} /> 상품 등록
+                    </button>
+                </div>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div className="p-4 border-b border-gray-200 flex justify-end">
+                    <label className="flex items-center space-x-2 text-sm text-gray-700 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            className="rounded text-red-500 focus:ring-red-500"
+                            onChange={(e) => {
+                                if (e.target.checked) {
+                                    setProducts(prev => prev.filter(p => (p.stock || 0) <= lowStockThreshold));
+                                } else {
+                                    fetchProducts(); // Reload all products
+                                }
+                            }}
+                        />
+                        <span className="font-medium">재고 부족 상품만 보기 ({lowStockThreshold}개 이하)</span>
+                    </label>
+                </div>
                 <table className="w-full text-left text-sm">
                     <thead className="bg-white text-gray-600 border-b border-gray-200">
                         <tr>
@@ -198,7 +254,7 @@ const ProductManager: React.FC<ProductManagerProps> = ({ products, setProducts }
                             </tr>
                         ) : (
                             products.map(product => (
-                                <tr key={product.id} className="hover:bg-gray-50 transition group">
+                                <tr key={product.id} className={`hover:bg-gray-50 transition group ${(product.stock || 0) <= lowStockThreshold ? 'bg-red-50' : ''}`}>
                                     <td className="px-6 py-4 font-medium text-gray-800">
                                         <div className="flex items-center gap-3">
                                             <img
@@ -210,11 +266,18 @@ const ProductManager: React.FC<ProductManagerProps> = ({ products, setProducts }
                                                 }}
                                             />
                                             {product.name}
+                                            {(product.stock || 0) <= lowStockThreshold && (
+                                                <span className="text-xs text-red-600 font-bold border border-red-200 px-1.5 py-0.5 rounded bg-white">
+                                                    품절임박
+                                                </span>
+                                            )}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-gray-600">₩{product.price.toLocaleString()}</td>
                                     <td className="px-6 py-4 text-gray-500">{product.category}</td>
-                                    <td className="px-6 py-4 text-gray-600">{product.stock}</td>
+                                    <td className={`px-6 py-4 font-bold ${(product.stock || 0) <= lowStockThreshold ? 'text-red-600' : 'text-gray-600'}`}>
+                                        {product.stock}
+                                    </td>
                                     <td className="px-6 py-4 text-right">
                                         <button
                                             onClick={() => { setEditingProduct(product); setIsProductModalOpen(true); }}

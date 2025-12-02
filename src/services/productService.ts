@@ -92,7 +92,14 @@ export const getNewProducts = async (): Promise<Product[]> => {
 /**
  * Create a new product in Firestore
  */
-export const createProduct = async (product: Omit<Product, 'id'>): Promise<Product> => {
+import { logAction } from './auditService';
+
+// ... existing imports
+
+/**
+ * Create a new product in Firestore
+ */
+export const createProduct = async (product: Omit<Product, 'id'>, adminUser: { uid: string, username: string }): Promise<Product> => {
     try {
         // Generate new ID using timestamp
         const newId = Date.now().toString();
@@ -106,6 +113,15 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
 
         await setDoc(docRef, productData);
 
+        // Log the action
+        await logAction(
+            adminUser.uid,
+            adminUser.username,
+            'CREATE_PRODUCT',
+            product.name,
+            `Created product: ${product.name} (${newId})`
+        );
+
         return { id: newId as any, ...product };
     } catch (error) {
         console.error('Error creating product:', error);
@@ -116,7 +132,7 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
 /**
  * Update an existing product in Firestore
  */
-export const updateProduct = async (id: number | string, updates: Partial<Product>): Promise<void> => {
+export const updateProduct = async (id: number | string, updates: Partial<Product>, adminUser: { uid: string, username: string }): Promise<void> => {
     try {
         const docRef = doc(db, PRODUCTS_COLLECTION, id.toString());
 
@@ -129,6 +145,15 @@ export const updateProduct = async (id: number | string, updates: Partial<Produc
         delete (updateData as any).id;
 
         await updateDoc(docRef, updateData);
+
+        // Log the action
+        await logAction(
+            adminUser.uid,
+            adminUser.username,
+            'UPDATE_PRODUCT',
+            updates.name || `Product ${id}`,
+            `Updated product ${id} with fields: ${Object.keys(updates).join(', ')}`
+        );
     } catch (error) {
         console.error('Error updating product:', error);
         throw error;
@@ -138,10 +163,19 @@ export const updateProduct = async (id: number | string, updates: Partial<Produc
 /**
  * Delete a product from Firestore
  */
-export const deleteProduct = async (id: number | string): Promise<void> => {
+export const deleteProduct = async (id: number | string, adminUser: { uid: string, username: string }): Promise<void> => {
     try {
         const docRef = doc(db, PRODUCTS_COLLECTION, id.toString());
         await deleteDoc(docRef);
+
+        // Log the action
+        await logAction(
+            adminUser.uid,
+            adminUser.username,
+            'DELETE_PRODUCT',
+            `Product ${id}`,
+            `Deleted product with ID: ${id}`
+        );
     } catch (error) {
         console.error('Error deleting product:', error);
         throw error;

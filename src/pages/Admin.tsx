@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Home, ShoppingCart, Package, Users, MessageCircle, FileText, Palette,
-  Percent, LineChart, BarChart2, Grid, Shield, Settings, LogOut
+  Percent, LineChart, BarChart2, Grid, Shield, Settings, LogOut, Menu, X
 } from 'lucide-react';
 import { useAuth } from '../contexts';
 import { Navigate } from 'react-router-dom';
@@ -18,6 +18,8 @@ import ProductManager from '../components/Admin/Products/ProductManager';
 import CustomerManager from '../components/Admin/Customers/CustomerManager';
 import SystemManager from '../components/Admin/System/SystemManager';
 import DesignManager from '../components/Admin/Design/DesignManager';
+import CSManager from '../components/Admin/CS/CSManager';
+import AnalyticsManager from '../components/Admin/Analytics/AnalyticsManager';
 
 // --- Main Admin Component ---
 
@@ -41,6 +43,7 @@ const MENU_ITEMS = [
 const Admin: React.FC = () => {
   const { user, logout, loading } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('home');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Data State - ProductManager will fetch from Firestore
   const [products, setProducts] = useState<Product[]>([]);
@@ -58,17 +61,52 @@ const Admin: React.FC = () => {
         }
       };
       fetchOrders();
+    } else if (activeTab === 'products' || activeTab === 'design') {
+      const fetchProducts = async () => {
+        try {
+          const { getProducts } = await import('../services/productService');
+          const data = await getProducts();
+          setProducts(data);
+        } catch (error) {
+          console.error("Failed to fetch products:", error);
+        }
+      };
+      fetchProducts();
+    } else if (activeTab === 'customers') {
+      const fetchCustomers = async () => {
+        try {
+          const { getCustomers } = await import('../services/customerService');
+          const data = await getCustomers();
+          setCustomers(data);
+        } catch (error) {
+          console.error("Failed to fetch customers:", error);
+        }
+      };
+      fetchCustomers();
     }
   }, [activeTab]);
 
   // Design & Promotion State
-  const [banners, setBanners] = useState<Banner[]>([
-    { id: 1, imageUrl: 'https://picsum.photos/1200/400?random=1', link: '/promotion/winter', startDate: '2023-11-01', endDate: '2023-12-31', isActive: true, position: 'main_hero', title: 'Winter Collection' },
-    { id: 2, imageUrl: 'https://picsum.photos/1200/400?random=2', link: '/new-arrivals', startDate: '2023-11-15', endDate: '2023-12-15', isActive: true, position: 'main_hero', title: 'New Arrivals' },
-  ]);
-  const [promotions, setPromotions] = useState<Promotion[]>([
-    { id: 1, title: '겨울 시즌 오프', description: '최대 50% 할인', bannerImage: 'https://picsum.photos/800/400?random=3', productIds: [1, 3, 5], startDate: '2023-12-01', endDate: '2023-12-31', isActive: true }
-  ]);
+  const [banners, setBanners] = useState<Banner[]>([]);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
+
+  useEffect(() => {
+    if (activeTab === 'design') {
+      const fetchDesignData = async () => {
+        try {
+          const [fetchedBanners, fetchedPromotions] = await Promise.all([
+            import('../services/designService').then(module => module.getBanners()),
+            import('../services/designService').then(module => module.getPromotions())
+          ]);
+          setBanners(fetchedBanners);
+          setPromotions(fetchedPromotions);
+        } catch (error) {
+          console.error("Failed to fetch design data:", error);
+        }
+      };
+      fetchDesignData();
+    }
+  }, [activeTab]);
 
   // Drag & Drop State
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
@@ -138,9 +176,20 @@ const Admin: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-gray-900">
+      {/* Mobile Header */}
+      <div className="md:hidden bg-white border-b border-gray-200 p-4 flex items-center justify-between z-30 sticky top-0">
+        <h1 className="text-xl font-serif font-bold tracking-wider">LUMINA ADMIN</h1>
+        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-gray-600">
+          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </div>
+
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col z-20">
-        <div className="h-16 flex items-center px-6 border-b border-gray-100">
+      <aside className={`
+        fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:h-screen
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        <div className="h-16 flex items-center px-6 border-b border-gray-100 hidden md:flex">
           <h1 className="text-xl font-serif font-bold tracking-wider">LUMINA ADMIN</h1>
         </div>
 
@@ -152,7 +201,10 @@ const Admin: React.FC = () => {
               return (
                 <li key={item.id}>
                   <button
-                    onClick={() => setActiveTab(item.id as Tab)}
+                    onClick={() => {
+                      setActiveTab(item.id as Tab);
+                      setIsMobileMenuOpen(false);
+                    }}
                     className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-sm transition-all duration-200
                       ${isActive
                         ? 'bg-gray-50 text-black font-bold border-l-2 border-black'
@@ -187,13 +239,21 @@ const Admin: React.FC = () => {
         </div>
       </aside>
 
+      {/* Overlay for mobile */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
         <div className="p-8">
           {activeTab === 'home' && <Dashboard orders={orders} products={products} />}
-          {activeTab === 'orders' && <OrderManager orders={orders} setOrders={setOrders} />}
-          {activeTab === 'products' && <ProductManager products={products} setProducts={setProducts} />}
-          {activeTab === 'customers' && <CustomerManager customers={customers} setCustomers={setCustomers} />}
+          {activeTab === 'orders' && <OrderManager orders={orders} setOrders={setOrders} user={user} />}
+          {activeTab === 'products' && <ProductManager products={products} setProducts={setProducts} user={user} />}
+          {activeTab === 'customers' && <CustomerManager customers={customers} setCustomers={setCustomers} user={user} />}
           {activeTab === 'system' && <SystemManager user={user} />}
           {activeTab === 'design' && (
             <DesignManager
@@ -206,18 +266,17 @@ const Admin: React.FC = () => {
               onDragOver={handleDragOver}
               onDragEnd={handleDragEnd}
               draggedItemIndex={draggedItemIndex}
+              user={user}
             />
           )}
-          {activeTab === 'messages' && renderPlaceholder('메시지 관리')}
+          {activeTab === 'messages' && <CSManager />}
           {activeTab === 'board' && renderPlaceholder('게시판 관리')}
           {activeTab === 'promotion' && renderPlaceholder('프로모션 관리')}
-          {activeTab === 'analytics' && renderPlaceholder('애널리틱스')}
+          {activeTab === 'analytics' && <AnalyticsManager />}
           {activeTab === 'stats' && renderPlaceholder('통계')}
           {activeTab === 'excel' && renderPlaceholder('통합엑셀')}
         </div>
       </main>
-
-
     </div>
   );
 };

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { ImageIcon, Plus, Edit3, Trash2, LinkIcon, Calendar, GripVertical, Percent, Package, ExternalLink } from 'lucide-react';
-import { Banner, Promotion, Product } from '../../../types';
+import { ImageIcon, Plus, Edit3, Trash2, LinkIcon, Calendar, GripVertical, Percent, Package, ExternalLink, Save } from 'lucide-react';
+import { Banner, Promotion, Product, User } from '../../../types';
+import { createBanner, updateBanner, deleteBanner, createPromotion, updatePromotion, deletePromotion, updateProductOrder } from '../../../services/designService';
+import { useGlobalModal } from '../../../contexts';
 
 interface DesignManagerProps {
     banners: Banner[];
@@ -12,6 +14,7 @@ interface DesignManagerProps {
     onDragOver: (e: React.DragEvent, index: number) => void;
     onDragEnd: () => void;
     draggedItemIndex: number | null;
+    user: User | null;
 }
 
 const DesignManager: React.FC<DesignManagerProps> = ({
@@ -23,12 +26,140 @@ const DesignManager: React.FC<DesignManagerProps> = ({
     onDragStart,
     onDragOver,
     onDragEnd,
-    draggedItemIndex
+    draggedItemIndex,
+    user
 }) => {
+    const { showAlert, showConfirm } = useGlobalModal();
     const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
     const [isPromotionModalOpen, setIsPromotionModalOpen] = useState(false);
     const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
     const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(null);
+    const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
+
+    // --- Banner Handlers ---
+    const handleSaveBanner = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!user) {
+            await showAlert('사용자 정보를 찾을 수 없습니다.', '오류');
+            return;
+        }
+
+        const formData = new FormData(e.currentTarget);
+        const bannerData = {
+            title: formData.get('title') as string,
+            imageUrl: formData.get('imageUrl') as string,
+            link: formData.get('link') as string,
+            startDate: formData.get('startDate') as string,
+            endDate: formData.get('endDate') as string,
+            position: 'main_hero' as const, // Default for now
+            isActive: true
+        };
+
+        try {
+            if (editingBanner) {
+                await updateBanner(editingBanner.id, bannerData, { uid: user.uid, username: user.username });
+                setBanners(prev => prev.map(b => b.id === editingBanner.id ? { ...b, ...bannerData } : b));
+                await showAlert('배너가 수정되었습니다.', '성공');
+            } else {
+                const newBanner = await createBanner(bannerData, { uid: user.uid, username: user.username });
+                setBanners(prev => [...prev, newBanner]);
+                await showAlert('배너가 등록되었습니다.', '성공');
+            }
+            setIsBannerModalOpen(false);
+        } catch (error: any) {
+            console.error(error);
+            await showAlert('배너 저장에 실패했습니다. ' + (error.message || ''), '오류');
+        }
+    };
+
+    const handleDeleteBanner = async (id: string | number) => {
+        if (!user) {
+            await showAlert('사용자 정보를 찾을 수 없습니다.', '오류');
+            return;
+        }
+        if (!await showConfirm('정말 이 배너를 삭제하시겠습니까?')) return;
+
+        try {
+            await deleteBanner(id, { uid: user.uid, username: user.username });
+            setBanners(prev => prev.filter(b => b.id !== id));
+            await showAlert('배너가 삭제되었습니다.', '성공');
+        } catch (error) {
+            console.error(error);
+            await showAlert('배너 삭제에 실패했습니다.', '오류');
+        }
+    };
+
+    // --- Promotion Handlers ---
+    const handleSavePromotion = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!user) {
+            await showAlert('사용자 정보를 찾을 수 없습니다.', '오류');
+            return;
+        }
+
+        const formData = new FormData(e.currentTarget);
+        // Handle product selection manually or via form data if implemented
+        // For simplicity, we'll assume productIds are handled separately or just mock for now
+        const productIds: number[] = selectedProductIds;
+
+        const promotionData = {
+            title: formData.get('title') as string,
+            description: formData.get('description') as string,
+            bannerImage: formData.get('bannerImage') as string,
+            startDate: formData.get('startDate') as string,
+            endDate: formData.get('endDate') as string,
+            productIds: productIds,
+            isActive: true
+        };
+
+        try {
+            if (editingPromotion) {
+                await updatePromotion(editingPromotion.id, promotionData, { uid: user.uid, username: user.username });
+                setPromotions(prev => prev.map(p => p.id === editingPromotion.id ? { ...p, ...promotionData } : p));
+                await showAlert('기획전이 수정되었습니다.', '성공');
+            } else {
+                const newPromotion = await createPromotion(promotionData, { uid: user.uid, username: user.username });
+                setPromotions(prev => [...prev, newPromotion]);
+                await showAlert('기획전이 생성되었습니다.', '성공');
+            }
+            setIsPromotionModalOpen(false);
+        } catch (error: any) {
+            console.error(error);
+            await showAlert('기획전 저장에 실패했습니다. ' + (error.message || ''), '오류');
+        }
+    };
+
+    const handleDeletePromotion = async (id: string | number) => {
+        if (!user) {
+            await showAlert('사용자 정보를 찾을 수 없습니다.', '오류');
+            return;
+        }
+        if (!await showConfirm('정말 이 기획전을 삭제하시겠습니까?')) return;
+
+        try {
+            await deletePromotion(id, { uid: user.uid, username: user.username });
+            setPromotions(prev => prev.filter(p => p.id !== id));
+            await showAlert('기획전이 삭제되었습니다.', '성공');
+        } catch (error) {
+            console.error(error);
+            await showAlert('기획전 삭제에 실패했습니다.', '오류');
+        }
+    };
+
+    // --- Product Order Handler ---
+    const handleSaveProductOrder = async () => {
+        if (!user) {
+            await showAlert('사용자 정보를 찾을 수 없습니다.', '오류');
+            return;
+        }
+        try {
+            await updateProductOrder(products, { uid: user.uid, username: user.username });
+            await showAlert('진열 순서가 저장되었습니다.', '성공');
+        } catch (error: any) {
+            console.error(error);
+            await showAlert('순서 저장 실패: ' + (error.message || ''), '오류');
+        }
+    };
 
     return (
         <div className="space-y-8">
@@ -53,8 +184,8 @@ const DesignManager: React.FC<DesignManagerProps> = ({
                             <div className="relative h-40 bg-gray-100">
                                 <img src={banner.imageUrl} alt={banner.title} className="w-full h-full object-cover" />
                                 <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition">
-                                    <button className="p-1.5 bg-white rounded-full shadow-sm hover:text-blue-600"><Edit3 size={14} /></button>
-                                    <button className="p-1.5 bg-white rounded-full shadow-sm hover:text-red-600"><Trash2 size={14} /></button>
+                                    <button onClick={() => { setEditingBanner(banner); setIsBannerModalOpen(true); }} className="p-1.5 bg-white rounded-full shadow-sm hover:text-blue-600"><Edit3 size={14} /></button>
+                                    <button onClick={() => handleDeleteBanner(banner.id)} className="p-1.5 bg-white rounded-full shadow-sm hover:text-red-600"><Trash2 size={14} /></button>
                                 </div>
                                 <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
                                     {banner.position === 'main_hero' ? '메인 히어로' : '팝업'}
@@ -83,12 +214,15 @@ const DesignManager: React.FC<DesignManagerProps> = ({
                     <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                         <GripVertical size={20} /> 진열 관리 (추천 상품 순서)
                     </h2>
-                    <button className="text-sm text-blue-600 hover:underline">순서 저장</button>
+                    <button onClick={handleSaveProductOrder} className="flex items-center space-x-1 text-sm text-blue-600 hover:text-blue-800 font-medium">
+                        <Save size={16} />
+                        <span>순서 저장</span>
+                    </button>
                 </div>
 
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                     <div className="p-4 bg-gray-50 border-b border-gray-200 text-xs text-gray-500">
-                        * 드래그하여 순서를 변경할 수 있습니다.
+                        * 드래그하여 순서를 변경할 수 있습니다. 변경 후 반드시 '순서 저장' 버튼을 눌러주세요.
                     </div>
                     <ul className="divide-y divide-gray-100">
                         {products.slice(0, 5).map((product, index) => (
@@ -121,7 +255,7 @@ const DesignManager: React.FC<DesignManagerProps> = ({
                         <Percent size={20} /> 기획전 관리
                     </h2>
                     <button
-                        onClick={() => { setEditingPromotion(null); setIsPromotionModalOpen(true); }}
+                        onClick={() => { setEditingPromotion(null); setSelectedProductIds([]); setIsPromotionModalOpen(true); }}
                         className="flex items-center space-x-2 bg-slate-700 text-white px-4 py-2 rounded-sm text-sm hover:bg-slate-800 transition"
                     >
                         <Plus size={16} />
@@ -142,8 +276,8 @@ const DesignManager: React.FC<DesignManagerProps> = ({
                                         <p className="text-gray-600 text-sm mb-3">{promo.description}</p>
                                     </div>
                                     <div className="flex space-x-2">
-                                        <button className="text-gray-400 hover:text-blue-600"><Edit3 size={18} /></button>
-                                        <button className="text-gray-400 hover:text-red-600"><Trash2 size={18} /></button>
+                                        <button onClick={() => { setEditingPromotion(promo); setSelectedProductIds(promo.productIds); setIsPromotionModalOpen(true); }} className="text-gray-400 hover:text-blue-600"><Edit3 size={18} /></button>
+                                        <button onClick={() => handleDeletePromotion(promo.id)} className="text-gray-400 hover:text-red-600"><Trash2 size={18} /></button>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
@@ -171,27 +305,27 @@ const DesignManager: React.FC<DesignManagerProps> = ({
                         <h2 className="text-lg font-bold mb-6 text-gray-800 border-b pb-2">
                             {editingBanner ? '배너 수정' : '배너 등록'}
                         </h2>
-                        <form onSubmit={(e) => { e.preventDefault(); setIsBannerModalOpen(false); }} className="space-y-4">
+                        <form onSubmit={handleSaveBanner} className="space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-gray-600 mb-1">제목</label>
-                                <input defaultValue={editingBanner?.title} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" />
+                                <input name="title" defaultValue={editingBanner?.title} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" required />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-gray-600 mb-1">이미지 URL</label>
-                                <input defaultValue={editingBanner?.imageUrl} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" />
+                                <input name="imageUrl" defaultValue={editingBanner?.imageUrl} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" required />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-gray-600 mb-1">링크</label>
-                                <input defaultValue={editingBanner?.link} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" />
+                                <input name="link" defaultValue={editingBanner?.link} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-600 mb-1">시작일</label>
-                                    <input type="date" defaultValue={editingBanner?.startDate} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" />
+                                    <input type="date" name="startDate" defaultValue={editingBanner?.startDate} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" required />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-gray-600 mb-1">종료일</label>
-                                    <input type="date" defaultValue={editingBanner?.endDate} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" />
+                                    <input type="date" name="endDate" defaultValue={editingBanner?.endDate} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" required />
                                 </div>
                             </div>
                             <div className="flex space-x-2 pt-4">
@@ -210,27 +344,27 @@ const DesignManager: React.FC<DesignManagerProps> = ({
                         <h2 className="text-lg font-bold mb-6 text-gray-800 border-b pb-2">
                             {editingPromotion ? '기획전 수정' : '기획전 생성'}
                         </h2>
-                        <form onSubmit={(e) => { e.preventDefault(); setIsPromotionModalOpen(false); }} className="space-y-4">
+                        <form onSubmit={handleSavePromotion} className="space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-gray-600 mb-1">기획전명</label>
-                                <input defaultValue={editingPromotion?.title} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" />
+                                <input name="title" defaultValue={editingPromotion?.title} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" required />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-gray-600 mb-1">설명</label>
-                                <textarea defaultValue={editingPromotion?.description} rows={2} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none resize-none" />
+                                <textarea name="description" defaultValue={editingPromotion?.description} rows={2} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none resize-none" />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-gray-600 mb-1">배너 이미지 URL</label>
-                                <input defaultValue={editingPromotion?.bannerImage} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" />
+                                <input name="bannerImage" defaultValue={editingPromotion?.bannerImage} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" required />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-600 mb-1">시작일</label>
-                                    <input type="date" defaultValue={editingPromotion?.startDate} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" />
+                                    <input type="date" name="startDate" defaultValue={editingPromotion?.startDate} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" required />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-gray-600 mb-1">종료일</label>
-                                    <input type="date" defaultValue={editingPromotion?.endDate} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" />
+                                    <input type="date" name="endDate" defaultValue={editingPromotion?.endDate} className="w-full border border-gray-300 p-2 text-sm rounded-sm outline-none" required />
                                 </div>
                             </div>
                             <div>
@@ -238,7 +372,18 @@ const DesignManager: React.FC<DesignManagerProps> = ({
                                 <div className="border border-gray-300 rounded-sm p-2 max-h-40 overflow-y-auto bg-gray-50">
                                     {products.map(product => (
                                         <label key={product.id} className="flex items-center space-x-2 p-1 hover:bg-white rounded cursor-pointer">
-                                            <input type="checkbox" className="rounded text-blue-500" defaultChecked={editingPromotion?.productIds.includes(product.id)} />
+                                            <input
+                                                type="checkbox"
+                                                className="rounded text-blue-500"
+                                                checked={selectedProductIds.includes(product.id)}
+                                                onChange={() => {
+                                                    setSelectedProductIds(prev =>
+                                                        prev.includes(product.id)
+                                                            ? prev.filter(id => id !== product.id)
+                                                            : [...prev, product.id]
+                                                    );
+                                                }}
+                                            />
                                             <img src={product.image} alt="" className="w-6 h-6 rounded object-cover" />
                                             <span className="text-sm text-gray-700">{product.name}</span>
                                         </label>

@@ -1,3 +1,4 @@
+
 export enum UserRole {
     ADMIN = 'ADMIN',
     GUEST = 'GUEST'
@@ -73,6 +74,7 @@ export interface Order {
     status: string;
     date: string;
     createdAt?: any;
+    shippingAddress?: string;
 }
 
 export interface Customer {
@@ -89,7 +91,7 @@ export interface Customer {
 }
 
 export interface Banner {
-    id: number;
+    id: string | number;
     imageUrl: string;
     link: string;
     startDate: string;
@@ -100,7 +102,7 @@ export interface Banner {
 }
 
 export interface Promotion {
-    id: number;
+    id: string | number;
     title: string;
     description: string;
     bannerImage: string;
@@ -108,4 +110,29 @@ export interface Promotion {
     startDate: string;
     endDate: string;
     isActive: boolean;
+}
+
+// Analytics Types
+export interface CustomerSegment {
+    id: string;
+    name: string;
+    count: number;
+    description: string;
+    customers: Customer[];
+}
+
+export interface TrafficSource {
+    source: string;
+    visits: number;
+    percentage: number;
+}
+
+export interface AuditLog {
+    id: string;
+    userId: string;
+    username: string;
+    action: string;
+    target: string;
+    details: string;
+    timestamp: string;
 }

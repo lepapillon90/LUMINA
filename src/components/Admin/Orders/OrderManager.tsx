@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ShoppingCart, Search, Printer, MoreHorizontal, Download, Trash2 } from 'lucide-react';
-import { Order } from '../../../types';
+import { Order, User } from '../../../types';
 import InvoiceModal from './InvoiceModal';
 import OrderDetailModal from './OrderDetailModal';
 import { updateOrderStatuses, deleteOrder } from '../../../services/orderService';
@@ -10,9 +10,10 @@ import { useGlobalModal } from '../../../contexts/GlobalModalContext';
 interface OrderManagerProps {
     orders: Order[];
     setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
+    user: User | null;
 }
 
-const OrderManager: React.FC<OrderManagerProps> = ({ orders, setOrders }) => {
+const OrderManager: React.FC<OrderManagerProps> = ({ orders, setOrders, user }) => {
     const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
     const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -50,8 +51,12 @@ const OrderManager: React.FC<OrderManagerProps> = ({ orders, setOrders }) => {
     };
 
     const executeBatchStatusChange = async () => {
+        if (!user) {
+            await showAlert('사용자 정보를 찾을 수 없습니다.', '오류');
+            return;
+        }
         try {
-            await updateOrderStatuses(selectedOrderIds, selectedBatchStatus);
+            await updateOrderStatuses(selectedOrderIds, selectedBatchStatus, { uid: user.uid, username: user.username });
             setOrders(prev => prev.map(o => selectedOrderIds.includes(o.id) ? { ...o, status: selectedBatchStatus } : o));
             setSelectedOrderIds([]); // Clear selection after update
             setSelectedBatchStatus(''); // Reset status selection

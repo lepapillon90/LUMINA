@@ -16,22 +16,6 @@
 
 ### 쇼핑 및 상품 상세 (Shop & Product Detail)
 - [x] **상품 목록:** 카테고리 필터링이 있는 그리드 뷰.
-- [x] **정렬:** "최신순" 정렬 로직 구현.
-- [x] **상세 뷰:** 좌측(갤러리) / 우측(정보) 레이아웃.
-- [x] **갤러리:** 메인 이미지 + 썸네일.
-- [x] **탭:** "상세 정보", "리뷰", "OOTD" 탭 구현.
-- [x] **기능:** 수량 선택기 및 특정 수량 "장바구니 담기".
-- [x] **줌:** 줌 기능 제거 (요청 사항).
-- [x] **Shop Page Enhancement**
-    - [x] Implement Detailed Filtering (Price, Material, Color, Size)
-    - [x] Implement Smart Search (Fuse.js)
-    - [x] Implement Sorting Options (Popularity, Sales, Reviews)
-    - [x] Implement Quick View Modal
-    - [x] Implement Wishlist Functionality
-    - [x] Implement Stock Notifications
-
-### 장바구니 및 결제 (Cart & Checkout)
-- [x] **장바구니 관리:** 아이템 목록, 수량 조절 (+/-), 아이템 삭제.
 - [x] **결제 폼:** 이름, 이메일, 주소 유효성 검사.
 - [x] **결제:** 성공 시 무통장 입금 정보 표시 구현.
 
@@ -62,49 +46,17 @@
 ### 관리 모듈
 - [x] **상품:** 편집/삭제/추가 모달이 있는 리스트 뷰.
 - [x] **주문:** 상태 업데이트 드롭다운.
-- [x] **고객:** 멤버십 등급이 있는 리스트 뷰.
-- [x] **게시물 상태:** 통계 테이블 구현.
 
-## 4단계: 개선 및 검증 (Phase 4: Refinement & Validation)
-- [x] **예외 처리:** 이미지 `onError` 대체 처리.
-- [x] **유효성 검사:** 폼 입력 확인 (관리자 상품 추가, 장바구니 결제).
-- [x] **UI 다듬기:**
-    - [x] 내비게이션 모바일 메뉴.
-    - [x] 홈 슬라이더 리사이징 (모바일에서 80% 너비).
-    - [x] 홈 슬라이더 이미지 일관성 (엄격한 4:5 비율).
-    - [x] 관리자 테이블 스크롤.
-- [x] **배포 준비:** 최종 코드 리뷰.
-- [x] **배포 (Deployment):** Firebase Hosting 배포 완료.
-
-## 5단계: 문서화 및 리팩토링 (Phase 5: Documentation & Refactoring)
-- [x] **로드맵 작성:** Home, Shop, OOTD, Cart, MyPage, Admin, Technical 로드맵 생성.
-- [x] **문서 정리:** `docs/` 폴더 생성 및 PRD, 컨벤션 등 이동.
-- [x] **프로젝트 구조 리팩토링:** 소스 코드를 `src/` 폴더로 이동 및 설정 파일 업데이트.
-- [x] **README 업데이트:** 프로젝트 소개 및 배포 링크 추가.
-
-## 6단계: 최적화 및 출시 준비 (Phase 6: Optimization & Launch Prep)
-- [ ] **SEO 최적화:** 메타 태그 (Title, Description, OG Tags) 추가.
-- [ ] **성능 최적화:** Lighthouse 점수 점검, 이미지 최적화, 코드 스플리팅 (Lazy Loading).
-- [ ] **접근성 (a11y):** 키보드 내비게이션, ARIA 레이블 점검.
-- [ ] **코드 리팩토링:** 사용하지 않는 코드 제거, TypeScript 타입 강화 (`any` 제거).
+## 4단계: 시스템 및 권한 관리 (System)
+- [x] **활동 로그 (Audit Log):** 관리자 활동 기록 (주문 수정, 상품 삭제 등) 추적 및 조회 기능.
+    - [x] `auditService.ts` 생성 (로그 기록/조회)
+    - [x] 주요 관리자 액션(상품/주문/회원 수정 등)에 로그 기록 연동
+    - [x] `SystemManager`에 활동 로그 탭 추가 및 조회 UI 구현
+- [x] **모바일 관리자 최적화 (Mobile Admin)**
+    - [x] `Admin.tsx` 반응형 레이아웃 적용 (햄버거 메뉴, 사이드바 토글)
+- [ ] **권한 관리 고도화:** 기존 권한 관리 기능 검증 및 세분화 (필요 시).
 - [ ] **최종 테스트:** 주요 사용자 흐름 (쇼핑 -> 장바구니 -> 결제) 수동 테스트.
 
-## 7단계: 백엔드 통합 (Phase 7: Backend Integration)
-- [x] **백엔드 로드맵:** `roadmaps/BACKEND_ROADMAP.md` 작성.
-    - [x] Create Data Migration Tool (`src/components/Admin/DataMigration.tsx`) <!-- id: 4 -->
-    - [x] Update `Shop` and `OOTD` components to use Firestore <!-- id: 5 -->
-    - [/] Run Data Migration (User Action Required) <!-- id: 6 -->
-- [x] **Firebase 설정:** `firebase.ts` 및 `.env` 설정.
-- [x] **인증 구현 (Auth):**
-    - [x] `src/types.ts`: Order 인터페이스 수정 (userId, items 추가) <!-- id: 10 -->
-    - [x] `src/services/orderService.ts`: 주문 생성 및 구매 내역 조회 함수 구현 <!-- id: 11 -->
-    - [x] `src/pages/Cart.tsx`: 결제 완료 시 주문 정보 Firestore 저장 로직 추가 <!-- id: 12 -->
-    - [x] `src/components/CreatePostModal.tsx`: 구매 내역 연동 및 탭 UI 구현 <!-- id: 13 -->
-- [x] **위시리스트 및 리뷰:**
-    - [x] `src/types.ts`: WishlistFolder, WishlistItem, Review 타입 추가 <!-- id: 26 -->
-    - [x] `src/services/wishlistService.ts`: 위시리스트 관리 서비스 구현 <!-- id: 27 -->
-    - [x] `src/services/reviewService.ts`: 리뷰 관리 서비스 구현 <!-- id: 28 -->
-    - [x] `src/components/MyPage/Wishlist.tsx`: 위시리스트 컴포넌트 구현 <!-- id: 29 -->
     - [x] `src/components/ReviewForm.tsx`: 리뷰 작성 폼 구현 <!-- id: 30 -->
     - [x] `src/components/MyPage/PendingReviews.tsx`: 리뷰 작성 가능 상품 목록 컴포넌트 <!-- id: 31 -->
     - [x] `src/pages/MyPage.tsx`: 위시리스트 및 리뷰 탭 추가 <!-- id: 32 -->

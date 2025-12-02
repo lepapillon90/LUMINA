@@ -3,6 +3,7 @@ import { db, auth, firebaseConfig } from '../firebase';
 import { User, UserRole, UserPermissions } from '../types';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail, updatePassword, signOut } from 'firebase/auth';
+import { logAction } from './auditService';
 
 const USERS_COLLECTION = 'users';
 
@@ -35,7 +36,7 @@ export const getAllUsers = async (): Promise<User[]> => {
     }
 };
 
-export const promoteUserToAdmin = async (uid: string, permissions: UserPermissions, displayId?: string, phoneNumber?: string, jobTitle?: string, department?: string, displayName?: string): Promise<void> => {
+export const promoteUserToAdmin = async (uid: string, permissions: UserPermissions, adminUser: { uid: string, username: string }, displayId?: string, phoneNumber?: string, jobTitle?: string, department?: string, displayName?: string): Promise<void> => {
     try {
         const updateData: any = {
             role: UserRole.ADMIN,
@@ -49,13 +50,21 @@ export const promoteUserToAdmin = async (uid: string, permissions: UserPermissio
         if (displayName) updateData.displayName = displayName;
 
         await updateDoc(doc(db, USERS_COLLECTION, uid), updateData);
+
+        await logAction(
+            adminUser.uid,
+            adminUser.username,
+            'PROMOTE_ADMIN',
+            `User ${uid}`,
+            `Promoted user ${uid} to admin`
+        );
     } catch (error) {
         console.error('Error promoting user to admin:', error);
         throw error;
     }
 };
 
-export const promoteToAdmin = async (email: string, username: string, permissions: UserPermissions, displayId?: string, phoneNumber?: string, jobTitle?: string, department?: string, displayName?: string): Promise<void> => {
+export const promoteToAdmin = async (email: string, username: string, permissions: UserPermissions, adminUser: { uid: string, username: string }, displayId?: string, phoneNumber?: string, jobTitle?: string, department?: string, displayName?: string): Promise<void> => {
     try {
         const q = query(collection(db, USERS_COLLECTION), where("email", "==", email));
         const querySnapshot = await getDocs(q);
@@ -65,14 +74,14 @@ export const promoteToAdmin = async (email: string, username: string, permission
         }
 
         const userDoc = querySnapshot.docs[0];
-        await promoteUserToAdmin(userDoc.id, permissions, displayId, phoneNumber, jobTitle, department, displayName);
+        await promoteUserToAdmin(userDoc.id, permissions, adminUser, displayId, phoneNumber, jobTitle, department, displayName);
     } catch (error) {
         console.error('Error promoting user to admin:', error);
         throw error;
     }
 };
 
-export const updateAdminUser = async (uid: string, permissions: UserPermissions, displayId?: string, phoneNumber?: string, jobTitle?: string, department?: string, displayName?: string): Promise<void> => {
+export const updateAdminUser = async (uid: string, permissions: UserPermissions, adminUser: { uid: string, username: string }, displayId?: string, phoneNumber?: string, jobTitle?: string, department?: string, displayName?: string): Promise<void> => {
     try {
         const updateData: any = { permissions };
         if (displayId !== undefined) updateData.displayId = displayId;
@@ -82,31 +91,55 @@ export const updateAdminUser = async (uid: string, permissions: UserPermissions,
         if (displayName !== undefined) updateData.displayName = displayName;
 
         await updateDoc(doc(db, USERS_COLLECTION, uid), updateData);
+
+        await logAction(
+            adminUser.uid,
+            adminUser.username,
+            'UPDATE_ADMIN',
+            `Admin ${uid}`,
+            `Updated admin user info`
+        );
     } catch (error) {
         console.error('Error updating admin user:', error);
         throw error;
     }
 };
 
-export const toggleAdminStatus = async (uid: string, isActive: boolean): Promise<void> => {
+export const toggleAdminStatus = async (uid: string, isActive: boolean, adminUser: { uid: string, username: string }): Promise<void> => {
     try {
         await updateDoc(doc(db, USERS_COLLECTION, uid), { isActive });
+
+        await logAction(
+            adminUser.uid,
+            adminUser.username,
+            'TOGGLE_ADMIN_STATUS',
+            `Admin ${uid}`,
+            `Changed status to ${isActive ? 'Active' : 'Inactive'}`
+        );
     } catch (error) {
         console.error('Error toggling admin status:', error);
         throw error;
     }
 };
 
-export const deleteAdminUser = async (uid: string): Promise<void> => {
+export const deleteAdminUser = async (uid: string, adminUser: { uid: string, username: string }): Promise<void> => {
     try {
         await deleteDoc(doc(db, USERS_COLLECTION, uid));
+
+        await logAction(
+            adminUser.uid,
+            adminUser.username,
+            'DELETE_ADMIN',
+            `Admin ${uid}`,
+            `Deleted admin user`
+        );
     } catch (error) {
         console.error('Error deleting admin user:', error);
         throw error;
     }
 };
 
-export const createAdminUser = async (email: string, password: string, username: string, permissions: UserPermissions, displayId?: string, phoneNumber?: string, jobTitle?: string, department?: string, displayName?: string): Promise<void> => {
+export const createAdminUser = async (email: string, password: string, username: string, permissions: UserPermissions, adminUser: { uid: string, username: string }, displayId?: string, phoneNumber?: string, jobTitle?: string, department?: string, displayName?: string): Promise<void> => {
     let secondaryApp;
     try {
         // 1. Initialize a secondary app instance to create user without logging out current admin
@@ -138,6 +171,14 @@ export const createAdminUser = async (email: string, password: string, username:
 
         // 4. Sign out from the secondary app to avoid any session conflicts (though it shouldn't affect main auth)
         await signOut(secondaryAuth);
+
+        await logAction(
+            adminUser.uid,
+            adminUser.username,
+            'CREATE_ADMIN',
+            username,
+            `Created new admin user: ${username}`
+        );
 
     } catch (error) {
         console.error('Error creating admin user:', error);

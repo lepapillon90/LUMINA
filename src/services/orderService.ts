@@ -1,6 +1,7 @@
 import { db } from '../firebase';
 import { collection, addDoc, query, where, getDocs, orderBy, writeBatch, doc, deleteDoc } from 'firebase/firestore';
 import { Order, Product } from '../types';
+import { logAction } from './auditService';
 
 const ORDERS_COLLECTION = 'orders';
 
@@ -96,7 +97,7 @@ export const getOrders = async (userId: string): Promise<Order[]> => {
     }
 };
 
-export const updateOrderStatuses = async (orderIds: string[], status: string): Promise<void> => {
+export const updateOrderStatuses = async (orderIds: string[], status: string, adminUser: { uid: string, username: string }): Promise<void> => {
     console.log("Updating orders:", orderIds, "to status:", status);
     try {
         const batch = writeBatch(db);
@@ -105,6 +106,16 @@ export const updateOrderStatuses = async (orderIds: string[], status: string): P
             batch.update(orderRef, { status });
         });
         await batch.commit();
+
+        // Log the action
+        await logAction(
+            adminUser.uid,
+            adminUser.username,
+            'UPDATE_ORDER_STATUS',
+            `${orderIds.length} orders`,
+            `Status changed to ${status} for orders: ${orderIds.join(', ')}`
+        );
+
         console.log("Batch update successful");
     } catch (error) {
         console.error("Error updating order statuses: ", error);

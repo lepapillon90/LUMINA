@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { Users, Plus, Search, Maximize2, FileText } from 'lucide-react';
-import { Customer } from '../../../types';
+import { Customer, User } from '../../../types';
 import CustomerDetailModal from './CustomerDetailModal';
 import CustomerMemoModal from './CustomerMemoModal';
 import { useGlobalModal } from '../../../contexts/GlobalModalContext';
+import { updateCustomerMemo } from '../../../services/customerService';
 
 interface CustomerManagerProps {
     customers: Customer[];
     setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>;
+    user: User | null;
 }
 
-const CustomerManager: React.FC<CustomerManagerProps> = ({ customers, setCustomers }) => {
+const CustomerManager: React.FC<CustomerManagerProps> = ({ customers, setCustomers, user }) => {
     const { showAlert } = useGlobalModal();
     const [customerFilter, setCustomerFilter] = useState<'all' | 'vip' | 'at_risk' | 'potential'>('all');
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -47,8 +49,18 @@ const CustomerManager: React.FC<CustomerManagerProps> = ({ customers, setCustome
     };
 
     const handleSaveMemo = async (customerId: string, memo: string) => {
-        setCustomers(prev => prev.map(c => c.id === customerId ? { ...c, memo } : c));
-        await showAlert('메모가 저장되었습니다.', '알림');
+        if (!user) {
+            await showAlert('사용자 정보를 찾을 수 없습니다.', '오류');
+            return;
+        }
+        try {
+            await updateCustomerMemo(customerId, memo, { uid: user.uid, username: user.username });
+            setCustomers(prev => prev.map(c => c.id === customerId ? { ...c, memo } : c));
+            await showAlert('메모가 저장되었습니다.', '알림');
+        } catch (error) {
+            console.error(error);
+            await showAlert('메모 저장에 실패했습니다.', '오류');
+        }
     };
 
     return (

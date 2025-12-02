@@ -27,6 +27,13 @@ interface AuthContextType {
 }
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Global Modal Context
+interface GlobalModalContextType {
+    showAlert: (message: string, title?: string) => Promise<void>;
+    showConfirm: (message: string, title?: string) => Promise<boolean>;
+}
+const GlobalModalContext = createContext<GlobalModalContextType | undefined>(undefined);
+
 
 // --- Providers ---
 
@@ -226,10 +233,112 @@ export const Providers: React.FC<{ children: ReactNode }> = ({ children }) => {
         }
     };
 
+    // Global Modal State
+    const [modalConfig, setModalConfig] = useState<{
+        isOpen: boolean;
+        type: 'alert' | 'confirm';
+        message: string;
+        title: string;
+        onConfirm?: () => void;
+    }>({
+        isOpen: false,
+        type: 'alert',
+        message: '',
+        title: ''
+    });
+
+    const showAlert = (message: string, title: string = '알림'): Promise<void> => {
+        return new Promise((resolve) => {
+            setModalConfig({
+                isOpen: true,
+                type: 'alert',
+                message,
+                title,
+                onConfirm: () => {
+                    setModalConfig(prev => ({ ...prev, isOpen: false }));
+                    resolve();
+                }
+            });
+        });
+    };
+
+    const showConfirm = (message: string, title: string = '확인'): Promise<boolean> => {
+        return new Promise((resolve) => {
+            setModalConfig({
+                isOpen: true,
+                type: 'confirm',
+                message,
+                title,
+                onConfirm: () => {
+                    setModalConfig(prev => ({ ...prev, isOpen: false }));
+                    resolve(true);
+                }
+            });
+            // We need a way to handle cancel, but for now we'll just close it.
+            // A better implementation would store the reject/resolve handlers.
+            // For this simple version, we'll assume cancel just closes without resolving true.
+            // To properly handle cancel returning false, we need to store the resolve function in a ref or state.
+        });
+    };
+
+    // Ref to hold the current resolve function for confirm modal
+    const confirmResolveRef = React.useRef<(value: boolean) => void>(() => { });
+
+    const showConfirmWithRef = (message: string, title: string = '확인'): Promise<boolean> => {
+        return new Promise((resolve) => {
+            confirmResolveRef.current = resolve;
+            setModalConfig({
+                isOpen: true,
+                type: 'confirm',
+                message,
+                title,
+                onConfirm: () => {
+                    setModalConfig(prev => ({ ...prev, isOpen: false }));
+                    resolve(true);
+                }
+            });
+        });
+    };
+
+    const handleCloseModal = () => {
+        setModalConfig(prev => ({ ...prev, isOpen: false }));
+        if (modalConfig.type === 'confirm') {
+            confirmResolveRef.current(false);
+        }
+    };
+
     return (
         <AuthContext.Provider value={{ user, loading, logout, toggleWishlist }}>
             <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, clearCart, isCartOpen, openCart, closeCart }}>
-                {loading ? <div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div></div> : children}
+                <GlobalModalContext.Provider value={{ showAlert, showConfirm: showConfirmWithRef }}>
+                    {loading ? <div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div></div> : children}
+
+                    {/* Global Modal UI */}
+                    {modalConfig.isOpen && (
+                        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm mx-4 animate-in fade-in zoom-in duration-200">
+                                <h3 className="text-lg font-bold text-gray-900 mb-2">{modalConfig.title}</h3>
+                                <p className="text-gray-600 mb-6">{modalConfig.message}</p>
+                                <div className="flex justify-end space-x-2">
+                                    {modalConfig.type === 'confirm' && (
+                                        <button
+                                            onClick={handleCloseModal}
+                                            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-sm text-sm font-medium transition-colors"
+                                        >
+                                            취소
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={modalConfig.onConfirm}
+                                        className="px-4 py-2 bg-black text-white rounded-sm text-sm font-medium hover:bg-gray-800 transition-colors"
+                                    >
+                                        확인
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </GlobalModalContext.Provider>
             </CartContext.Provider>
         </AuthContext.Provider>
     );
@@ -246,5 +355,11 @@ export const useCart = () => {
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) throw new Error("useAuth must be used within Providers");
+    return context;
+};
+
+export const useGlobalModal = () => {
+    const context = useContext(GlobalModalContext);
+    if (!context) throw new Error("useGlobalModal must be used within Providers");
     return context;
 };
