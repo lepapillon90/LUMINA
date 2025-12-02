@@ -25,7 +25,7 @@ const MyOOTD: React.FC<MyOOTDProps> = ({ posts, loading }) => {
     return (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {posts.map((post) => (
-                <div key={post.id} className="group relative aspect-[4/5] bg-gray-100 rounded-lg overflow-hidden cursor-pointer">
+                <div key={post.id} className="group relative aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer">
                     <img
                         src={post.image}
                         alt="My OOTD"

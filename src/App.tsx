@@ -26,6 +26,8 @@ const ProductDetail = lazy(() => import('./pages/ProductDetail'));
 const OOTD = lazy(() => import('./pages/OOTD'));
 const Magazine = lazy(() => import('./pages/Magazine'));
 const Cart = lazy(() => import('./pages/Cart'));
+const Checkout = lazy(() => import('./pages/Checkout'));
+const CheckoutSuccess = lazy(() => import('./pages/CheckoutSuccess'));
 const MyPage = lazy(() => import('./pages/MyPage'));
 const Admin = lazy(() => import('./pages/Admin'));
 const DataMigration = lazy(() => import('./components/Admin/DataMigration'));
@@ -62,6 +64,8 @@ const Layout: React.FC = () => {
             <Route path="/ootd" element={<OOTD />} />
             <Route path="/magazine" element={<Magazine />} />
             <Route path="/cart" element={<Cart />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/checkout/success" element={<CheckoutSuccess />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />

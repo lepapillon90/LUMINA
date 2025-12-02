@@ -1,23 +1,41 @@
-import React, { useState } from 'react';
-import { Users, Plus, Search, Maximize2, FileText } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Users, Plus, Search, Maximize2, FileText, RefreshCw } from 'lucide-react';
 import { Customer, User } from '../../../types';
 import CustomerDetailModal from './CustomerDetailModal';
 import CustomerMemoModal from './CustomerMemoModal';
 import { useGlobalModal } from '../../../contexts/GlobalModalContext';
-import { updateCustomerMemo } from '../../../services/customerService';
+import { getCustomers, updateCustomerMemo } from '../../../services/customerService';
 
 interface CustomerManagerProps {
-    customers: Customer[];
-    setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>;
     user: User | null;
 }
 
-const CustomerManager: React.FC<CustomerManagerProps> = ({ customers, setCustomers, user }) => {
+const CustomerManager: React.FC<CustomerManagerProps> = ({ user }) => {
     const { showAlert } = useGlobalModal();
+    const [loading, setLoading] = useState(false);
+    const [customers, setCustomers] = useState<Customer[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
     const [customerFilter, setCustomerFilter] = useState<'all' | 'vip' | 'at_risk' | 'potential'>('all');
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [isMemoModalOpen, setIsMemoModalOpen] = useState(false);
+
+    useEffect(() => {
+        loadCustomers();
+    }, []);
+
+    const loadCustomers = async () => {
+        setLoading(true);
+        try {
+            const data = await getCustomers();
+            setCustomers(data);
+        } catch (error) {
+            console.error('[MY_LOG] Error loading customers:', error);
+            await showAlert('고객 데이터를 불러오는데 실패했습니다.', '오류');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // CRM Logic: Calculate Stats
     const totalCustomers = customers.length;
@@ -29,12 +47,24 @@ const CustomerManager: React.FC<CustomerManagerProps> = ({ customers, setCustome
     const vipCustomers = customers.filter(c => c.grade === 'VIP').length;
     const atRiskCustomers = customers.filter(c => c.status === 'inactive' || !c.lastLoginDate).length;
 
-    // Filter Logic
+    // Filter and Search Logic
     const filteredCustomers = customers.filter(c => {
-        if (customerFilter === 'all') return true;
-        if (customerFilter === 'vip') return c.grade === 'VIP';
-        if (customerFilter === 'at_risk') return c.status === 'inactive';
-        if (customerFilter === 'potential') return c.totalSpent === 0;
+        // Filter by category
+        if (customerFilter === 'vip' && c.grade !== 'VIP') return false;
+        if (customerFilter === 'at_risk' && c.status !== 'inactive') return false;
+        if (customerFilter === 'potential' && c.totalSpent !== 0) return false;
+        
+        // Search filter
+        if (searchQuery) {
+            const query = searchQuery.toLowerCase();
+            return (
+                c.name.toLowerCase().includes(query) ||
+                c.email.toLowerCase().includes(query) ||
+                c.phone.includes(query) ||
+                c.id.toLowerCase().includes(query)
+            );
+        }
+        
         return true;
     });
 
@@ -54,14 +84,22 @@ const CustomerManager: React.FC<CustomerManagerProps> = ({ customers, setCustome
             return;
         }
         try {
-            await updateCustomerMemo(customerId, memo, { uid: user.uid, username: user.username });
+            await updateCustomerMemo(customerId, memo, { uid: user.uid, username: user.username || 'Admin' });
             setCustomers(prev => prev.map(c => c.id === customerId ? { ...c, memo } : c));
             await showAlert('메모가 저장되었습니다.', '알림');
         } catch (error) {
-            console.error(error);
+            console.error('[MY_LOG] Error saving memo:', error);
             await showAlert('메모 저장에 실패했습니다.', '오류');
         }
     };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -69,9 +107,17 @@ const CustomerManager: React.FC<CustomerManagerProps> = ({ customers, setCustome
                 <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                     <Users size={20} /> 고객 관리 (CRM)
                 </h2>
-                <button className="bg-black text-white px-4 py-2 rounded-sm text-sm hover:bg-gray-800 transition flex items-center gap-2">
-                    <Plus size={16} /> 고객 수동 등록
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={loadCustomers}
+                        className="bg-gray-100 text-gray-700 px-4 py-2 rounded-sm text-sm hover:bg-gray-200 transition flex items-center gap-2"
+                    >
+                        <RefreshCw size={16} /> 새로고침
+                    </button>
+                    <button className="bg-black text-white px-4 py-2 rounded-sm text-sm hover:bg-gray-800 transition flex items-center gap-2">
+                        <Plus size={16} /> 고객 수동 등록
+                    </button>
+                </div>
             </div>
 
             {/* CRM Stats Cards */}
@@ -118,7 +164,13 @@ const CustomerManager: React.FC<CustomerManagerProps> = ({ customers, setCustome
                     </div>
                     <div className="flex items-center w-full md:w-auto bg-white border border-gray-300 rounded-sm px-3 py-1.5">
                         <Search size={16} className="text-gray-400 mr-2" />
-                        <input type="text" placeholder="회원명, 아이디, 전화번호" className="text-sm w-full focus:outline-none" />
+                        <input
+                            type="text"
+                            placeholder="회원명, 아이디, 전화번호, 이메일"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="text-sm w-full focus:outline-none"
+                        />
                     </div>
                 </div>
 
@@ -135,7 +187,14 @@ const CustomerManager: React.FC<CustomerManagerProps> = ({ customers, setCustome
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
-                            {filteredCustomers.map(customer => (
+                            {filteredCustomers.length === 0 ? (
+                                <tr>
+                                    <td colSpan={6} className="px-6 py-12 text-center text-gray-400">
+                                        {searchQuery ? '검색 결과가 없습니다.' : '고객 데이터가 없습니다.'}
+                                    </td>
+                                </tr>
+                            ) : (
+                                filteredCustomers.map(customer => (
                                 <tr key={customer.id} className="hover:bg-gray-50 transition group">
                                     <td className="px-6 py-4 font-medium text-gray-800">
                                         <div className="flex items-center gap-2">
@@ -179,7 +238,8 @@ const CustomerManager: React.FC<CustomerManagerProps> = ({ customers, setCustome
                                         </button>
                                     </td>
                                 </tr>
-                            ))}
+                            ))
+                            )}
                         </tbody>
                     </table>
                 </div>

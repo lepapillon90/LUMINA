@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ShoppingBag, Menu, X, User as UserIcon, LogOut } from 'lucide-react';
 import { useCart, useAuth } from '../../contexts';
 import { UserRole } from '../../types';
@@ -10,6 +10,7 @@ const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { cart, isCartOpen, openCart, closeCart } = useCart();
   const { user, logout } = useAuth();
   const isHome = location.pathname === '/';
@@ -61,7 +62,14 @@ const Navbar: React.FC = () => {
                   <Link to="/mypage" className="hover:text-accent transition" aria-label="마이페이지">
                     <UserIcon size={20} />
                   </Link>
-                  <button onClick={logout} className="hover:text-accent transition" aria-label="로그아웃">
+                  <button 
+                    onClick={async () => {
+                      await logout();
+                      navigate('/');
+                    }} 
+                    className="hover:text-accent transition" 
+                    aria-label="로그아웃"
+                  >
                     <LogOut size={20} />
                   </button>
                 </div>

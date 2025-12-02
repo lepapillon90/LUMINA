@@ -1,0 +1,175 @@
+{
+  "config": {
+    "configFile": "C:\\Users\\lepap\\Desktop\\LUMINA\\playwright.config.ts",
+    "rootDir": "C:/Users/lepap/Desktop/LUMINA/tests",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "json",
+        {
+          "outputFile": "results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "C:/Users/lepap/Desktop/LUMINA/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/Users/lepap/Desktop/LUMINA/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.57.0",
+    "workers": 6,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:3000",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "address.spec.ts",
+      "file": "address.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "signup and add address",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "timedOut",
+                  "duration": 60052,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "location": {
+                        "file": "C:\\Users\\lepap\\Desktop\\LUMINA\\tests\\address.spec.ts",
+                        "column": 44,
+                        "line": 53
+                      },
+                      "message": "Error: page.content: Target page, context or browser has been closed\n\n\u001b[0m \u001b[90m 51 |\u001b[39m             } \u001b[36mcatch\u001b[39m (e) {\n \u001b[90m 52 |\u001b[39m                 log(\u001b[32m`Failed to fill form. Dumping content...`\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 53 |\u001b[39m                 \u001b[36mconst\u001b[39m content \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mcontent()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                            \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 54 |\u001b[39m                 fs\u001b[33m.\u001b[39mwriteFileSync(\u001b[32m'error_page_content.html'\u001b[39m\u001b[33m,\u001b[39m content)\u001b[33m;\u001b[39m\n \u001b[90m 55 |\u001b[39m                 log(\u001b[32m'Content dumped to error_page_content.html'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 56 |\u001b[39m                 \u001b[36mthrow\u001b[39m e\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\lepap\\Desktop\\LUMINA\\tests\\address.spec.ts:53:44\u001b[22m\n\u001b[2m    at C:\\Users\\lepap\\Desktop\\LUMINA\\tests\\address.spec.ts:40:9\u001b[22m"
+                    }
+                  ],
+                  "stdout": [
+                    {
+                      "text": "Navigating to signup...\n"
+                    },
+                    {
+                      "text": "Page loaded. Checking title...\n"
+                    },
+                    {
+                      "text": "Page title: LUMINA - 루미나 프리미엄 악세서리\n"
+                    },
+                    {
+                      "text": "Filling signup form...\n"
+                    },
+                    {
+                      "text": "Failed to fill form. Dumping content...\n"
+                    },
+                    {
+                      "text": "TEST FAILED: Error: page.content: Target page, context or browser has been closed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Navigate to Signup",
+                      "duration": 5040
+                    },
+                    {
+                      "title": "Fill Signup Form",
+                      "duration": 54936,
+                      "error": {
+                        "message": "Error: page.content: Target page, context or browser has been closed",
+                        "stack": "Error: page.content: Target page, context or browser has been closed\n    at C:\\Users\\lepap\\Desktop\\LUMINA\\tests\\address.spec.ts:53:44\n    at C:\\Users\\lepap\\Desktop\\LUMINA\\tests\\address.spec.ts:40:9",
+                        "location": {
+                          "file": "C:\\Users\\lepap\\Desktop\\LUMINA\\tests\\address.spec.ts",
+                          "column": 44,
+                          "line": 53
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 51 |\u001b[39m             } \u001b[36mcatch\u001b[39m (e) {\n \u001b[90m 52 |\u001b[39m                 log(\u001b[32m`Failed to fill form. Dumping content...`\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 53 |\u001b[39m                 \u001b[36mconst\u001b[39m content \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mcontent()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                            \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 54 |\u001b[39m                 fs\u001b[33m.\u001b[39mwriteFileSync(\u001b[32m'error_page_content.html'\u001b[39m\u001b[33m,\u001b[39m content)\u001b[33m;\u001b[39m\n \u001b[90m 55 |\u001b[39m                 log(\u001b[32m'Content dumped to error_page_content.html'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 56 |\u001b[39m                 \u001b[36mthrow\u001b[39m e\u001b[33m;\u001b[39m\u001b[0m"
+                      }
+                    }
+                  ],
+                  "startTime": "2025-12-02T22:33:11.643Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\lepap\\Desktop\\LUMINA\\test-results\\address-signup-and-add-address-chromium\\error-context.md"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "dcfc26db63a9a44cfefc-0bad4e55fb4c1c59aa74",
+          "file": "address.spec.ts",
+          "line": 16,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-12-02T22:33:10.285Z",
+    "duration": 61620.05499999999,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

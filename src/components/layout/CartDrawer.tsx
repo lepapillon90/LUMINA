@@ -124,7 +124,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                         <p className="text-xs text-gray-500 mb-4 text-center">배송비 및 세금은 결제 단계에서 계산됩니다.</p>
                         <div className="space-y-3">
                             <button
-                                onClick={() => { onClose(); navigate('/cart'); }}
+                                onClick={() => { onClose(); navigate('/checkout'); }}
                                 className="w-full bg-black text-white py-3 uppercase tracking-widest text-sm hover:bg-gray-800 transition"
                             >
                                 결제하기

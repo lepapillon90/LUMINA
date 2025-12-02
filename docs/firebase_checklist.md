@@ -8,6 +8,18 @@ LUMINA 프로젝트의 정상적인 작동을 위해 Firebase Console에서 다�
     *   **이메일/비밀번호 (Email/Password)** 제공업체를 **사용 설정(Enabled)** 하세요.
     *   (선택 사항) **Google** 로그인도 구현 예정이라면 사용 설정하세요.
 
+*   **이메일 템플릿 설정 (비밀번호 재설정)**:
+    *   Firebase Console -> Build -> Authentication -> Templates 탭으로 이동.
+    *   **Password reset** 템플릿을 선택합니다.
+    *   이메일 제목과 본문을 커스터마이징할 수 있습니다.
+    *   **Action URL**은 비밀번호 재설정 완료 후 리다이렉트될 URL입니다 (예: `https://yourdomain.com/login`).
+    *   **중요**: Firebase는 실제로 이메일을 발송합니다. 등록된 사용자의 이메일 주소로 비밀번호 재설정 링크가 전송됩니다.
+    
+*   **인증된 도메인 설정**:
+    *   Firebase Console -> Build -> Authentication -> Settings -> Authorized domains에서 앱이 실행되는 도메인을 확인하세요.
+    *   개발 환경에서는 `localhost`가 기본적으로 포함되어 있습니다.
+    *   프로덕션 배포 시 실제 도메인을 추가해야 합니다.
+
 ## 2. Cloud Firestore (데이터베이스)
 *   **데이터베이스 확인**:
     *   현재 코드는 `lumina`라는 이름의 데이터베이스를 사용하도록 설정되어 있습니다 (`src/firebase.ts`).

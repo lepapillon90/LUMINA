@@ -1,0 +1,289 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - navigation [ref=e4]:
+    - generic [ref=e6]:
+      - paragraph [ref=e8]: 🚚 5만원 이상 구매 시 무료 배송
+      - button [ref=e9] [cursor=pointer]:
+        - img [ref=e10]
+    - generic [ref=e14]:
+      - link "LUMINA 홈으로 이동" [ref=e15] [cursor=pointer]:
+        - /url: "#/"
+        - text: LUMINA
+      - generic [ref=e16]:
+        - link "홈" [ref=e17] [cursor=pointer]:
+          - /url: "#/"
+        - link "쇼핑" [ref=e18] [cursor=pointer]:
+          - /url: "#/shop"
+        - link "장바구니" [ref=e19] [cursor=pointer]:
+          - /url: "#/cart"
+        - link "매거진" [ref=e20] [cursor=pointer]:
+          - /url: "#/magazine"
+        - link "OOTD" [ref=e21] [cursor=pointer]:
+          - /url: "#/ootd"
+      - generic [ref=e22]:
+        - link "로그인" [ref=e23] [cursor=pointer]:
+          - /url: "#/login"
+          - img [ref=e24]
+        - button "장바구니, 0개 항목" [ref=e27] [cursor=pointer]:
+          - img [ref=e28]
+  - main [ref=e31]:
+    - generic [ref=e32]:
+      - generic [ref=e37]:
+        - paragraph [ref=e38]: Timeless Elegance
+        - heading "LUMINA" [level=1] [ref=e39]
+        - paragraph [ref=e40]: 내면의 빛을 발견하세요. 당신을 위해 수작업으로 완성된 모던 악세서리.
+        - link "컬렉션 보기" [ref=e41] [cursor=pointer]:
+          - /url: "#/shop"
+      - generic [ref=e44]:
+        - generic [ref=e45]:
+          - generic [ref=e46]:
+            - img [ref=e47]
+            - text: LIMITED TIME OFFER
+          - 'heading "Flash Sale: 24 Hours Only" [level=2] [ref=e50]'
+          - paragraph [ref=e51]: 오늘 자정까지만 진행되는 특별한 혜택. 엄선된 베스트셀러 아이템을 최대 30% 할인된 가격으로 만나보세요.
+          - generic [ref=e52]:
+            - generic [ref=e53]:
+              - generic [ref=e54]: "16"
+              - text: Hours
+            - generic [ref=e55]: ":"
+            - generic [ref=e56]:
+              - generic [ref=e57]: "25"
+              - text: Mins
+            - generic [ref=e58]: ":"
+            - generic [ref=e59]:
+              - generic [ref=e60]: "48"
+              - text: Secs
+        - generic [ref=e62]:
+          - img "Sale Item" [ref=e64]
+          - generic [ref=e65]:
+            - heading "Midnight Collection Set" [level=3] [ref=e66]
+            - generic [ref=e67]:
+              - generic [ref=e68]: ₩250,000
+              - generic [ref=e69]: ₩175,000
+            - link "Shop Now" [ref=e70] [cursor=pointer]:
+              - /url: "#/shop"
+      - generic [ref=e71]:
+        - generic [ref=e72]:
+          - heading "New Arrivals" [level=2] [ref=e73]
+          - paragraph [ref=e74]: 가장 먼저 만나는 루미나의 새로운 컬렉션
+        - generic [ref=e75]:
+          - button [ref=e76] [cursor=pointer]:
+            - img [ref=e77]
+          - button [ref=e79] [cursor=pointer]:
+            - img [ref=e80]
+          - link "트위스트 링 NEW 트위스트 링 ₩10,000" [ref=e84] [cursor=pointer]:
+            - /url: "#/product/1764545597805"
+            - generic [ref=e85]:
+              - img "트위스트 링" [ref=e88]
+              - generic [ref=e89]: NEW
+              - button [ref=e90]:
+                - img [ref=e91]
+            - generic [ref=e93]:
+              - heading "트위스트 링" [level=3] [ref=e94]
+              - paragraph [ref=e95]: ₩10,000
+      - generic [ref=e98]:
+        - generic [ref=e99]:
+          - heading "Winter Lookbook" [level=2] [ref=e100]
+          - paragraph [ref=e101]: 차가운 겨울 공기 속에서도 빛나는 당신을 위한 스타일링. 루미나의 윈터 컬렉션으로 우아함을 더해보세요.
+          - link "Shop the Collection" [ref=e102] [cursor=pointer]:
+            - /url: "#/shop"
+        - generic [ref=e103]:
+          - img "Winter Lookbook" [ref=e104]
+          - button [ref=e106] [cursor=pointer]:
+            - img [ref=e109]
+          - button [ref=e111] [cursor=pointer]:
+            - img [ref=e114]
+      - generic [ref=e116]:
+        - generic [ref=e117]:
+          - generic [ref=e118]:
+            - heading "Trending OOTD" [level=2] [ref=e119]
+            - paragraph [ref=e120]: 지금 가장 사랑받는 스타일을 만나보세요
+          - link "더 보기" [ref=e121] [cursor=pointer]:
+            - /url: "#/ootd"
+            - text: 더 보기
+            - img [ref=e122]
+        - generic [ref=e124]:
+          - 'link "Trending OOTD by @minji_style #1 Trending 실버 미스트 목걸이로 완성한 겨울 코디 ❄️ MI @minji_style 245" [ref=e125] [cursor=pointer]':
+            - /url: "#/ootd"
+            - generic [ref=e126]:
+              - img "Trending OOTD by @minji_style" [ref=e127]
+              - generic [ref=e128]: "#1 Trending"
+              - paragraph [ref=e130]: 실버 미스트 목걸이로 완성한 겨울 코디 ❄️
+            - generic [ref=e131]:
+              - generic [ref=e132]:
+                - generic [ref=e133]: MI
+                - generic [ref=e134]: "@minji_style"
+              - generic [ref=e135]:
+                - img [ref=e136]
+                - generic [ref=e138]: "245"
+          - 'link "Trending OOTD by @seoul_chic #2 Trending 오늘 데이트룩의 완성은 루미나 진주 귀걸이! ✨ SE @seoul_chic 124" [ref=e139] [cursor=pointer]':
+            - /url: "#/ootd"
+            - generic [ref=e140]:
+              - img "Trending OOTD by @seoul_chic" [ref=e141]
+              - generic [ref=e142]: "#2 Trending"
+              - paragraph [ref=e144]: 오늘 데이트룩의 완성은 루미나 진주 귀걸이! ✨
+            - generic [ref=e145]:
+              - generic [ref=e146]:
+                - generic [ref=e147]: SE
+                - generic [ref=e148]: "@seoul_chic"
+              - generic [ref=e149]:
+                - img [ref=e150]
+                - generic [ref=e152]: "124"
+          - 'link "Trending OOTD by @fashion_daily #3 Trending 심플한 골드 포인트가 어떤 옷이든 잘 어울려요. FA @fashion_daily 89" [ref=e153] [cursor=pointer]':
+            - /url: "#/ootd"
+            - generic [ref=e154]:
+              - img "Trending OOTD by @fashion_daily" [ref=e155]
+              - generic [ref=e156]: "#3 Trending"
+              - paragraph [ref=e158]: 심플한 골드 포인트가 어떤 옷이든 잘 어울려요.
+            - generic [ref=e159]:
+              - generic [ref=e160]:
+                - generic [ref=e161]: FA
+                - generic [ref=e162]: "@fashion_daily"
+              - generic [ref=e163]:
+                - img [ref=e164]
+                - generic [ref=e166]: "89"
+      - generic [ref=e168]:
+        - generic [ref=e169]:
+          - generic [ref=e170]:
+            - heading "Lumina Magazine" [level=2] [ref=e171]
+            - paragraph [ref=e172]: 스타일링 팁부터 브랜드 스토리까지
+          - link "더 보기" [ref=e173] [cursor=pointer]:
+            - /url: "#/magazine"
+            - text: 더 보기
+            - img [ref=e174]
+        - generic [ref=e176]:
+          - article [ref=e177] [cursor=pointer]:
+            - img "How to Layer Necklaces Like a Pro" [ref=e179]
+            - generic [ref=e180]:
+              - generic [ref=e181]: STYLE GUIDE
+              - heading "How to Layer Necklaces Like a Pro" [level=3] [ref=e182]
+              - paragraph [ref=e183]: 완벽한 레이어링을 위한 3가지 법칙. 길이와 소재의 조화를 통해 나만의 스타일을 완성해보세요.
+              - generic [ref=e184]: READ MORE
+          - article [ref=e185] [cursor=pointer]:
+            - img "The Art of Handcrafting" [ref=e187]
+            - generic [ref=e188]:
+              - generic [ref=e189]: BRAND STORY
+              - heading "The Art of Handcrafting" [level=3] [ref=e190]
+              - paragraph [ref=e191]: 루미나의 모든 제품이 탄생하는 과정. 장인의 손길로 완성되는 섬세한 디테일을 만나보세요.
+              - generic [ref=e192]: READ MORE
+          - article [ref=e193] [cursor=pointer]:
+            - img "2025 Jewelry Trends" [ref=e195]
+            - generic [ref=e196]:
+              - generic [ref=e197]: TREND REPORT
+              - heading "2025 Jewelry Trends" [level=3] [ref=e198]
+              - paragraph [ref=e199]: 올해 주목해야 할 쥬얼리 트렌드 키워드. 볼드한 골드부터 미니멀한 실버까지.
+              - generic [ref=e200]: READ MORE
+      - generic [ref=e202]:
+        - generic [ref=e203]:
+          - generic [ref=e204]:
+            - img [ref=e205]
+            - heading "@lumina_official" [level=2] [ref=e208]
+          - paragraph [ref=e209]: "Share your moments with #LuminaStyle"
+          - link "FOLLOW US" [ref=e210] [cursor=pointer]:
+            - /url: https://instagram.com
+            - text: FOLLOW US
+            - img [ref=e211]
+        - generic [ref=e215]:
+          - link "Instagram post 1 1,240 45" [ref=e216] [cursor=pointer]:
+            - /url: https://instagram.com
+            - img "Instagram post 1" [ref=e217]
+            - generic [ref=e218]:
+              - generic [ref=e219]:
+                - img [ref=e220]
+                - generic [ref=e222]: 1,240
+              - generic [ref=e223]:
+                - img [ref=e224]
+                - generic [ref=e226]: "45"
+          - link "Instagram post 2 856 23" [ref=e227] [cursor=pointer]:
+            - /url: https://instagram.com
+            - img "Instagram post 2" [ref=e228]
+            - generic [ref=e229]:
+              - generic [ref=e230]:
+                - img [ref=e231]
+                - generic [ref=e233]: "856"
+              - generic [ref=e234]:
+                - img [ref=e235]
+                - generic [ref=e237]: "23"
+          - link "Instagram post 3 2,100 112" [ref=e238] [cursor=pointer]:
+            - /url: https://instagram.com
+            - img "Instagram post 3" [ref=e239]
+            - generic [ref=e240]:
+              - generic [ref=e241]:
+                - img [ref=e242]
+                - generic [ref=e244]: 2,100
+              - generic [ref=e245]:
+                - img [ref=e246]
+                - generic [ref=e248]: "112"
+          - link "Instagram post 4 945 38" [ref=e249] [cursor=pointer]:
+            - /url: https://instagram.com
+            - img "Instagram post 4" [ref=e250]
+            - generic [ref=e251]:
+              - generic [ref=e252]:
+                - img [ref=e253]
+                - generic [ref=e255]: "945"
+              - generic [ref=e256]:
+                - img [ref=e257]
+                - generic [ref=e259]: "38"
+          - link "Instagram post 5 1,530 67" [ref=e260] [cursor=pointer]:
+            - /url: https://instagram.com
+            - img "Instagram post 5" [ref=e261]
+            - generic [ref=e262]:
+              - generic [ref=e263]:
+                - img [ref=e264]
+                - generic [ref=e266]: 1,530
+              - generic [ref=e267]:
+                - img [ref=e268]
+                - generic [ref=e270]: "67"
+          - link "Instagram post 6 1,890 92" [ref=e271] [cursor=pointer]:
+            - /url: https://instagram.com
+            - img "Instagram post 6" [ref=e272]
+            - generic [ref=e273]:
+              - generic [ref=e274]:
+                - img [ref=e275]
+                - generic [ref=e277]: 1,890
+              - generic [ref=e278]:
+                - img [ref=e279]
+                - generic [ref=e281]: "92"
+      - generic [ref=e283]:
+        - button [ref=e284] [cursor=pointer]:
+          - img [ref=e285]
+        - img "Newsletter" [ref=e289]
+        - generic [ref=e290]:
+          - heading "Join the Club" [level=3] [ref=e291]
+          - paragraph [ref=e292]: 루미나 뉴스레터를 구독하고 첫 구매 10% 할인 쿠폰을 받으세요. 신상품 소식과 시크릿 세일 정보를 가장 먼저 알려드립니다.
+          - generic [ref=e293]:
+            - generic [ref=e294]:
+              - img [ref=e295]
+              - textbox "이메일 주소를 입력하세요" [ref=e298]
+            - button "구독하고 혜택 받기" [disabled] [ref=e299]
+          - button "괜찮습니다, 다음에 할게요" [ref=e300] [cursor=pointer]
+  - button [ref=e302] [cursor=pointer]:
+    - img [ref=e303]
+  - contentinfo [ref=e306]:
+    - generic [ref=e307]:
+      - generic [ref=e308]:
+        - heading "LUMINA" [level=3] [ref=e309]
+        - paragraph [ref=e310]:
+          - text: "\"Luminósus\" - 밝고 명확한 빛."
+          - text: 변치 않는 악세서리로 당신의 아름다움을 비춥니다.
+      - generic [ref=e311]:
+        - heading "고객 센터" [level=4] [ref=e312]
+        - list [ref=e313]:
+          - listitem [ref=e314]:
+            - link "문의하기" [ref=e315] [cursor=pointer]:
+              - /url: "#"
+          - listitem [ref=e316]:
+            - link "배송 및 반품" [ref=e317] [cursor=pointer]:
+              - /url: "#"
+          - listitem [ref=e318]:
+            - link "자주 묻는 질문 (FAQ)" [ref=e319] [cursor=pointer]:
+              - /url: "#"
+      - generic [ref=e320]:
+        - heading "Follow Us" [level=4] [ref=e321]
+        - generic [ref=e322]:
+          - button "Instagram" [ref=e323] [cursor=pointer]: IG
+          - button "Facebook" [ref=e324] [cursor=pointer]: FB
+    - generic [ref=e325]: © 2025 LUMINA. All rights reserved.
+```

@@ -1,6 +1,7 @@
-import React from 'react';
-import { Customer } from '../../../types';
-import { X, User, Phone, Mail, Calendar, CreditCard, Star } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Customer, Order } from '../../../types';
+import { X, User, Phone, Mail, Calendar, CreditCard, Star, Package } from 'lucide-react';
+import { getCustomerOrders } from '../../../services/customerService';
 
 interface CustomerDetailModalProps {
     isOpen: boolean;
@@ -9,6 +10,28 @@ interface CustomerDetailModalProps {
 }
 
 const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ isOpen, onClose, customer }) => {
+    const [orders, setOrders] = useState<Order[]>([]);
+    const [loadingOrders, setLoadingOrders] = useState(false);
+
+    useEffect(() => {
+        if (isOpen && customer) {
+            loadOrders();
+        }
+    }, [isOpen, customer]);
+
+    const loadOrders = async () => {
+        if (!customer) return;
+        setLoadingOrders(true);
+        try {
+            const data = await getCustomerOrders(customer.id);
+            setOrders(data);
+        } catch (error) {
+            console.error('[MY_LOG] Error loading customer orders:', error);
+        } finally {
+            setLoadingOrders(false);
+        }
+    };
+
     if (!isOpen || !customer) return null;
 
     return (
@@ -59,11 +82,55 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ isOpen, onClo
 
                 <div className="border-t pt-6">
                     <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                        <Star size={18} /> 최근 주문 내역
+                        <Package size={18} /> 주문 내역 ({orders.length}건)
                     </h3>
-                    <div className="bg-gray-50 rounded-lg p-4 text-center text-gray-500 text-sm">
-                        최근 주문 내역이 없습니다.
-                    </div>
+                    {loadingOrders ? (
+                        <div className="bg-gray-50 rounded-lg p-4 text-center text-gray-500 text-sm">
+                            로딩 중...
+                        </div>
+                    ) : orders.length === 0 ? (
+                        <div className="bg-gray-50 rounded-lg p-4 text-center text-gray-500 text-sm">
+                            주문 내역이 없습니다.
+                        </div>
+                    ) : (
+                        <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                            {orders.map(order => (
+                                <div key={order.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div>
+                                            <p className="font-medium text-gray-900">주문 #{order.id.slice(0, 8)}</p>
+                                            <p className="text-xs text-gray-500">
+                                                {order.createdAt 
+                                                    ? (order.createdAt instanceof Date 
+                                                        ? order.createdAt 
+                                                        : order.createdAt.toDate?.() || new Date(order.createdAt)).toLocaleDateString('ko-KR')
+                                                    : '-'}
+                                            </p>
+                                        </div>
+                                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                            order.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                            order.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                            order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                            'bg-gray-100 text-gray-700'
+                                        }`}>
+                                            {order.status === 'completed' ? '완료' :
+                                             order.status === 'pending' ? '대기' :
+                                             order.status === 'cancelled' ? '취소' :
+                                             order.status || '알 수 없음'}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <div className="text-sm text-gray-600">
+                                            {order.items?.length || 0}개 상품
+                                        </div>
+                                        <div className="font-bold text-gray-900">
+                                            ₩{order.total?.toLocaleString() || '0'}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 <div className="mt-8 flex justify-end">

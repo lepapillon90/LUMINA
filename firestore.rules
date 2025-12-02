@@ -10,15 +10,30 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
     function isAdmin() {
+      // Check if the user document has role 'ADMIN'
+      // Note: This requires a read, which costs money/quota.
+      // Ideally use Custom Claims, but for this app we use Firestore doc.
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN';
+    }
+
+    // Users: Public read (for profiles), Owner write
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if isAuthenticated() && isOwner(userId);
     }
 
     // Products: Public read, Admin write
     match /products/{productId} {
       allow read: if true;
+      allow write: if isAuthenticated() && isAdmin();
+    }
+
+    // Orders: Owner read/write
+    match /orders/{orderId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
       allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
       allow delete: if isAuthenticated() && isAdmin();
-      allow create: if isAuthenticated() && isAdmin();
     }
 
     // Carts: Owner read/write
@@ -26,22 +41,57 @@ service cloud.firestore {
       allow read, write: if isAuthenticated() && isOwner(userId);
     }
 
-    // Users: Public read, Owner write
-    match /users/{userId} {
-      allow read: if true;
-      allow create: if isAuthenticated() && isOwner(userId);
-      allow update: if isAuthenticated() && (isOwner(userId) || isAdmin());
-    }
-
     // OOTD Posts: Public read, Authenticated create, Owner/Admin update/delete
     match /ootd_posts/{postId} {
       allow read: if true;
       allow create: if isAuthenticated();
+      // Allow update if owner or admin. 
+      // Note: We check 'userId' field if it exists, or 'user' field (username) is harder to verify.
+      // Since we added 'userId', we use that.
+      // For legacy posts without userId, this might fail, but new posts will work.
       allow update, delete: if isAuthenticated() && (
         resource.data.userId == request.auth.uid || 
         isAdmin() ||
+        // Fallback for likes/comments which might be updated by others?
+        // Actually, likes/comments update the document. 
+        // If we want ANYONE to like/comment, we need to allow update with specific constraints.
+        // For now, let's allow any authenticated user to update 'likes' and 'comments' fields?
+        // That's complex in rules.
+        // Simplified: Allow authenticated users to update. (Less secure but functional for MVP social features)
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'comments', 'isLiked']))
       );
+    }
+
+    // User Addresses: Owner read/write
+    match /user_addresses/{addressId} {
+      // 읽기: 자신의 주소만 읽기 가능 (쿼리 포함)
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // 생성: 자신의 userId로만 생성 가능
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid;
+      
+      // 수정: 자신의 주소만 수정 가능 (userId는 변경 불가)
+      allow update: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid && 
+        request.resource.data.userId == request.auth.uid;
+      
+      // 삭제: 자신의 주소만 삭제 가능
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // User Coupons: Owner read, Admin write
+    match /user_coupons/{couponId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow write: if isAuthenticated() && isAdmin();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Point History: Owner read, System write
+    match /point_history/{historyId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow write: if isAuthenticated() && isAdmin();
     }
   }
 }

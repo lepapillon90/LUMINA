@@ -29,7 +29,7 @@ const Wishlist: React.FC<WishlistProps> = ({ items, loading }) => {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {items.map((product) => (
                 <div key={product.id} className="group">
-                    <Link to={`/product/${product.id}`} className="block relative aspect-[4/5] bg-gray-100 overflow-hidden mb-3 rounded-md">
+                    <Link to={`/product/${product.id}`} className="block relative aspect-square bg-gray-100 overflow-hidden mb-3 rounded-md">
                         <img
                             src={product.image}
                             alt={product.name}

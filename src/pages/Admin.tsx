@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Home, ShoppingCart, Package, Users, MessageCircle, FileText, Palette,
-  Percent, LineChart, BarChart2, Grid, Shield, Settings, LogOut, Menu, X
+  Home, ShoppingCart, Package, Users, MessageCircle, FileText,
+  LineChart, BarChart2, Grid, Shield, Settings, LogOut, Menu, X, Layout
 } from 'lucide-react';
 import { useAuth } from '../contexts';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import {
-  User, UserRole, Product, Order, Customer, Banner, Promotion, UserPermissions
+  User, UserRole, Product, Order, Customer, UserPermissions
 } from '../types';
 
 import { getAllOrders } from '../services/orderService';
@@ -17,13 +17,13 @@ import OrderManager from '../components/Admin/Orders/OrderManager';
 import ProductManager from '../components/Admin/Products/ProductManager';
 import CustomerManager from '../components/Admin/Customers/CustomerManager';
 import SystemManager from '../components/Admin/System/SystemManager';
-import DesignManager from '../components/Admin/Design/DesignManager';
 import CSManager from '../components/Admin/CS/CSManager';
 import AnalyticsManager from '../components/Admin/Analytics/AnalyticsManager';
+import HomepageManager from '../components/Admin/Homepage/HomepageManager';
 
 // --- Main Admin Component ---
 
-type Tab = 'home' | 'orders' | 'products' | 'customers' | 'messages' | 'board' | 'design' | 'promotion' | 'analytics' | 'stats' | 'excel' | 'system';
+type Tab = 'home' | 'orders' | 'products' | 'customers' | 'messages' | 'board' | 'analytics' | 'stats' | 'excel' | 'system' | 'homepage';
 
 const MENU_ITEMS = [
   { id: 'home', label: '홈', icon: Home, permission: null },
@@ -32,8 +32,7 @@ const MENU_ITEMS = [
   { id: 'customers', label: '고객', icon: Users, permission: 'customers' },
   { id: 'messages', label: '메시지', icon: MessageCircle, permission: null },
   { id: 'board', label: '게시판', icon: FileText, permission: null },
-  { id: 'design', label: '디자인', icon: Palette, permission: null },
-  { id: 'promotion', label: '프로모션', icon: Percent, permission: null },
+  { id: 'homepage', label: '홈페이지 관리', icon: Layout, permission: null },
   { id: 'analytics', label: '애널리틱스', icon: LineChart, permission: 'analytics' },
   { id: 'stats', label: '통계', icon: BarChart2, permission: 'analytics' },
   { id: 'excel', label: '통합엑셀', icon: Grid, permission: null },
@@ -42,13 +41,18 @@ const MENU_ITEMS = [
 
 const Admin: React.FC = () => {
   const { user, logout, loading } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
 
   // Data State - ProductManager will fetch from Firestore
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
 
   useEffect(() => {
     if (activeTab === 'orders') {
@@ -72,65 +76,8 @@ const Admin: React.FC = () => {
         }
       };
       fetchProducts();
-    } else if (activeTab === 'customers') {
-      const fetchCustomers = async () => {
-        try {
-          const { getCustomers } = await import('../services/customerService');
-          const data = await getCustomers();
-          setCustomers(data);
-        } catch (error) {
-          console.error("Failed to fetch customers:", error);
-        }
-      };
-      fetchCustomers();
-    }
   }, [activeTab]);
 
-  // Design & Promotion State
-  const [banners, setBanners] = useState<Banner[]>([]);
-  const [promotions, setPromotions] = useState<Promotion[]>([]);
-
-  useEffect(() => {
-    if (activeTab === 'design') {
-      const fetchDesignData = async () => {
-        try {
-          const [fetchedBanners, fetchedPromotions] = await Promise.all([
-            import('../services/designService').then(module => module.getBanners()),
-            import('../services/designService').then(module => module.getPromotions())
-          ]);
-          setBanners(fetchedBanners);
-          setPromotions(fetchedPromotions);
-        } catch (error) {
-          console.error("Failed to fetch design data:", error);
-        }
-      };
-      fetchDesignData();
-    }
-  }, [activeTab]);
-
-  // Drag & Drop State
-  const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
-
-  const handleDragStart = (index: number) => {
-    setDraggedItemIndex(index);
-  };
-
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    if (draggedItemIndex === null || draggedItemIndex === index) return;
-
-    const newProducts = [...products];
-    const draggedItem = newProducts[draggedItemIndex];
-    newProducts.splice(draggedItemIndex, 1);
-    newProducts.splice(index, 0, draggedItem);
-
-    setProducts(newProducts);
-    setDraggedItemIndex(index);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedItemIndex(null);
-  };
 
 
 
@@ -142,7 +89,7 @@ const Admin: React.FC = () => {
           <Shield size={48} className="mx-auto text-red-500 mb-4" />
           <h1 className="text-2xl font-bold text-gray-800 mb-2">계정 비활성화</h1>
           <p className="text-gray-600 mb-6">관리자 계정이 비활성화되었습니다. 관리자에게 문의하세요.</p>
-          <button onClick={logout} className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700">
+          <button onClick={handleLogout} className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700">
             로그아웃
           </button>
         </div>
@@ -230,7 +177,7 @@ const Admin: React.FC = () => {
             </div>
           </div>
           <button
-            onClick={logout}
+            onClick={handleLogout}
             className="w-full flex items-center justify-center space-x-2 px-4 py-2 border border-gray-200 rounded-sm text-sm text-gray-600 hover:bg-gray-50 transition"
           >
             <LogOut size={16} />
@@ -253,25 +200,11 @@ const Admin: React.FC = () => {
           {activeTab === 'home' && <Dashboard orders={orders} products={products} />}
           {activeTab === 'orders' && <OrderManager orders={orders} setOrders={setOrders} user={user} />}
           {activeTab === 'products' && <ProductManager products={products} setProducts={setProducts} user={user} />}
-          {activeTab === 'customers' && <CustomerManager customers={customers} setCustomers={setCustomers} user={user} />}
+          {activeTab === 'customers' && <CustomerManager user={user} />}
           {activeTab === 'system' && <SystemManager user={user} />}
-          {activeTab === 'design' && (
-            <DesignManager
-              banners={banners}
-              setBanners={setBanners}
-              promotions={promotions}
-              setPromotions={setPromotions}
-              products={products}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDragEnd={handleDragEnd}
-              draggedItemIndex={draggedItemIndex}
-              user={user}
-            />
-          )}
           {activeTab === 'messages' && <CSManager />}
           {activeTab === 'board' && renderPlaceholder('게시판 관리')}
-          {activeTab === 'promotion' && renderPlaceholder('프로모션 관리')}
+          {activeTab === 'homepage' && <HomepageManager user={user} />}
           {activeTab === 'analytics' && <AnalyticsManager />}
           {activeTab === 'stats' && renderPlaceholder('통계')}
           {activeTab === 'excel' && renderPlaceholder('통합엑셀')}

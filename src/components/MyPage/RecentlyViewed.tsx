@@ -37,7 +37,7 @@ const RecentlyViewed: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {products.map((product) => (
                 <Link key={product.id} to={`/product/${product.id}`} className="group block">
-                    <div className="aspect-[4/5] bg-gray-100 overflow-hidden mb-3 rounded-md relative">
+                    <div className="aspect-square bg-gray-100 overflow-hidden mb-3 rounded-md relative">
                         <img
                             src={product.image}
                             alt={product.name}
