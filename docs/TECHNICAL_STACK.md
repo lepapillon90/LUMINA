@@ -4,6 +4,7 @@
 *   **라이브러리:** React 19.
 *   **번들러/런타임:** Vite (Local Build).
 *   **언어:** TypeScript (TSX).
+*   **디자인 시스템:** Storybook.
 
 ## 2. 스타일링 (Styling)
 *   **프레임워크:** Tailwind CSS (v3.x).
@@ -23,7 +24,7 @@
 *   **서비스:** `services/geminiService.ts`.
 
 ## 6. 데이터 관리 (Data Management)
-*   **소스:** 정적 모의 데이터 (`constants.ts`).
+*   **소스:** Firestore (상품 데이터), 정적 모의 데이터 (OOTD 등).
 *   **타입:** 컴포넌트 간 공유되는 `types.ts`에 정의.
 
 ## 7. 배포 (Deployment)
@@ -58,6 +59,10 @@
 ## 7. 배포 (Deployment)
 *   **호스팅:** Firebase Hosting.
 *   **빌드:** `npm run build` (Vite Build).
+
+## 8. 테스트 (Testing)
+*   **유닛/통합 테스트:** Vitest.
+*   **E2E 테스트:** Playwright.
 
 ## 8. 폴더 구조 (Folder Structure)
 ```

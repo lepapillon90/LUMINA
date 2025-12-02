@@ -1,17 +1,16 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth, useGlobalModal } from '../contexts';
 import { getProducts } from '../services/productService';
 import { Product } from '../types';
-import RecommendedSection from '../components/features/home/RecommendedSection';
 import LookbookSection from '../components/features/home/LookbookSection';
-import PersonalizedRecommendation from '../components/features/home/PersonalizedRecommendation';
 import NewsletterPopup from '../components/features/home/NewsletterPopup';
 import PurchaseNotification from '../components/features/home/PurchaseNotification';
-import ReviewSlider from '../components/features/home/ReviewSlider';
+
 import MagazineSection from '../components/features/home/MagazineSection';
 import TimeSale from '../components/features/home/TimeSale';
 import InstagramFeed from '../components/features/home/InstagramFeed';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Heart } from 'lucide-react';
 import SEO from '../components/common/SEO';
 import OptimizedImage from '../components/common/OptimizedImage';
 
@@ -20,6 +19,9 @@ import TrendingOOTDSection from '../components/features/home/TrendingOOTDSection
 const Home: React.FC = () => {
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);
   const sliderRef = useRef<HTMLDivElement>(null);
+  const { user, toggleWishlist } = useAuth();
+  const { showConfirm } = useGlobalModal();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchNewArrivals = async () => {
@@ -81,7 +83,7 @@ const Home: React.FC = () => {
             Timeless Elegance
           </p>
           <h1
-            className="text-5xl md:text-[64px] font-serif font-bold mb-6 drop-shadow-md animate-fade-in-up delay-100"
+            className="text-4xl md:text-[64px] font-serif font-bold mb-6 drop-shadow-md animate-fade-in-up delay-100"
             style={{ fontFamily: "'Cinzel', serif" }}
           >
             LUMINA
@@ -98,8 +100,12 @@ const Home: React.FC = () => {
         </div>
       </section>
 
+      {/* Time Sale */}
+      <TimeSale />
+
       {/* Featured Section (New Arrivals) */}
-      <section className="py-24 bg-white overflow-hidden">
+      {/* Featured Section (New Arrivals) */}
+      <section className="py-16 md:py-24 bg-white overflow-hidden">
         <div className="container mx-auto px-6 mb-12">
           <h2 className="text-3xl md:text-4xl font-serif text-primary mb-3">New Arrivals</h2>
           <p className="text-gray-500 font-light">가장 먼저 만나는 루미나의 새로운 컬렉션</p>
@@ -142,6 +148,28 @@ const Home: React.FC = () => {
                           className="w-full h-full object-cover"
                         />
                       </div>
+                      {/* NEW Badge */}
+                      <div className="absolute top-2 left-2 bg-black text-white text-[10px] font-bold px-2 py-1 z-10">
+                        NEW
+                      </div>
+                      {/* Wishlist Button */}
+                      <button
+                        className="absolute top-2 right-2 p-2 bg-white/80 rounded-full hover:bg-white transition shadow-sm z-10"
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          if (!user) {
+                            const confirmed = await showConfirm("로그인이 필요한 서비스입니다.\n로그인 페이지로 이동하시겠습니까?");
+                            if (confirmed) navigate('/login');
+                            return;
+                          }
+                          await toggleWishlist(product.id);
+                        }}
+                      >
+                        <Heart
+                          size={16}
+                          className={`transition ${user?.wishlist?.includes(product.id) ? 'fill-red-500 text-red-500' : 'text-gray-600 hover:fill-red-500 hover:text-red-500'}`}
+                        />
+                      </button>
                     </div>
                     <div className="mt-4">
                       <h3 className="text-sm text-gray-900 font-medium group-hover:text-gray-600 transition truncate">
@@ -166,29 +194,16 @@ const Home: React.FC = () => {
       {/* Lookbook Section */}
       <LookbookSection />
 
-      {/* Time Sale */}
-      <TimeSale />
 
-      {/* Mid Banner */}
-      <section className="w-full">
-        <OptimizedImage
-          src="/mid_banner.png"
-          alt="Lumina Lifestyle"
-          className="w-full h-[300px] md:h-[400px] object-cover object-center"
-        />
-      </section>
 
-      {/* Personalized Recommendation */}
-      <PersonalizedRecommendation />
 
-      {/* Recommended Section */}
-      <RecommendedSection />
+
+
 
       {/* Trending OOTD Section */}
       <TrendingOOTDSection />
 
-      {/* Review Slider */}
-      <ReviewSlider />
+
 
       {/* Magazine Section */}
       <MagazineSection />
@@ -196,16 +211,7 @@ const Home: React.FC = () => {
       {/* Instagram Feed */}
       <InstagramFeed />
 
-      {/* Brand Story Snippet */}
-      <section className="bg-secondary py-20">
-        <div className="container mx-auto px-6 text-center max-w-2xl">
-          <h2 className="text-3xl font-serif mb-6">Lumina Philosophy</h2>
-          <p className="text-gray-600 leading-loose mb-8">
-            라틴어 "Luminósus"에서 유래한 루미나(LUMINA)는 쥬얼리가 단순한 장식이 아닌, 당신만의 스타일을 명확하게 해주는 매개체라고 믿습니다. 각각의 조각들은 빛을 머금고 당신의 내면의 광채를 반사하도록 디자인되었습니다.
-          </p>
-          <OptimizedImage src="/sub_banner.png" alt="Jewelry Detail" className="w-full h-64 object-cover object-center mt-8 grayscale opacity-80 hover:grayscale-0 transition duration-700" />
-        </div>
-      </section>
+
 
       {/* Newsletter Popup */}
       <NewsletterPopup />

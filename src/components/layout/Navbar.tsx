@@ -46,6 +46,8 @@ const Navbar: React.FC = () => {
             <div className="hidden md:flex space-x-8 text-sm uppercase tracking-wider font-medium">
               <Link to="/" className="hover:text-accent transition">홈</Link>
               <Link to="/shop" className="hover:text-accent transition">쇼핑</Link>
+              <Link to="/cart" className="hover:text-accent transition">장바구니</Link>
+              <Link to="/magazine" className="hover:text-accent transition">매거진</Link>
               <Link to="/ootd" className="hover:text-accent transition">OOTD</Link>
             </div>
 
@@ -98,6 +100,8 @@ const Navbar: React.FC = () => {
           <div className="md:hidden absolute top-full left-0 w-full bg-white text-primary shadow-lg py-4 flex flex-col space-y-4 px-6">
             <Link to="/" onClick={() => setIsMenuOpen(false)} className="block py-2 border-b border-gray-100">홈</Link>
             <Link to="/shop" onClick={() => setIsMenuOpen(false)} className="block py-2 border-b border-gray-100">쇼핑</Link>
+            <Link to="/cart" onClick={() => setIsMenuOpen(false)} className="block py-2 border-b border-gray-100">장바구니</Link>
+            <Link to="/magazine" onClick={() => setIsMenuOpen(false)} className="block py-2 border-b border-gray-100">매거진</Link>
             <Link to="/ootd" onClick={() => setIsMenuOpen(false)} className="block py-2 border-b border-gray-100">OOTD</Link>
           </div>
         )}

@@ -2,7 +2,11 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 
-const MagazineSection: React.FC = () => {
+interface MagazineSectionProps {
+    showViewAll?: boolean;
+}
+
+const MagazineSection: React.FC<MagazineSectionProps> = ({ showViewAll = true }) => {
     const articles = [
         {
             id: 1,
@@ -31,16 +35,18 @@ const MagazineSection: React.FC = () => {
     ];
 
     return (
-        <section className="py-24 bg-white">
+        <section className="py-16 md:py-24 bg-white">
             <div className="container mx-auto px-6">
                 <div className="flex justify-between items-end mb-12">
                     <div>
                         <h2 className="text-3xl font-serif text-primary mb-2">Lumina Magazine</h2>
                         <p className="text-gray-500">스타일링 팁부터 브랜드 스토리까지</p>
                     </div>
-                    <Link to="/blog" className="hidden md:flex items-center gap-2 text-sm font-medium hover:gap-3 transition-all">
-                        VIEW ALL STORIES <ArrowRight size={16} />
-                    </Link>
+                    {showViewAll && (
+                        <Link to="/magazine" className="hidden md:flex items-center gap-2 text-sm font-medium hover:gap-3 transition-all">
+                            더 보기 <ArrowRight size={16} />
+                        </Link>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -63,11 +69,13 @@ const MagazineSection: React.FC = () => {
                     ))}
                 </div>
 
-                <div className="mt-10 text-center md:hidden">
-                    <Link to="/blog" className="inline-flex items-center gap-2 text-sm font-medium border-b border-black pb-1">
-                        VIEW ALL STORIES <ArrowRight size={16} />
-                    </Link>
-                </div>
+                {showViewAll && (
+                    <div className="mt-10 text-center md:hidden">
+                        <Link to="/magazine" className="inline-flex items-center gap-2 text-sm font-medium border-b border-black pb-1">
+                            더 많은 매거진 보기 <ArrowRight size={16} />
+                        </Link>
+                    </div>
+                )}
             </div>
         </section>
     );

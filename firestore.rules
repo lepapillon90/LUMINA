@@ -10,14 +10,15 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
     function isAdmin() {
-      // Check if the user document has role 'ADMIN'
-      // Note: This requires a read, which costs money/quota.
-      // Ideally use Custom Claims, but for this app we use Firestore doc.
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN';
     }
 
+    // Products: Public read, Admin write
+    match /products/{productId} {
+      allow read: if true;
       allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
       allow delete: if isAuthenticated() && isAdmin();
+      allow create: if isAuthenticated() && isAdmin();
     }
 
     // Carts: Owner read/write
@@ -29,19 +30,9 @@ service cloud.firestore {
     match /ootd_posts/{postId} {
       allow read: if true;
       allow create: if isAuthenticated();
-      // Allow update if owner or admin. 
-      // Note: We check 'userId' field if it exists, or 'user' field (username) is harder to verify.
-      // Since we added 'userId', we use that.
-      // For legacy posts without userId, this might fail, but new posts will work.
       allow update, delete: if isAuthenticated() && (
         resource.data.userId == request.auth.uid || 
         isAdmin() ||
-        // Fallback for likes/comments which might be updated by others?
-        // Actually, likes/comments update the document. 
-        // If we want ANYONE to like/comment, we need to allow update with specific constraints.
-        // For now, let's allow any authenticated user to update 'likes' and 'comments' fields?
-        // That's complex in rules.
-        // Simplified: Allow authenticated users to update. (Less secure but functional for MVP social features)
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'comments', 'isLiked']))
       );
     }

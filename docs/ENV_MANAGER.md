@@ -6,6 +6,14 @@
 | 변수명 (Variable Name) | 설명 (Description) | 필수 여부 (Required) | 용도 (Usage) |
 | :--- | :--- | :--- | :--- |
 | `VITE_GEMINI_API_KEY` | Google Gemini API 키 | 예 (Yes) | `services/geminiService.ts`에서 Google GenAI 인증에 사용됩니다. |
+| `VITE_FIREBASE_API_KEY` | Firebase API Key | 예 (Yes) | Firebase 초기화 및 인증에 사용됩니다. |
+| `VITE_FIREBASE_AUTH_DOMAIN` | Firebase Auth Domain | 예 (Yes) | Firebase 인증 도메인입니다. |
+| `VITE_FIREBASE_PROJECT_ID` | Firebase Project ID | 예 (Yes) | Firebase 프로젝트 식별자입니다. |
+| `VITE_FIREBASE_STORAGE_BUCKET` | Firebase Storage Bucket | 예 (Yes) | 이미지 등 파일 저장소 주소입니다. |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` | Firebase Messaging Sender ID | 예 (Yes) | 클라우드 메시징(FCM)에 사용됩니다. |
+| `VITE_FIREBASE_APP_ID` | Firebase App ID | 예 (Yes) | 웹 앱 식별자입니다. |
+| `VITE_GA4_ID` | Google Analytics 4 ID | 아니오 (No) | GA4 트래킹에 사용됩니다. |
+| `VITE_SENTRY_DSN` | Sentry DSN | 아니오 (No) | 에러 모니터링에 사용됩니다. |
 
 ## 2. 주입 방법 (Injection Method)
 *   프로젝트 루트의 `.env` 파일에 정의합니다.

@@ -14,9 +14,9 @@ const TrendingOOTDSection: React.FC = () => {
     };
 
     return (
-        <section className="py-24 bg-gray-50">
+        <section className="py-16 bg-gray-50">
             <div className="container mx-auto px-6">
-                <div className="flex justify-between items-end mb-12">
+                <div className="flex justify-between items-end mb-8">
                     <div>
                         <h2 className="text-3xl md:text-4xl font-serif text-primary mb-3">Trending OOTD</h2>
                         <p className="text-gray-500 font-light">지금 가장 사랑받는 스타일을 만나보세요</p>
@@ -30,7 +30,7 @@ const TrendingOOTDSection: React.FC = () => {
                     </Link>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {trendingPosts.map((post, index) => (
                         <Link
                             to="/ootd"

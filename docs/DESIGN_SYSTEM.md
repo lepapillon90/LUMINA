@@ -29,6 +29,7 @@
 *   **Claim Status (Pink):** `#fff1f2` (배경), `#f43f5e` (텍스트)
 
 ## 3. UI 컴포넌트 (UI Components)
+> **Note**: 모든 UI 컴포넌트는 **Storybook**에서 문서화되고 테스트됩니다. (`npm run storybook`)
 
 ### 버튼 (Buttons)
 *   **스타일:** 날카로운 모서리 (rounded-none 또는 rounded-sm), 대문자 텍스트, 넓은 자간.

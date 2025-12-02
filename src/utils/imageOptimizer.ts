@@ -1,5 +1,6 @@
 import imageCompression from 'browser-image-compression';
 
+
 export const compressImage = async (file: File): Promise<File> => {
     const options = {
         maxSizeMB: 1,          // 최대 파일 크기: 1MB
@@ -17,4 +18,23 @@ export const compressImage = async (file: File): Promise<File> => {
         console.error('Image compression failed:', error);
         return file; // 실패 시 원본 파일 반환
     }
+};
+
+export const optimizeImageUrl = (url: string, width: number = 800): string => {
+    if (!url) return '';
+
+    // Unsplash Optimization
+    if (url.includes('images.unsplash.com')) {
+        const separator = url.includes('?') ? '&' : '?';
+        return `${url}${separator}auto=format&fit=crop&w=${width}&q=80`;
+    }
+
+    // Cloudinary Optimization (Example pattern)
+    if (url.includes('cloudinary.com')) {
+        // Basic example: insert transformation string
+        // This is a simplified regex and might need adjustment based on actual URL structure
+        return url.replace('/upload/', `/upload/w_${width},q_auto,f_auto/`);
+    }
+
+    return url;
 };

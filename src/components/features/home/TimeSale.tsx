@@ -30,7 +30,7 @@ const TimeSale: React.FC = () => {
     }, []);
 
     return (
-        <section className="py-16 bg-black text-white">
+        <section className="py-12 md:py-16 bg-black text-white">
             <div className="container mx-auto px-6">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-8">
 
@@ -47,24 +47,24 @@ const TimeSale: React.FC = () => {
 
                         <div className="flex items-center justify-center md:justify-start gap-4 text-center">
                             <div>
-                                <div className="bg-gray-800 w-16 h-16 rounded-lg flex items-center justify-center text-2xl font-bold font-mono mb-2">
+                                <div className="bg-gray-800 w-12 h-12 md:w-16 md:h-16 rounded-lg flex items-center justify-center text-xl md:text-2xl font-bold font-mono mb-2">
                                     {String(timeLeft.hours).padStart(2, '0')}
                                 </div>
-                                <span className="text-xs text-gray-500 uppercase">Hours</span>
+                                <span className="text-[10px] md:text-xs text-gray-500 uppercase">Hours</span>
                             </div>
-                            <span className="text-2xl font-bold -mt-6">:</span>
+                            <span className="text-xl md:text-2xl font-bold -mt-6">:</span>
                             <div>
-                                <div className="bg-gray-800 w-16 h-16 rounded-lg flex items-center justify-center text-2xl font-bold font-mono mb-2">
+                                <div className="bg-gray-800 w-12 h-12 md:w-16 md:h-16 rounded-lg flex items-center justify-center text-xl md:text-2xl font-bold font-mono mb-2">
                                     {String(timeLeft.minutes).padStart(2, '0')}
                                 </div>
-                                <span className="text-xs text-gray-500 uppercase">Mins</span>
+                                <span className="text-[10px] md:text-xs text-gray-500 uppercase">Mins</span>
                             </div>
-                            <span className="text-2xl font-bold -mt-6">:</span>
+                            <span className="text-xl md:text-2xl font-bold -mt-6">:</span>
                             <div>
-                                <div className="bg-gray-800 w-16 h-16 rounded-lg flex items-center justify-center text-2xl font-bold font-mono mb-2 text-red-500">
+                                <div className="bg-gray-800 w-12 h-12 md:w-16 md:h-16 rounded-lg flex items-center justify-center text-xl md:text-2xl font-bold font-mono mb-2 text-red-500">
                                     {String(timeLeft.seconds).padStart(2, '0')}
                                 </div>
-                                <span className="text-xs text-gray-500 uppercase">Secs</span>
+                                <span className="text-[10px] md:text-xs text-gray-500 uppercase">Secs</span>
                             </div>
                         </div>
                     </div>

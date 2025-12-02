@@ -24,6 +24,7 @@ const Home = lazy(() => import('./pages/Home'));
 const Shop = lazy(() => import('./pages/Shop'));
 const ProductDetail = lazy(() => import('./pages/ProductDetail'));
 const OOTD = lazy(() => import('./pages/OOTD'));
+const Magazine = lazy(() => import('./pages/Magazine'));
 const Cart = lazy(() => import('./pages/Cart'));
 const MyPage = lazy(() => import('./pages/MyPage'));
 const Admin = lazy(() => import('./pages/Admin'));
@@ -59,6 +60,7 @@ const Layout: React.FC = () => {
             <Route path="/shop" element={<Shop />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/ootd" element={<OOTD />} />
+            <Route path="/magazine" element={<Magazine />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />

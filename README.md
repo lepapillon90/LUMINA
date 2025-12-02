@@ -30,6 +30,7 @@ Google Gemini 기반의 **AI 스타일리스트**와 사용자 참여형 **OOTD(
 
 ### 3. AI 기술 (AI Tech)
 - **AI 스타일리스트 'Lumi'**: Google Gemini API를 활용한 1:1 스타일링 상담 챗봇.
+- **실시간 데이터 연동**: Firestore의 최신 상품 데이터를 기반으로 정확한 추천 제공.
 - 현재 보고 있는 상품이나 상황(TPO)에 맞는 쥬얼리 추천.
 
 ### 4. 관리자 (Admin)
@@ -45,6 +46,8 @@ Google Gemini 기반의 **AI 스타일리스트**와 사용자 참여형 **OOTD(
 - **AI**: Google Gemini API (`@google/genai`)
 - **Deployment**: Firebase Hosting
 - **Routing**: React Router v7
+- **Testing**: Vitest, Playwright
+- **Design System**: Storybook
 
 ---
 
@@ -98,14 +101,24 @@ LUMINA/
    npm run dev
    ```
 
+5. **Storybook 실행**
+   컴포넌트 개발 및 테스트를 위해 Storybook을 실행합니다.
+   ```bash
+   npm run storybook
+   ```
+
 ---
 
 ## 📝 문서 (Documentation)
 
 더 자세한 내용은 `docs/` 폴더를 참고하세요.
 - [기획서 (PRD)](docs/PRD.md)
+- [기술 스택](docs/TECHNICAL_STACK.md)
 - [코딩 컨벤션](docs/CODING_CONVENTIONS.md)
 - [디자인 시스템](docs/DESIGN_SYSTEM.md)
+- [환경 변수 가이드](docs/ENV_MANAGER.md)
+- [Firebase 체크리스트](docs/firebase_checklist.md)
+- [폴더 구조 설명](docs/FOLDER_STRUCTURE.md)
 
 ## 🗺️ 로드맵 (Roadmap)
 
@@ -113,3 +126,8 @@ LUMINA/
 - [홈 페이지 로드맵](roadmaps/HOME_ROADMAP.md)
 - [쇼핑 페이지 로드맵](roadmaps/SHOP_ROADMAP.md)
 - [OOTD 로드맵](roadmaps/OOTD_ROADMAP.md)
+- [장바구니/결제 로드맵](roadmaps/CART_ROADMAP.md)
+- [마이페이지 로드맵](roadmaps/MYPAGE_ROADMAP.md)
+- [관리자 페이지 로드맵](roadmaps/ADMIN_ROADMAP.md)
+- [백엔드 로드맵](roadmaps/BACKEND_ROADMAP.md)
+- [기술 로드맵](roadmaps/TECHNICAL_ROADMAP.md)
