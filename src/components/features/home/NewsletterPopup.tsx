@@ -1,11 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { X, Mail } from 'lucide-react';
 
-const NewsletterPopup: React.FC = () => {
-    const [isVisible, setIsVisible] = useState(false);
+interface NewsletterPopupProps {
+    forceShow?: boolean;
+}
+
+const NewsletterPopup: React.FC<NewsletterPopupProps> = ({ forceShow = false }) => {
+    const [isVisible, setIsVisible] = useState(forceShow);
     const [email, setEmail] = useState('');
 
     useEffect(() => {
+        if (forceShow) {
+            setIsVisible(true);
+            return;
+        }
+
         // Check if already seen in this session
         const hasSeen = sessionStorage.getItem('newsletter_popup_seen');
         if (!hasSeen) {
@@ -15,7 +24,7 @@ const NewsletterPopup: React.FC = () => {
             }, 3000);
             return () => clearTimeout(timer);
         }
-    }, []);
+    }, [forceShow]);
 
     const handleClose = () => {
         setIsVisible(false);

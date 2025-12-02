@@ -4,6 +4,7 @@ import { Product } from '../../../types';
 import { Eye, Heart } from 'lucide-react';
 import { useAuth } from '../../../contexts';
 import { useGlobalModal } from '../../../contexts/GlobalModalContext';
+import OptimizedImage from '../../common/OptimizedImage';
 
 interface ProductCardProps {
     product: Product;
@@ -30,14 +31,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
             <Link to={`/product/${product.id}`} className="block relative">
                 {/* Image Container with Aspect Ratio */}
                 <div className="relative w-full pt-[100%] bg-gray-100 overflow-hidden mb-4">
-                    <img
-                        src={product.image}
-                        alt={product.name}
-                        onError={(e) => {
-                            e.currentTarget.src = "https://via.placeholder.com/400x500?text=No+Image";
-                        }}
-                        className="absolute top-0 left-0 w-full h-full object-cover transition duration-700 group-hover:scale-110"
-                    />
+                    <div className="absolute inset-0 w-full h-full group-hover:scale-110 transition duration-700">
+                        <OptimizedImage
+                            src={product.image}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                        />
+                    </div>
                     {/* Overlay or Badge if needed */}
                     {/* Badges Container */}
                     <div className="absolute top-3 left-3 flex flex-col gap-1 z-10">

@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Sparkles, Send, X } from 'lucide-react';
 import { getStylistAdvice } from '../../../services/geminiService';
-import { PRODUCTS } from '../../../constants';
+import { getProducts } from '../../../services/productService';
+import { Product } from '../../../types';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -14,6 +15,7 @@ const AIStylist: React.FC = () => {
     { role: 'assistant', text: "안녕하세요! 당신만의 AI 스타일리스트 '루미'입니다. 오늘 특별히 찾으시는 스타일이 있으신가요?" }
   ]);
   const [input, setInput] = useState('');
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -25,6 +27,15 @@ const AIStylist: React.FC = () => {
     scrollToBottom();
   }, [messages, isOpen]);
 
+  // Fetch products when the component mounts
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const fetchedProducts = await getProducts();
+      setProducts(fetchedProducts);
+    };
+    fetchProducts();
+  }, []);
+
   const handleSend = async () => {
     if (!input.trim()) return;
 
@@ -34,7 +45,7 @@ const AIStylist: React.FC = () => {
     setIsLoading(true);
 
     // Create a simple string context of available products
-    const productContext = PRODUCTS.map(p => `${p.name} (${p.category}): ₩${p.price}`).join(', ');
+    const productContext = products.map(p => `${p.name} (${p.category}): ₩${p.price}`).join(', ');
 
     const advice = await getStylistAdvice(userMsg, productContext);
 
@@ -75,8 +86,8 @@ const AIStylist: React.FC = () => {
               >
                 <div
                   className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${msg.role === 'user'
-                      ? 'bg-primary text-white rounded-br-none'
-                      : 'bg-white border border-gray-200 text-gray-700 rounded-bl-none shadow-sm'
+                    ? 'bg-primary text-white rounded-br-none'
+                    : 'bg-white border border-gray-200 text-gray-700 rounded-bl-none shadow-sm'
                     }`}
                 >
                   {msg.text}

@@ -13,6 +13,7 @@ import TimeSale from '../components/features/home/TimeSale';
 import InstagramFeed from '../components/features/home/InstagramFeed';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import SEO from '../components/common/SEO';
+import OptimizedImage from '../components/common/OptimizedImage';
 
 import TrendingOOTDSection from '../components/features/home/TrendingOOTDSection';
 
@@ -61,7 +62,14 @@ const Home: React.FC = () => {
           >
             <source src="https://videos.pexels.com/video-files/5359634/5359634-uhd_2560_1440_25fps.mp4" type="video/mp4" />
             {/* Fallback Image */}
-            <img src="/hero_poster.png" alt="Hero Background" className="w-full h-full object-cover" />
+            <OptimizedImage
+              src="/hero_poster.png"
+              alt="Hero Background"
+              className="w-full h-full object-cover"
+              loading="eager"
+              // @ts-ignore
+              fetchPriority="high"
+            />
           </video>
           {/* Overlay */}
           <div className="absolute inset-0 bg-black/30"></div>
@@ -127,14 +135,13 @@ const Home: React.FC = () => {
                   <Link to={`/product/${product.id}`} className="block relative">
                     {/* 1:1 Aspect Ratio (Square) */}
                     <div className="relative w-full pt-[100%] bg-gray-100 overflow-hidden">
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        onError={(e) => {
-                          e.currentTarget.src = "https://via.placeholder.com/400x400?text=No+Image";
-                        }}
-                        className="absolute top-0 left-0 w-full h-full object-cover transition duration-700 group-hover:scale-110"
-                      />
+                      <div className="absolute inset-0 w-full h-full group-hover:scale-110 transition duration-700">
+                        <OptimizedImage
+                          src={product.image}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
                     </div>
                     <div className="mt-4">
                       <h3 className="text-sm text-gray-900 font-medium group-hover:text-gray-600 transition truncate">
@@ -164,7 +171,7 @@ const Home: React.FC = () => {
 
       {/* Mid Banner */}
       <section className="w-full">
-        <img
+        <OptimizedImage
           src="/mid_banner.png"
           alt="Lumina Lifestyle"
           className="w-full h-[300px] md:h-[400px] object-cover object-center"
@@ -196,7 +203,7 @@ const Home: React.FC = () => {
           <p className="text-gray-600 leading-loose mb-8">
             라틴어 "Luminósus"에서 유래한 루미나(LUMINA)는 쥬얼리가 단순한 장식이 아닌, 당신만의 스타일을 명확하게 해주는 매개체라고 믿습니다. 각각의 조각들은 빛을 머금고 당신의 내면의 광채를 반사하도록 디자인되었습니다.
           </p>
-          <img src="/sub_banner.png" alt="Jewelry Detail" className="w-full h-64 object-cover object-center mt-8 grayscale opacity-80 hover:grayscale-0 transition duration-700" />
+          <OptimizedImage src="/sub_banner.png" alt="Jewelry Detail" className="w-full h-64 object-cover object-center mt-8 grayscale opacity-80 hover:grayscale-0 transition duration-700" />
         </div>
       </section>
 

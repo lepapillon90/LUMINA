@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 
-const apiKey = process.env.API_KEY || ''; // Ensure API key is available
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY || ''; // Ensure API key is available
 const ai = new GoogleGenAI({ apiKey });
 
 export const getStylistAdvice = async (userMessage: string, context: string): Promise<string> => {

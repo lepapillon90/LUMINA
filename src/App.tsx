@@ -2,29 +2,37 @@ import React, { Suspense, lazy, useEffect } from 'react';
 import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { GlobalModalProvider } from './contexts/GlobalModalContext';
 import { ToastProvider } from './contexts/ToastContext';
-import { Providers } from './contexts'; // Correct import for Auth and Cart providers
-// import { HelmetProvider } from 'react-helmet-async';
+import { Providers } from './contexts';
+import { QueryProvider } from './contexts/QueryContext';
+import { HelmetProvider } from 'react-helmet-async';
+import ReactGA from 'react-ga4';
+import hotjar from '@hotjar/browser';
 
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import AIStylist from './components/features/home/AIStylist';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import Loading from './components/common/Loading';
+import RouteTracker from './components/common/RouteTracker';
+import GTM from './components/common/GTM';
 
-import Home from './pages/Home';
-import Shop from './pages/Shop';
-import ProductDetail from './pages/ProductDetail';
-import OOTD from './pages/OOTD';
-import Cart from './pages/Cart';
-import MyPage from './pages/MyPage';
-import Admin from './pages/Admin';
-import DataMigration from './components/Admin/DataMigration';
-import NotFound from './pages/NotFound';
+// Initialize GA4 (Replace with actual Measurement ID)
+ReactGA.initialize("G-MEASUREMENT_ID");
 
-import Login from './pages/Auth/Login';
-import Signup from './pages/Auth/Signup';
-import GuestOrderTracking from './pages/GuestOrderTracking';
+// Lazy load all pages
+const Home = lazy(() => import('./pages/Home'));
+const Shop = lazy(() => import('./pages/Shop'));
+const ProductDetail = lazy(() => import('./pages/ProductDetail'));
+const OOTD = lazy(() => import('./pages/OOTD'));
+const Cart = lazy(() => import('./pages/Cart'));
+const MyPage = lazy(() => import('./pages/MyPage'));
+const Admin = lazy(() => import('./pages/Admin'));
+const DataMigration = lazy(() => import('./components/Admin/DataMigration'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+const Login = lazy(() => import('./pages/Auth/Login'));
+const Signup = lazy(() => import('./pages/Auth/Signup'));
 const ForgotPassword = lazy(() => import('./pages/Auth/ForgotPassword'));
+const GuestOrderTracking = lazy(() => import('./pages/GuestOrderTracking'));
 
 // --- Layout Helper ---
 const ScrollToTop = () => {
@@ -70,20 +78,29 @@ const Layout: React.FC = () => {
 };
 
 const App: React.FC = () => {
+  useEffect(() => {
+    // Initialize Hotjar (Replace with actual Site ID and Version)
+    hotjar.init(1234567, 6);
+  }, []);
+
   return (
-    <GlobalModalProvider>
-      <ToastProvider>
-        <Providers>
-          {/* <HelmetProvider> */}
-          <HashRouter>
-            <ErrorBoundary>
-              <Layout />
-            </ErrorBoundary>
-          </HashRouter>
-          {/* </HelmetProvider> */}
-        </Providers>
-      </ToastProvider>
-    </GlobalModalProvider>
+    <QueryProvider>
+      <GlobalModalProvider>
+        <ToastProvider>
+          <Providers>
+            <HelmetProvider>
+              <HashRouter>
+                <GTM gtmId="GTM-XXXXXXX" />
+                <RouteTracker />
+                <ErrorBoundary>
+                  <Layout />
+                </ErrorBoundary>
+              </HashRouter>
+            </HelmetProvider>
+          </Providers>
+        </ToastProvider>
+      </GlobalModalProvider>
+    </QueryProvider>
   );
 };
 

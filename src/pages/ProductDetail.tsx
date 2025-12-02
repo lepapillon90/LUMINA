@@ -6,6 +6,7 @@ import { useCart } from '../contexts';
 import { ChevronRight, Star, Truck, ShieldCheck, Heart } from 'lucide-react';
 import SEO from '../components/common/SEO';
 import Loading from '../components/common/Loading';
+import ReactGA from 'react-ga4';
 import ConfirmModal from '../components/common/ConfirmModal';
 
 import RestockModal from '../components/features/products/RestockModal';
@@ -45,6 +46,19 @@ const ProductDetail: React.FC = () => {
                         // Limit to 10
                         if (recent.length > 10) recent.pop();
                         localStorage.setItem('recentlyViewed', JSON.stringify(recent));
+
+                        // GA4 E-commerce Event: view_item
+                        ReactGA.event('view_item', {
+                            currency: 'KRW',
+                            value: data.price,
+                            items: [{
+                                item_id: data.id.toString(),
+                                item_name: data.name,
+                                item_category: data.category,
+                                price: data.price,
+                                quantity: 1
+                            }]
+                        });
                     }
                 } catch (error) {
                     console.error("Error fetching product:", error);
@@ -67,6 +81,19 @@ const ProductDetail: React.FC = () => {
         if (product) {
             addToCart(product, quantity);
             setIsConfirmModalOpen(false);
+
+            // GA4 E-commerce Event: add_to_cart
+            ReactGA.event('add_to_cart', {
+                currency: 'KRW',
+                value: product.price * quantity,
+                items: [{
+                    item_id: product.id.toString(),
+                    item_name: product.name,
+                    item_category: product.category,
+                    price: product.price,
+                    quantity: quantity
+                }]
+            });
         }
     };
 
@@ -86,11 +113,11 @@ const ProductDetail: React.FC = () => {
 
     return (
         <div className="pt-24 pb-20 bg-white min-h-screen">
-            <SEO title={product.name} description={product.description} image={product.image} />
-
-            {/* JSON-LD Structured Data */}
-            <script type="application/ld+json">
-                {JSON.stringify({
+            <SEO
+                title={product.name}
+                description={product.description}
+                image={product.image}
+                jsonLd={{
                     "@context": "https://schema.org/",
                     "@type": "Product",
                     "name": product.name,
@@ -104,8 +131,8 @@ const ProductDetail: React.FC = () => {
                         "price": product.price,
                         "availability": product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
                     }
-                })}
-            </script>
+                }}
+            />
 
             <div className="container mx-auto px-6">
                 {/* Breadcrumb */}
