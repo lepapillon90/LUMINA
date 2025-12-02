@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Image as ImageIcon, Tag, Loader, Search, Trash2, ShoppingBag, Globe } from 'lucide-react';
+import { X, Image as ImageIcon, Tag, Loader, Search, Trash2, ShoppingBag, Globe, Sparkles } from 'lucide-react';
 import { PRODUCTS } from '../../../constants';
 import { OOTDPost, Product } from '../../../types';
 import { uploadImage } from '../../../services/storageService';
@@ -21,6 +21,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onSubmit }) 
     const [isUploading, setIsUploading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [isDragging, setIsDragging] = useState(false);
+
+    // AI Tagging State
+    const [aiTags, setAiTags] = useState<string[]>([]);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
 
     // New State for Tabs and Purchased Products
     const [activeTab, setActiveTab] = useState<'all' | 'purchased'>('all');
@@ -51,9 +55,12 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onSubmit }) 
         e.preventDefault();
         if (!caption || !imageUrl) return;
 
+        // Append AI tags to caption or store separately (for now just append to caption for demo)
+        const finalCaption = caption + (aiTags.length > 0 ? `\n\n${aiTags.map(t => `#${t}`).join(' ')}` : '');
+
         onSubmit({
             image: imageUrl,
-            caption,
+            caption: finalCaption,
             productsUsed: selectedProducts,
             comments: [],
             isLiked: false
@@ -77,6 +84,17 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onSubmit }) 
         await processFile(file);
     };
 
+    const simulateAiAnalysis = async () => {
+        setIsAnalyzing(true);
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Mock tags
+        const mockTags = ['Casual', 'Summer', 'Minimal', 'DailyLook'];
+        setAiTags(mockTags);
+        setIsAnalyzing(false);
+    };
+
     const processFile = async (file: File) => {
         if (!file.type.startsWith('image/')) {
             await showAlert('이미지 파일만 업로드 가능합니다.', '오류');
@@ -87,6 +105,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onSubmit }) 
         try {
             const url = await uploadImage(file, 'ootd');
             setImageUrl(url);
+            // Trigger AI Analysis after upload
+            simulateAiAnalysis();
         } catch (error) {
             console.error("Upload failed:", error);
             await showAlert("이미지 업로드에 실패했습니다.", "오류");
@@ -181,13 +201,38 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onSubmit }) 
                             {imageUrl && !isUploading && (
                                 <button
                                     type="button"
-                                    onClick={(e) => { e.stopPropagation(); setImageUrl(''); }}
+                                    onClick={(e) => { e.stopPropagation(); setImageUrl(''); setAiTags([]); }}
                                     className="text-xs text-red-500 mt-2 hover:text-red-600 flex items-center gap-1 ml-1"
                                 >
                                     <Trash2 size={12} /> 사진 삭제
                                 </button>
                             )}
                         </div>
+
+                        {/* AI Analysis Result */}
+                        {(isAnalyzing || aiTags.length > 0) && (
+                            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 animate-fade-in">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Sparkles size={16} className="text-blue-600" />
+                                    <span className="text-sm font-bold text-blue-900">Gemini AI 스타일 분석</span>
+                                </div>
+                                {isAnalyzing ? (
+                                    <div className="flex items-center gap-2 text-sm text-blue-700">
+                                        <Loader size={14} className="animate-spin" />
+                                        이미지를 분석하고 있습니다...
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-wrap gap-2">
+                                        {aiTags.map((tag, idx) => (
+                                            <span key={idx} className="bg-white text-blue-800 text-xs px-2 py-1 rounded border border-blue-200 font-medium">
+                                                #{tag}
+                                            </span>
+                                        ))}
+                                        <span className="text-xs text-blue-400 self-center ml-1">자동 생성됨</span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         {/* Caption */}
                         <div>
