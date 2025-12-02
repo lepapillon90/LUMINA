@@ -1,5 +1,5 @@
 import { db } from '../firebase';
-import { collection, addDoc, query, where, getDocs, orderBy, writeBatch, doc, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, orderBy, writeBatch, doc, deleteDoc, runTransaction, getFirestore } from 'firebase/firestore';
 import { Order, Product } from '../types';
 import { logAction } from './auditService';
 import { sendOrderNotification } from './emailService';
@@ -8,18 +8,45 @@ const ORDERS_COLLECTION = 'orders';
 
 export const createOrder = async (userId: string, order: Omit<Order, 'id'>): Promise<string> => {
     console.log("Creating order for user:", userId, "Order data:", order);
+    const db = getFirestore();
+
     try {
-        const docRef = await addDoc(collection(db, ORDERS_COLLECTION), {
-            ...order,
-            userId,
-            createdAt: new Date()
+        const newOrderId = await runTransaction(db, async (transaction) => {
+            // 1. Check stock for all items
+            for (const item of order.items) {
+                const productRef = doc(db, 'products', String(item.id));
+                const productDoc = await transaction.get(productRef);
+
+                if (!productDoc.exists()) {
+                    throw `Product ${item.name} does not exist!`;
+                }
+
+                const currentStock = productDoc.data().stock || 0;
+                if (currentStock < item.quantity) {
+                    throw `Stock insufficient for ${item.name}. Available: ${currentStock}`;
+                }
+
+                // 2. Decrement stock
+                transaction.update(productRef, { stock: currentStock - item.quantity });
+            }
+
+            // 3. Create Order
+            const orderRef = doc(collection(db, ORDERS_COLLECTION));
+            transaction.set(orderRef, {
+                ...order,
+                userId,
+                createdAt: new Date()
+            });
+
+            return orderRef.id;
         });
-        console.log("Order created with ID:", docRef.id);
+
+        console.log("Order created with ID:", newOrderId);
 
         // Send Admin Notification (Client-side simulation)
-        sendOrderNotification(docRef.id, order.total).catch(err => console.error("Failed to send admin notification:", err));
+        sendOrderNotification(newOrderId, order.total).catch(err => console.error("Failed to send admin notification:", err));
 
-        return docRef.id;
+        return newOrderId;
     } catch (error) {
         console.error("Error creating order: ", error);
         throw error;
