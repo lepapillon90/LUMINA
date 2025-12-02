@@ -2,6 +2,7 @@ import { db } from '../firebase';
 import { collection, addDoc, query, where, getDocs, orderBy, writeBatch, doc, deleteDoc } from 'firebase/firestore';
 import { Order, Product } from '../types';
 import { logAction } from './auditService';
+import { sendOrderNotification } from './emailService';
 
 const ORDERS_COLLECTION = 'orders';
 
@@ -14,6 +15,10 @@ export const createOrder = async (userId: string, order: Omit<Order, 'id'>): Pro
             createdAt: new Date()
         });
         console.log("Order created with ID:", docRef.id);
+
+        // Send Admin Notification (Client-side simulation)
+        sendOrderNotification(docRef.id, order.total).catch(err => console.error("Failed to send admin notification:", err));
+
         return docRef.id;
     } catch (error) {
         console.error("Error creating order: ", error);

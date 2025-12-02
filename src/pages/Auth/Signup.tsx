@@ -5,6 +5,7 @@ import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { getQuery, set } from '../../services/db';
 import { where } from 'firebase/firestore';
 import { useGlobalModal } from '../../contexts/GlobalModalContext';
+import { sendWelcomeEmail } from '../../services/emailService';
 
 const Signup: React.FC = () => {
     const navigate = useNavigate();
@@ -106,6 +107,9 @@ const Signup: React.FC = () => {
                 totalSpent: 0,
                 createdAt: new Date().toISOString()
             });
+
+            // Send Welcome Email (Client-side simulation)
+            sendWelcomeEmail(formData.email, formData.name).catch(err => console.error("Failed to send welcome email:", err));
 
             await showAlert('회원가입이 완료되었습니다! 자동으로 로그인됩니다.', '환영합니다');
             navigate('/');

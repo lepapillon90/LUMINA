@@ -1,6 +1,6 @@
 import { getAll, add, update, getQuery } from './db';
 import { OOTDPost } from '../types';
-import { orderBy, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { orderBy, arrayUnion, arrayRemove, runTransaction, doc, getFirestore } from 'firebase/firestore';
 
 const COLLECTION = 'ootd_posts';
 
@@ -44,15 +44,50 @@ export const createOOTDPost = async (post: Omit<OOTDPost, 'id'>) => {
 };
 
 export const toggleLikeOOTDPost = async (firestoreId: string, currentLikes: number, isLiked: boolean) => {
-    // Note: In a real app, we'd track WHO liked it in a subcollection or array.
-    // For this simple version, we just increment/decrement count and toggle local state.
-    // However, 'isLiked' is per-user. Saving it to the doc means everyone sees it liked.
-    // We will stick to the simple requirement: Update 'likes' count.
-    // The 'isLiked' state should ideally be user-specific, but for now we might just update the count.
+    const db = getFirestore();
+    const postRef = doc(db, COLLECTION, firestoreId);
 
-    const newLikes = isLiked ? currentLikes - 1 : currentLikes + 1;
-    await update(COLLECTION, firestoreId, { likes: newLikes });
-    return newLikes;
+    try {
+        await runTransaction(db, async (transaction) => {
+            const postDoc = await transaction.get(postRef);
+            if (!postDoc.exists()) {
+                throw "Post does not exist!";
+            }
+
+            const postData = postDoc.data() as OOTDPost;
+            // Calculate new likes based on current DB state, not UI state
+            // If UI says 'isLiked' is true, it means user wants to UNLIKE.
+            // But 'isLiked' passed here is the OLD state.
+            // Wait, in OOTD.tsx: 
+            // const newLikes = post.isLiked ? post.likes - 1 : post.likes + 1;
+            // await toggleLikeOOTDPost(String(post.id), post.likes, post.isLiked);
+            // So 'isLiked' passed is the OLD state (before toggle).
+
+            // If old state was liked, we are unliking -> decrement.
+            // If old state was not liked, we are liking -> increment.
+
+            const adjustment = isLiked ? -1 : 1;
+            const newLikes = (postData.likes || 0) + adjustment;
+
+            transaction.update(postRef, { likes: Math.max(0, newLikes) });
+
+            // Aggregation: Update author's total likes
+            if (postData.userId) {
+                const userRef = doc(db, 'users', postData.userId);
+                const userDoc = await transaction.get(userRef);
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    const currentTotal = userData.totalLikes || 0;
+                    const newTotal = currentTotal + adjustment;
+                    transaction.update(userRef, { totalLikes: Math.max(0, newTotal) });
+                }
+            }
+        });
+        return true;
+    } catch (e) {
+        console.error("Transaction failed: ", e);
+        throw e;
+    }
 };
 
 export const addCommentToOOTDPost = async (firestoreId: string, comment: { user: string; text: string }) => {

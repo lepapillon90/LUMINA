@@ -2,6 +2,62 @@ import { storage } from '../firebase';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 /**
+ * Compresses an image file using HTML5 Canvas.
+ * @param file The original file.
+ * @param maxWidth The maximum width of the compressed image.
+ * @param quality The quality of the JPEG compression (0 to 1).
+ * @returns Promise resolving to the compressed Blob.
+ */
+const compressImage = (file: File, maxWidth: number = 1200, quality: number = 0.8): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            image.src = e.target?.result as string;
+        };
+
+        reader.onerror = (error) => reject(error);
+
+        image.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = image.width;
+            let height = image.height;
+
+            if (width > maxWidth) {
+                height = Math.round((height * maxWidth) / width);
+                width = maxWidth;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                reject(new Error('Failed to get canvas context'));
+                return;
+            }
+
+            ctx.drawImage(image, 0, 0, width, height);
+
+            canvas.toBlob(
+                (blob) => {
+                    if (blob) {
+                        resolve(blob);
+                    } else {
+                        reject(new Error('Canvas to Blob conversion failed'));
+                    }
+                },
+                'image/jpeg',
+                quality
+            );
+        };
+
+        reader.readAsDataURL(file);
+    });
+};
+
+/**
  * Uploads an image to Firebase Storage and returns the download URL.
  * @param file The file to upload.
  * @param path The path in storage (e.g., 'ootd/', 'products/').
@@ -12,12 +68,27 @@ export const uploadImage = async (file: File, path: string = 'ootd'): Promise<st
         // Create a unique filename using timestamp and random string
         const timestamp = Date.now();
         const randomString = Math.random().toString(36).substring(2, 8);
-        const extension = file.name.split('.').pop();
-        const filename = `${timestamp}_${randomString}.${extension}`;
+        const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+        // Force jpg extension if compressed, or keep original if not
+        const finalExtension = ['jpg', 'jpeg', 'png', 'webp'].includes(extension) ? 'jpg' : extension;
+        const filename = `${timestamp}_${randomString}.${finalExtension}`;
 
         const storageRef = ref(storage, `${path}/${filename}`);
 
-        const snapshot = await uploadBytes(storageRef, file);
+        let fileToUpload: Blob | File = file;
+
+        // Compress if it's an image
+        if (file.type.startsWith('image/')) {
+            try {
+                console.log(`Original file size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+                fileToUpload = await compressImage(file);
+                console.log(`Compressed file size: ${(fileToUpload.size / 1024 / 1024).toFixed(2)} MB`);
+            } catch (compressionError) {
+                console.warn('Image compression failed, uploading original file:', compressionError);
+            }
+        }
+
+        const snapshot = await uploadBytes(storageRef, fileToUpload);
         const downloadURL = await getDownloadURL(snapshot.ref);
 
         return downloadURL;
