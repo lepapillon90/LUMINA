@@ -11,25 +11,25 @@ export const getCustomers = async (): Promise<Customer[]> => {
     try {
         // Fetch all users (excluding admins)
         const usersSnapshot = await getDocs(collection(db, USERS_COLLECTION));
-        
+
         // Fetch all orders to calculate totalSpent
         const ordersSnapshot = await getDocs(collection(db, ORDERS_COLLECTION));
-        
+
         // Create a map of userId -> totalSpent
         const totalSpentMap = new Map<string, number>();
         const lastOrderDateMap = new Map<string, Date>();
-        
+
         ordersSnapshot.forEach(doc => {
             const order = doc.data() as Order;
             const userId = order.userId;
             if (userId) {
                 const currentTotal = totalSpentMap.get(userId) || 0;
                 totalSpentMap.set(userId, currentTotal + (order.total || 0));
-                
+
                 // Track last order date
                 if (order.createdAt) {
-                    const orderDate = order.createdAt instanceof Timestamp 
-                        ? order.createdAt.toDate() 
+                    const orderDate = order.createdAt instanceof Timestamp
+                        ? order.createdAt.toDate()
                         : new Date(order.createdAt);
                     const existingDate = lastOrderDateMap.get(userId);
                     if (!existingDate || orderDate > existingDate) {
@@ -41,40 +41,40 @@ export const getCustomers = async (): Promise<Customer[]> => {
 
         // Map Firestore documents to Customer type
         const customers: Customer[] = [];
-        
+
         usersSnapshot.forEach(doc => {
             const data = doc.data();
-            
+
             // Skip admin users
             if (data.role === 'ADMIN') return;
-            
+
             const userId = doc.id;
             const totalSpent = totalSpentMap.get(userId) || 0;
             const calculatedGrade = calculateMembershipGrade(totalSpent);
-            
+
             // Determine status based on last login and order date
             let status: 'active' | 'inactive' | 'banned' = 'active';
-            const lastLogin = data.lastLogin 
+            const lastLogin = data.lastLogin
                 ? (data.lastLogin instanceof Timestamp ? data.lastLogin.toDate() : new Date(data.lastLogin))
                 : null;
             const lastOrderDate = lastOrderDateMap.get(userId);
-            
+
             // Inactive if no login in last 90 days and no order in last 90 days
             const ninetyDaysAgo = new Date();
             ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-            
+
             if ((!lastLogin || lastLogin < ninetyDaysAgo) && (!lastOrderDate || lastOrderDate < ninetyDaysAgo)) {
                 status = 'inactive';
             }
-            
+
             // Format dates
-            const joinDate = data.createdAt 
-                ? (data.createdAt instanceof Timestamp 
-                    ? data.createdAt.toDate() 
+            const joinDate = data.createdAt
+                ? (data.createdAt instanceof Timestamp
+                    ? data.createdAt.toDate()
                     : new Date(data.createdAt)).toISOString().split('T')[0]
                 : '';
-            
-            const lastLoginDate = lastLogin 
+
+            const lastLoginDate = lastLogin
                 ? lastLogin.toISOString().split('T')[0]
                 : undefined;
 
@@ -88,7 +88,8 @@ export const getCustomers = async (): Promise<Customer[]> => {
                 totalSpent,
                 grade: calculatedGrade,
                 status,
-                memo: data.memo || ''
+                memo: data.memo || '',
+                points: data.points || 0
             } as Customer);
         });
 

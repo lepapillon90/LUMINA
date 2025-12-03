@@ -8,21 +8,18 @@ import { getCustomers, updateCustomerMemo } from '../../../services/customerServ
 
 interface CustomerManagerProps {
     user: User | null;
+    customers: Customer[];
+    setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>;
 }
 
-const CustomerManager: React.FC<CustomerManagerProps> = ({ user }) => {
+const CustomerManager: React.FC<CustomerManagerProps> = ({ user, customers, setCustomers }) => {
     const { showAlert } = useGlobalModal();
     const [loading, setLoading] = useState(false);
-    const [customers, setCustomers] = useState<Customer[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [customerFilter, setCustomerFilter] = useState<'all' | 'vip' | 'at_risk' | 'potential'>('all');
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [isMemoModalOpen, setIsMemoModalOpen] = useState(false);
-
-    useEffect(() => {
-        loadCustomers();
-    }, []);
 
     const loadCustomers = async () => {
         setLoading(true);
@@ -53,7 +50,7 @@ const CustomerManager: React.FC<CustomerManagerProps> = ({ user }) => {
         if (customerFilter === 'vip' && c.grade !== 'VIP') return false;
         if (customerFilter === 'at_risk' && c.status !== 'inactive') return false;
         if (customerFilter === 'potential' && c.totalSpent !== 0) return false;
-        
+
         // Search filter
         if (searchQuery) {
             const query = searchQuery.toLowerCase();
@@ -64,7 +61,7 @@ const CustomerManager: React.FC<CustomerManagerProps> = ({ user }) => {
                 c.id.toLowerCase().includes(query)
             );
         }
-        
+
         return true;
     });
 
@@ -121,7 +118,7 @@ const CustomerManager: React.FC<CustomerManagerProps> = ({ user }) => {
             </div>
 
             {/* CRM Stats Cards */}
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                     <p className="text-xs text-gray-500 mb-1">총 회원수</p>
                     <p className="text-2xl font-bold text-gray-900">{totalCustomers.toLocaleString()}</p>
@@ -195,50 +192,50 @@ const CustomerManager: React.FC<CustomerManagerProps> = ({ user }) => {
                                 </tr>
                             ) : (
                                 filteredCustomers.map(customer => (
-                                <tr key={customer.id} className="hover:bg-gray-50 transition group">
-                                    <td className="px-6 py-4 font-medium text-gray-800">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500">
-                                                {customer.name[0]}
+                                    <tr key={customer.id} className="hover:bg-gray-50 transition group">
+                                        <td className="px-6 py-4 font-medium text-gray-800">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500">
+                                                    {customer.name[0]}
+                                                </div>
+                                                {customer.name}
                                             </div>
-                                            {customer.name}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <p className="text-gray-900">{customer.phone}</p>
-                                        <p className="text-xs text-gray-400">{customer.email}</p>
-                                    </td>
-                                    <td className="px-6 py-4 text-gray-600">
-                                        {customer.lastLoginDate || '-'}
-                                        {customer.status === 'inactive' && <span className="ml-2 text-[10px] text-red-500 font-bold">휴면</span>}
-                                    </td>
-                                    <td className="px-6 py-4 text-slate-700">₩{customer.totalSpent.toLocaleString()}</td>
-                                    <td className="px-6 py-4">
-                                        <span className={`px-2 py-0.5 rounded-sm text-xs font-medium border
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <p className="text-gray-900">{customer.phone}</p>
+                                            <p className="text-xs text-gray-400">{customer.email}</p>
+                                        </td>
+                                        <td className="px-6 py-4 text-gray-600">
+                                            {customer.lastLoginDate || '-'}
+                                            {customer.status === 'inactive' && <span className="ml-2 text-[10px] text-red-500 font-bold">휴면</span>}
+                                        </td>
+                                        <td className="px-6 py-4 text-slate-700">₩{customer.totalSpent.toLocaleString()}</td>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2 py-0.5 rounded-sm text-xs font-medium border
                       ${customer.grade === 'VIP' ? 'bg-purple-50 text-purple-700 border-purple-100' :
-                                                customer.grade === 'Gold' ? 'bg-yellow-50 text-yellow-700 border-yellow-100' :
-                                                    customer.grade === 'Silver' ? 'bg-gray-50 text-gray-700 border-gray-200' : 'bg-orange-50 text-orange-700 border-orange-100'}`}>
-                                            {customer.grade}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <button
-                                            onClick={() => handleViewDetails(customer)}
-                                            className="text-gray-400 hover:text-blue-600 mr-2"
-                                            title="상세보기"
-                                        >
-                                            <Maximize2 size={16} />
-                                        </button>
-                                        <button
-                                            onClick={() => handleOpenMemo(customer)}
-                                            className="text-gray-400 hover:text-gray-800"
-                                            title="메모"
-                                        >
-                                            <FileText size={16} />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))
+                                                    customer.grade === 'Gold' ? 'bg-yellow-50 text-yellow-700 border-yellow-100' :
+                                                        customer.grade === 'Silver' ? 'bg-gray-50 text-gray-700 border-gray-200' : 'bg-orange-50 text-orange-700 border-orange-100'}`}>
+                                                {customer.grade}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <button
+                                                onClick={() => handleViewDetails(customer)}
+                                                className="text-gray-400 hover:text-blue-600 mr-2"
+                                                title="상세보기"
+                                            >
+                                                <Maximize2 size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleOpenMemo(customer)}
+                                                className="text-gray-400 hover:text-gray-800"
+                                                title="메모"
+                                            >
+                                                <FileText size={16} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))
                             )}
                         </tbody>
                     </table>

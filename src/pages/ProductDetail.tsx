@@ -151,6 +151,13 @@ const ProductDetail: React.FC = () => {
     // Combine main image and additional images for the gallery
     const allImages = [product.image, ...(product.images || [])];
 
+    // Calculate total stock
+    const totalStock = product ? (
+        (product.sizeColorStock && product.sizeColorStock.length > 0)
+            ? product.sizeColorStock.reduce((acc, item) => acc + item.quantity, 0)
+            : (product.stock || 0)
+    ) : 0;
+
     return (
         <div className="pt-40 pb-20 bg-white min-h-screen">
             <SEO
@@ -169,7 +176,7 @@ const ProductDetail: React.FC = () => {
                         "url": window.location.href,
                         "priceCurrency": "KRW",
                         "price": product.price,
-                        "availability": product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
+                        "availability": totalStock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
                     }
                 }}
             />
@@ -227,12 +234,12 @@ const ProductDetail: React.FC = () => {
                         <h1 className="text-3xl md:text-4xl font-serif text-primary mb-4">{product.name}</h1>
 
                         {/* Stock Status */}
-                        {product.stock !== undefined && product.stock > 0 && product.stock <= 5 && (
+                        {totalStock > 0 && totalStock <= 5 && (
                             <p className="text-red-600 font-bold mb-2 animate-pulse">
-                                품절 임박! 남은 수량: {product.stock}개
+                                품절 임박! 남은 수량: {totalStock}개
                             </p>
                         )}
-                        {product.stock === 0 && (
+                        {totalStock === 0 && (
                             <p className="text-red-600 font-bold mb-2 text-xl">
                                 일시 품절 (Sold Out)
                             </p>
@@ -270,18 +277,36 @@ const ProductDetail: React.FC = () => {
                                         </button>
                                     </div>
                                     <div className="flex flex-wrap gap-2">
-                                        {product.sizes.map(size => (
-                                            <button
-                                                key={size}
-                                                onClick={() => setSelectedSize(size)}
-                                                className={`min-w-[3rem] px-3 py-2 text-sm border transition ${selectedSize === size
-                                                    ? 'border-black bg-black text-white'
-                                                    : 'border-gray-200 text-gray-600 hover:border-gray-400'
-                                                    }`}
-                                            >
-                                                {size}
-                                            </button>
-                                        ))}
+                                        {product.sizes.map(size => {
+                                            // Check availability
+                                            let isAvailable = true;
+                                            if (product.sizeColorStock && product.sizeColorStock.length > 0) {
+                                                if (selectedColor) {
+                                                    // If color is selected, check specific combination
+                                                    const variant = product.sizeColorStock.find(item => item.size === size && item.color === selectedColor);
+                                                    isAvailable = variant ? variant.quantity > 0 : false;
+                                                } else {
+                                                    // If no color selected, check if size exists in any quantity
+                                                    isAvailable = product.sizeColorStock.some(item => item.size === size && item.quantity > 0);
+                                                }
+                                            }
+
+                                            return (
+                                                <button
+                                                    key={size}
+                                                    onClick={() => isAvailable && setSelectedSize(size)}
+                                                    disabled={!isAvailable}
+                                                    className={`min-w-[3rem] px-3 py-2 text-sm border transition ${!isAvailable
+                                                            ? 'border-red-200 text-red-300 bg-red-50 cursor-not-allowed decoration-red-300 line-through'
+                                                            : selectedSize === size
+                                                                ? 'border-black bg-black text-white'
+                                                                : 'border-gray-200 text-gray-600 hover:border-gray-400'
+                                                        }`}
+                                                >
+                                                    {size}
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             )}
@@ -291,18 +316,36 @@ const ProductDetail: React.FC = () => {
                                 <div className="mb-6">
                                     <span className="block text-sm font-medium text-gray-900 mb-2">색상</span>
                                     <div className="flex flex-wrap gap-2">
-                                        {product.colors.map(color => (
-                                            <button
-                                                key={color}
-                                                onClick={() => setSelectedColor(color)}
-                                                className={`px-4 py-2 text-sm border transition ${selectedColor === color
-                                                    ? 'border-black bg-black text-white'
-                                                    : 'border-gray-200 text-gray-600 hover:border-gray-400'
-                                                    }`}
-                                            >
-                                                {color}
-                                            </button>
-                                        ))}
+                                        {product.colors.map(color => {
+                                            // Check availability
+                                            let isAvailable = true;
+                                            if (product.sizeColorStock && product.sizeColorStock.length > 0) {
+                                                if (selectedSize) {
+                                                    // If size is selected, check specific combination
+                                                    const variant = product.sizeColorStock.find(item => item.size === selectedSize && item.color === color);
+                                                    isAvailable = variant ? variant.quantity > 0 : false;
+                                                } else {
+                                                    // If no size selected, check if color exists in any quantity
+                                                    isAvailable = product.sizeColorStock.some(item => item.color === color && item.quantity > 0);
+                                                }
+                                            }
+
+                                            return (
+                                                <button
+                                                    key={color}
+                                                    onClick={() => isAvailable && setSelectedColor(color)}
+                                                    disabled={!isAvailable}
+                                                    className={`px-4 py-2 text-sm border transition ${!isAvailable
+                                                            ? 'border-red-200 text-red-300 bg-red-50 cursor-not-allowed decoration-red-300 line-through'
+                                                            : selectedColor === color
+                                                                ? 'border-black bg-black text-white'
+                                                                : 'border-gray-200 text-gray-600 hover:border-gray-400'
+                                                        }`}
+                                                >
+                                                    {color}
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             )}
@@ -313,13 +356,13 @@ const ProductDetail: React.FC = () => {
                                     <button
                                         onClick={() => setQuantity(Math.max(1, quantity - 1))}
                                         className="px-3 py-1 hover:bg-gray-100 transition disabled:opacity-50"
-                                        disabled={product.stock === 0}
+                                        disabled={totalStock === 0}
                                     >-</button>
                                     <span className="px-3 py-1 text-sm font-medium min-w-[2rem] text-center">{quantity}</span>
                                     <button
                                         onClick={() => setQuantity(quantity + 1)}
                                         className="px-3 py-1 hover:bg-gray-100 transition disabled:opacity-50"
-                                        disabled={product.stock === 0}
+                                        disabled={totalStock === 0}
                                     >+</button>
                                 </div>
                             </div>
@@ -327,7 +370,7 @@ const ProductDetail: React.FC = () => {
 
                         {/* Actions */}
                         <div className="flex gap-4 mb-10">
-                            {product.stock === 0 ? (
+                            {totalStock === 0 ? (
                                 <button
                                     onClick={() => setIsRestockModalOpen(true)}
                                     className="flex-1 bg-gray-800 text-white py-4 uppercase tracking-widest text-sm font-medium hover:bg-black transition duration-300"

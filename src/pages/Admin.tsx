@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Home, ShoppingCart, Package, Users, MessageCircle, FileText,
-  LineChart, BarChart2, Grid, Shield, Settings, LogOut, Menu, X, Layout, Headphones
+  LineChart, BarChart2, Grid, Shield, Settings, LogOut, Menu, X, Layout, Warehouse
 } from 'lucide-react';
 import { useAuth } from '../contexts';
 import { Navigate, useNavigate } from 'react-router-dom';
@@ -10,6 +10,7 @@ import {
 } from '../types';
 
 import { getAllOrders } from '../services/orderService';
+import { getCustomers } from '../services/customerService';
 
 // Import extracted components
 import Dashboard from '../components/Admin/Dashboard/Dashboard';
@@ -17,25 +18,25 @@ import OrderManager from '../components/Admin/Orders/OrderManager';
 import ProductManager from '../components/Admin/Products/ProductManager';
 import CustomerManager from '../components/Admin/Customers/CustomerManager';
 
-import CSManager from '../components/Admin/CS/CSManager';
 import AnalyticsManager from '../components/Admin/Analytics/AnalyticsManager';
 import HomepageManager from '../components/Admin/Homepage/HomepageManager';
+import AdminAccountManager from '../components/Admin/Accounts/AdminAccountManager';
+import InventoryManager from '../components/Admin/Inventory/InventoryManager';
 
 // --- Main Admin Component ---
 
-type Tab = 'home' | 'orders' | 'products' | 'customers' | 'cs' | 'analytics' | 'stats' | 'excel' | 'homepage';
+type Tab = 'home' | 'orders' | 'products' | 'customers' | 'analytics' | 'excel' | 'homepage' | 'accounts' | 'inventory';
 
 const MENU_ITEMS = [
   { id: 'home', label: '홈', icon: Home, permission: null },
+  { id: 'homepage', label: '홈페이지 관리', icon: Layout, permission: null },
+  { id: 'customers', label: '고객', icon: Users, permission: 'customers' },
   { id: 'orders', label: '주문', icon: ShoppingCart, permission: 'orders' },
   { id: 'products', label: '상품', icon: Package, permission: 'products' },
-  { id: 'customers', label: '고객', icon: Users, permission: 'customers' },
-  { id: 'cs', label: '고객센터', icon: Headphones, permission: null },
-  { id: 'homepage', label: '홈페이지 관리', icon: Layout, permission: null },
-  { id: 'analytics', label: '애널리틱스', icon: LineChart, permission: 'analytics' },
-  { id: 'stats', label: '통계', icon: BarChart2, permission: 'analytics' },
+  { id: 'inventory', label: '재고', icon: Warehouse, permission: 'products' },
+  { id: 'analytics', label: '데이터 분석', icon: LineChart, permission: 'analytics' },
   { id: 'excel', label: '통합엑셀', icon: Grid, permission: null },
-
+  { id: 'accounts', label: '관리자 계정', icon: Shield, permission: 'system' },
 ];
 
 const Admin: React.FC = () => {
@@ -52,9 +53,28 @@ const Admin: React.FC = () => {
   // Data State - ProductManager will fetch from Firestore
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
 
   useEffect(() => {
-    if (activeTab === 'orders') {
+    if (activeTab === 'home') {
+      const fetchDashboardData = async () => {
+        try {
+          const [ordersData, customersData] = await Promise.all([
+            getAllOrders(),
+            getCustomers()
+          ]);
+          setOrders(ordersData);
+          setCustomers(customersData);
+
+          const { getProducts } = await import('../services/productService');
+          const productsData = await getProducts();
+          setProducts(productsData);
+        } catch (error) {
+          console.error("Failed to fetch dashboard data:", error);
+        }
+      };
+      fetchDashboardData();
+    } else if (activeTab === 'orders') {
       const fetchOrders = async () => {
         try {
           const data = await getAllOrders();
@@ -75,6 +95,16 @@ const Admin: React.FC = () => {
         }
       };
       fetchProducts();
+    } else if (activeTab === 'customers') {
+      const fetchCustomers = async () => {
+        try {
+          const data = await getCustomers();
+          setCustomers(data);
+        } catch (error) {
+          console.error("Failed to fetch customers:", error);
+        }
+      };
+      fetchCustomers();
     }
   }, [activeTab]);
 
@@ -122,7 +152,7 @@ const Admin: React.FC = () => {
   });
 
   return (
-    <div className="flex h-screen bg-gray-50 font-sans text-gray-900">
+    <div className="flex flex-col md:flex-row h-screen bg-gray-50 font-sans text-gray-900">
       {/* Mobile Header */}
       <div className="md:hidden bg-white border-b border-gray-200 p-4 flex items-center justify-between z-30 sticky top-0">
         <h1 className="text-xl font-serif font-bold tracking-wider">LUMINA ADMIN</h1>
@@ -196,15 +226,15 @@ const Admin: React.FC = () => {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
-        <div className="p-8">
-          {activeTab === 'home' && <Dashboard orders={orders} products={products} />}
+        <div className="p-4 md:p-8">
+          {activeTab === 'home' && <Dashboard orders={orders} products={products} customers={customers} />}
           {activeTab === 'orders' && <OrderManager orders={orders} setOrders={setOrders} user={user} />}
           {activeTab === 'products' && <ProductManager products={products} setProducts={setProducts} user={user} />}
-          {activeTab === 'customers' && <CustomerManager user={user} />}
-          {activeTab === 'cs' && <CSManager />}
+          {activeTab === 'inventory' && <InventoryManager user={user} />}
+          {activeTab === 'customers' && <CustomerManager user={user} customers={customers} setCustomers={setCustomers} />}
           {activeTab === 'homepage' && <HomepageManager user={user} />}
+          {activeTab === 'accounts' && <AdminAccountManager user={user} />}
           {activeTab === 'analytics' && <AnalyticsManager />}
-          {activeTab === 'stats' && renderPlaceholder('통계')}
           {activeTab === 'excel' && renderPlaceholder('통합엑셀')}
         </div>
       </main>

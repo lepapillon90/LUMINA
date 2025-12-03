@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layout, Video, Clock, Star, BookOpen, Image, Mail, TrendingUp, ImageIcon, Percent, Bell } from 'lucide-react';
+import { Layout, Video, Clock, Star, BookOpen, Image, Mail, TrendingUp, ImageIcon, Percent, Bell, Headphones } from 'lucide-react';
 import { User } from '../../../types';
 import HeroSectionManager from './HeroSectionManager';
 import TimeSaleManager from './TimeSaleManager';
@@ -12,12 +12,13 @@ import NewsletterManager from './NewsletterManager';
 import BannersManager from './BannersManager';
 import PromotionsManager from './PromotionsManager';
 import AnnouncementBarManager from './AnnouncementBarManager';
+import CSManager from '../CS/CSManager';
 
 interface HomepageManagerProps {
     user: User | null;
 }
 
-type Section = 'overview' | 'hero' | 'timesale' | 'newarrivals' | 'lookbook' | 'trending' | 'magazine' | 'instagram' | 'newsletter' | 'banners' | 'promotions' | 'announcement';
+type Section = 'overview' | 'hero' | 'timesale' | 'newarrivals' | 'lookbook' | 'trending' | 'magazine' | 'instagram' | 'newsletter' | 'banners' | 'promotions' | 'announcement' | 'cs';
 
 const HomepageManager: React.FC<HomepageManagerProps> = ({ user }) => {
     const [activeSection, setActiveSection] = useState<Section>('overview');
@@ -35,6 +36,7 @@ const HomepageManager: React.FC<HomepageManagerProps> = ({ user }) => {
         { id: 'newsletter', label: '뉴스레터', icon: Mail },
         { id: 'banners', label: '배너 관리', icon: ImageIcon },
         { id: 'promotions', label: '프로모션', icon: Percent },
+        { id: 'cs', label: '고객센터', icon: Headphones },
     ];
 
     return (
@@ -54,11 +56,10 @@ const HomepageManager: React.FC<HomepageManagerProps> = ({ user }) => {
                             <button
                                 key={section.id}
                                 onClick={() => setActiveSection(section.id as Section)}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition ${
-                                    isActive
+                                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition ${isActive
                                         ? 'bg-gray-900 text-white'
                                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                }`}
+                                    }`}
                             >
                                 <Icon size={16} />
                                 <span>{section.label}</span>
@@ -69,7 +70,7 @@ const HomepageManager: React.FC<HomepageManagerProps> = ({ user }) => {
             </div>
 
             {/* Section Content */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6">
                 {activeSection === 'overview' && (
                     <div className="text-center py-12">
                         <Layout size={48} className="mx-auto text-gray-300 mb-4" />
@@ -116,6 +117,8 @@ const HomepageManager: React.FC<HomepageManagerProps> = ({ user }) => {
                 {activeSection === 'banners' && <BannersManager user={user} />}
 
                 {activeSection === 'promotions' && <PromotionsManager user={user} />}
+
+                {activeSection === 'cs' && <CSManager />}
             </div>
         </div>
     );

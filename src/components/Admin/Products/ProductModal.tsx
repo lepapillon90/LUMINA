@@ -51,11 +51,21 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
             setColors(product?.colors || []);
             setSizeStock(product?.sizeStock || {});
             setSelectedCategory(product?.category || 'earring');
-            // sizeColorStock이 있으면 사용, 없으면 빈 배열
+            // sizeColorStock이 있으면 사용, 없으면 기본 카테고리 사이즈로 초기화 (신규 등록 시)
             if (product?.sizeColorStock && product.sizeColorStock.length > 0) {
                 setSizeColorStocks(product.sizeColorStock.map((item, index) => ({
                     id: `${item.size}-${item.color}-${index}`,
                     ...item
+                })));
+            } else if (!product) {
+                // 신규 등록인 경우 현재 선택된 카테고리(기본값)의 사이즈로 자동 생성
+                const initialCategory = 'earring'; // Default category
+                const initialSizes = getSizeOptionsByCategory(initialCategory);
+                setSizeColorStocks(initialSizes.map((size, index) => ({
+                    id: Date.now().toString() + index,
+                    size: size,
+                    color: '',
+                    quantity: 0
                 })));
             } else {
                 setSizeColorStocks([]);
@@ -287,7 +297,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                 {/* Modal Body */}
                 <form onSubmit={handleSubmit} className="flex-1 flex flex-col lg:flex-row overflow-hidden">
                     {/* Left: Gallery & Image Input */}
-                    <div className="lg:w-1/2 p-8 bg-gray-50 overflow-y-auto border-r border-gray-100">
+                    <div className="lg:w-1/2 p-4 lg:p-8 bg-gray-50 overflow-y-auto border-r border-gray-100">
                         <div className="mb-6">
                             <label className="block text-xs font-bold text-gray-600 mb-2">대표 이미지 <span className="text-red-500">*</span></label>
                             <div className="flex items-center gap-2">
@@ -357,7 +367,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                     </div>
 
                     {/* Right: Info Inputs */}
-                    <div className="lg:w-1/2 p-8 overflow-y-auto bg-white">
+                    <div className="lg:w-1/2 p-4 lg:p-8 overflow-y-auto bg-white">
                         <div className="max-w-md mx-auto space-y-8">
                             {/* Breadcrumb Style Category Selector */}
                             <div className="flex items-center text-sm text-gray-500 font-light">
@@ -369,12 +379,18 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                                     name="category"
                                     value={selectedCategory}
                                     onChange={(e) => {
-                                        setSelectedCategory(e.target.value);
-                                        // 카테고리 변경 시 현재 사이즈가 새로운 카테고리에 맞지 않으면 초기화
-                                        const newSizeOptions = getSizeOptionsByCategory(e.target.value);
-                                        setSizeColorStocks(prev => prev.filter(item => 
-                                            newSizeOptions.includes(item.size)
-                                        ).map(item => ({ ...item })));
+                                        const newCategory = e.target.value;
+                                        setSelectedCategory(newCategory);
+
+                                        // 카테고리 변경 시 해당 카테고리의 모든 사이즈로 리스트 자동 생성
+                                        const newSizeOptions = getSizeOptionsByCategory(newCategory);
+                                        const newStocks = newSizeOptions.map((size, index) => ({
+                                            id: Date.now().toString() + index,
+                                            size: size,
+                                            color: '', // 색상은 사용자가 선택
+                                            quantity: 0
+                                        }));
+                                        setSizeColorStocks(newStocks);
                                     }}
                                     className="text-black font-medium border-none focus:ring-0 p-0 cursor-pointer bg-transparent outline-none hover:underline"
                                 >
@@ -430,23 +446,9 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
                                     <label className="block text-xs font-bold text-gray-400">사이즈/색상/수량 조합</label>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setSizeColorStocks(prev => [...prev, {
-                                                id: Date.now().toString(),
-                                                size: '',
-                                                color: '',
-                                                quantity: 0
-                                            }]);
-                                        }}
-                                        className="flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-300 rounded-sm text-xs font-medium hover:bg-gray-50 transition"
-                                    >
-                                        <Plus size={14} />
-                                        추가하기
-                                    </button>
+                                    {/* 추가하기 버튼 제거됨 (자동 생성 사용) */}
                                 </div>
-                                
+
                                 {sizeColorStocks.length > 0 && (
                                     <div className="space-y-3 border border-gray-200 rounded-sm p-4 bg-gray-50">
                                         {sizeColorStocks.map((item, index) => (
@@ -459,7 +461,8 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                                                             updated[index].size = e.target.value;
                                                             setSizeColorStocks(updated);
                                                         }}
-                                                        className="text-sm text-gray-900 border-b border-gray-300 focus:border-black outline-none py-1 bg-white"
+                                                        className="text-sm text-gray-900 border-b border-gray-300 focus:border-black outline-none py-1 bg-gray-100 text-gray-500 cursor-not-allowed"
+                                                        disabled={true} // 사이즈는 항상 자동생성된 값 사용
                                                     >
                                                         <option value="">사이즈 선택</option>
                                                         {getSizeOptionsByCategory(selectedCategory).map(size => (
@@ -476,7 +479,9 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                                                             setSizeColorStocks(updated);
                                                         }}
                                                         placeholder="수량"
-                                                        className="text-sm text-gray-900 border-b border-gray-300 focus:border-black outline-none py-1"
+                                                        className={`text-sm text-gray-900 border-b border-gray-300 focus:border-black outline-none py-1 ${product ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
+                                                        disabled={!!product}
+                                                        title={product ? "재고 수량은 '재고 관리' 메뉴에서 변경해주세요." : "초기 재고 수량"}
                                                     />
                                                     <select
                                                         value={item.color}
@@ -485,7 +490,8 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                                                             updated[index].color = e.target.value;
                                                             setSizeColorStocks(updated);
                                                         }}
-                                                        className="text-sm text-gray-900 border-b border-gray-300 focus:border-black outline-none py-1 bg-white"
+                                                        className={`text-sm text-gray-900 border-b border-gray-300 focus:border-black outline-none py-1 ${product ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white'}`}
+                                                        disabled={!!product} // 상품 수정 시 색상 변경 불가
                                                     >
                                                         <option value="">색상 선택</option>
                                                         <option value="Gold">Gold</option>
@@ -499,16 +505,18 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                                                         <option value="Pink">Pink</option>
                                                     </select>
                                                 </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setSizeColorStocks(prev => prev.filter(i => i.id !== item.id));
-                                                    }}
-                                                    className="text-gray-400 hover:text-red-600 transition p-1"
-                                                    title="삭제"
-                                                >
-                                                    <X size={16} />
-                                                </button>
+                                                {!product && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSizeColorStocks(prev => prev.filter(i => i.id !== item.id));
+                                                        }}
+                                                        className="text-gray-400 hover:text-red-600 transition p-1"
+                                                        title="삭제"
+                                                    >
+                                                        <X size={16} />
+                                                    </button>
+                                                )}
                                             </div>
                                         ))}
                                     </div>

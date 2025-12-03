@@ -125,9 +125,9 @@ const OrderManager: React.FC<OrderManagerProps> = ({ orders, setOrders, user }) 
             </h2>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                <div className="p-4 border-b border-gray-200 flex items-center bg-gray-50 justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center bg-white border border-gray-300 px-3 py-1.5 rounded-sm w-80">
+                <div className="p-4 border-b border-gray-200 flex flex-col md:flex-row items-start md:items-center bg-gray-50 justify-between gap-4">
+                    <div className="flex flex-col md:flex-row items-start md:items-center gap-4 w-full md:w-auto">
+                        <div className="flex items-center bg-white border border-gray-300 px-3 py-1.5 rounded-sm w-full md:w-80">
                             <Search size={16} className="text-gray-400 mr-2" />
                             <input
                                 type="text"
@@ -135,43 +135,45 @@ const OrderManager: React.FC<OrderManagerProps> = ({ orders, setOrders, user }) 
                                 className="bg-transparent border-none focus:outline-none text-sm w-full"
                             />
                         </div>
-                        <select
-                            value={selectedBatchStatus}
-                            onChange={(e) => setSelectedBatchStatus(e.target.value)}
-                            className="bg-white border border-gray-300 text-gray-700 text-sm rounded-sm focus:ring-blue-500 focus:border-blue-500 block p-1.5"
-                        >
-                            <option value="">상태 변경 선택</option>
-                            <option value="입금대기">입금대기</option>
-                            <option value="결제완료">결제완료</option>
-                            <option value="배송준비">배송준비</option>
-                            <option value="배송중">배송중</option>
-                            <option value="배송완료">배송완료</option>
-                            <option value="취소요청">취소요청</option>
-                            <option value="주문취소">주문취소</option>
-                        </select>
-                        <button
-                            onClick={handleBatchStatusClick}
-                            disabled={!selectedBatchStatus}
-                            className={`px-3 py-1.5 rounded-sm text-xs font-bold transition
-                                        ${selectedBatchStatus
-                                    ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
-                                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
-                        >
-                            변경
-                        </button>
-                        <div className="h-4 w-px bg-gray-300 mx-2"></div>
-                        <button
-                            onClick={handlePrintInvoice}
-                            className="flex items-center gap-1 px-3 py-1.5 border border-gray-300 rounded-sm text-xs font-medium hover:bg-white text-gray-700"
-                        >
-                            <Printer size={14} />
-                            <span>송장 출력</span>
-                        </button>
+                        <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto">
+                            <select
+                                value={selectedBatchStatus}
+                                onChange={(e) => setSelectedBatchStatus(e.target.value)}
+                                className="bg-white border border-gray-300 text-gray-700 text-sm rounded-sm focus:ring-blue-500 focus:border-blue-500 block p-1.5 flex-1 md:flex-none"
+                            >
+                                <option value="">상태 변경 선택</option>
+                                <option value="입금대기">입금대기</option>
+                                <option value="결제완료">결제완료</option>
+                                <option value="배송준비">배송준비</option>
+                                <option value="배송중">배송중</option>
+                                <option value="배송완료">배송완료</option>
+                                <option value="취소요청">취소요청</option>
+                                <option value="주문취소">주문취소</option>
+                            </select>
+                            <button
+                                onClick={handleBatchStatusClick}
+                                disabled={!selectedBatchStatus}
+                                className={`px-3 py-1.5 rounded-sm text-xs font-bold transition whitespace-nowrap
+                                            ${selectedBatchStatus
+                                        ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
+                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                            >
+                                변경
+                            </button>
+                            <div className="h-4 w-px bg-gray-300 mx-2 hidden md:block"></div>
+                            <button
+                                onClick={handlePrintInvoice}
+                                className="flex items-center gap-1 px-3 py-1.5 border border-gray-300 rounded-sm text-xs font-medium hover:bg-white text-gray-700 whitespace-nowrap"
+                            >
+                                <Printer size={14} />
+                                <span>송장 출력</span>
+                            </button>
+                        </div>
                     </div>
-                    <div className="space-x-2">
+                    <div className="flex items-center gap-2 w-full md:w-auto justify-end">
                         <button
                             onClick={handleExcelDownload}
-                            className="flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-300 text-xs rounded-sm hover:bg-gray-50 transition"
+                            className="flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-300 text-xs rounded-sm hover:bg-gray-50 transition whitespace-nowrap"
                         >
                             <Download size={14} />
                             엑셀 다운로드

@@ -23,27 +23,27 @@ export const createOrder = async (userId: string, order: Omit<Order, 'id'>): Pro
 
             const productData = productDoc.data();
             const product = { id: item.id, ...productData } as Product;
-            
+
             // 사이즈-색상 조합별 재고가 있는 경우 (최우선)
             if (product.sizeColorStock && item.selectedSize && item.selectedColor) {
                 const stockItem = product.sizeColorStock.find(
                     s => s.size === item.selectedSize && s.color === item.selectedColor
                 );
-                
+
                 if (stockItem) {
                     if (stockItem.quantity < item.quantity) {
                         throw `Stock insufficient for ${item.name} (Size: ${item.selectedSize}, Color: ${item.selectedColor}). Available: ${stockItem.quantity}`;
                     }
-                    
+
                     // 사이즈-색상 조합별 재고 차감
                     const updatedSizeColorStock = product.sizeColorStock.map(s =>
                         s.size === item.selectedSize && s.color === item.selectedColor
                             ? { ...s, quantity: s.quantity - item.quantity }
                             : s
                     );
-                    console.log(`[DEBUG] Updating size-color stock for ${item.name} (${item.selectedSize}, ${item.selectedColor})...`);
+
                     await updateDoc(productRef, { sizeColorStock: updatedSizeColorStock });
-                    console.log(`[DEBUG] Size-color stock updated: ${stockItem.quantity} -> ${stockItem.quantity - item.quantity}`);
+
                 } else {
                     // 사이즈-색상 조합이 없지만 일반 재고가 있는 경우
                     const currentStock = productData.stock || 0;
@@ -58,12 +58,12 @@ export const createOrder = async (userId: string, order: Omit<Order, 'id'>): Pro
                 if (currentSizeStock < item.quantity) {
                     throw `Stock insufficient for ${item.name} (Size: ${item.selectedSize}). Available: ${currentSizeStock}`;
                 }
-                
+
                 const updatedSizeStock = {
                     ...product.sizeStock,
                     [item.selectedSize]: currentSizeStock - item.quantity
                 };
-                console.log(`[DEBUG] Updating size stock for ${item.name} (${item.selectedSize})...`);
+
                 await updateDoc(productRef, { sizeStock: updatedSizeStock });
             } else {
                 // 일반 재고 차감
@@ -71,8 +71,8 @@ export const createOrder = async (userId: string, order: Omit<Order, 'id'>): Pro
                 if (currentStock < item.quantity) {
                     throw `Stock insufficient for ${item.name}. Available: ${currentStock}`;
                 }
-                
-                console.log(`[DEBUG] Updating stock for ${item.name}...`);
+
+                // console.log(`[DEBUG] Updating stock for ${item.name}...`);
                 await updateDoc(productRef, { stock: currentStock - item.quantity });
             }
         }
@@ -210,13 +210,13 @@ export const updateOrderStatuses = async (orderIds: string[], status: string, ad
                     if (productDoc.exists()) {
                         const productData = productDoc.data();
                         const product = { id: item.id, ...productData } as Product;
-                        
+
                         // 사이즈-색상 조합별 재고 복구 (최우선)
                         if (product.sizeColorStock && item.selectedSize && item.selectedColor) {
                             const stockItem = product.sizeColorStock.find(
                                 s => s.size === item.selectedSize && s.color === item.selectedColor
                             );
-                            
+
                             if (stockItem) {
                                 const updatedSizeColorStock = product.sizeColorStock.map(s =>
                                     s.size === item.selectedSize && s.color === item.selectedColor

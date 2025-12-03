@@ -99,6 +99,7 @@ export interface Customer {
     lastLoginDate?: string;
     status?: 'active' | 'inactive' | 'banned';
     memo?: string;
+    points?: number;
 }
 
 export interface Banner {
@@ -167,27 +168,27 @@ export interface StyleProfile {
     wristSize?: string;
     neckSize?: string;
     earSize?: string;
-    
+
     // 선호 소재 및 톤
     tone?: string;
     preferredMaterials?: string[];
-    
+
     // 스타일 선호도
     preferredStyle?: string[];
     preferredJewelryTypes?: string[];
-    
+
     // 예산 범위
     budgetRange?: string;
-    
+
     // 착용 목적
     wearingPurpose?: string[];
-    
+
     // 디자인 선호도
     designPreference?: string[];
-    
+
     // 알러지 정보
     allergy?: string;
-    
+
     // 기념일 정보
     specialOccasions?: {
         birthday?: string;
@@ -377,4 +378,22 @@ export interface HomepageAnnouncementBar {
     rotationInterval?: number; // milliseconds
     isActive: boolean;
     updatedAt?: any;
+}
+
+// Inventory Management Types
+export interface InventoryLog {
+    id: string;
+    productId: number;
+    productName: string;
+    type: '입고' | '출고';
+    size?: string;
+    color?: string;
+    quantity: number;
+    beforeQuantity: number; // 변경 전 재고
+    afterQuantity: number; // 변경 후 재고
+    reason?: string; // 사유 (입고: "신규 입고", "반품 입고" 등, 출고: "판매", "폐기", "반품" 등)
+    adminUserId: string;
+    adminUsername: string;
+    createdAt: any;
+    orderId?: string; // 출고인 경우 관련 주문 ID (있는 경우)
 }

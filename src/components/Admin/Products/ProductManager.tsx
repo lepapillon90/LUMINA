@@ -4,6 +4,7 @@ import { Product, User } from '../../../types';
 import ProductModal from './ProductModal';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
 import { getProducts, createProduct, updateProduct, deleteProduct } from '../../../services/productService';
+import { logInventoryChange } from '../../../services/inventoryService';
 import { deleteImage } from '../../../services/storageService';
 import { useToast } from '../../../contexts/ToastContext';
 
@@ -68,6 +69,27 @@ const ProductManager: React.FC<ProductManagerProps> = ({ products, setProducts, 
                 // Create new product
                 const { id, ...productData } = product;
                 const newProduct = await createProduct(productData, { uid: user.uid, username: user.username });
+
+                // Log initial stock if any
+                if (newProduct.sizeColorStock && newProduct.sizeColorStock.length > 0) {
+                    for (const stockItem of newProduct.sizeColorStock) {
+                        if (stockItem.quantity > 0) {
+                            await logInventoryChange(
+                                newProduct.id,
+                                newProduct.name,
+                                '입고',
+                                stockItem.size,
+                                stockItem.color,
+                                stockItem.quantity,
+                                0, // Before
+                                stockItem.quantity, // After
+                                'Initial Stock Registration',
+                                { uid: user.uid, username: user.username }
+                            );
+                        }
+                    }
+                }
+
                 setProducts(prev => [...prev, newProduct]);
                 showToast('상품이 등록되었습니다.', 'success');
             }
@@ -188,7 +210,7 @@ const ProductManager: React.FC<ProductManagerProps> = ({ products, setProducts, 
                 </button>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden overflow-x-auto">
                 <table className="w-full text-left text-sm">
                     <thead className="bg-white text-gray-600 border-b border-gray-200">
                         <tr>

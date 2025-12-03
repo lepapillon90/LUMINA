@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { HelpCircle } from 'lucide-react';
-import { Order, Product } from '../../../types';
+import { Order, Product, Customer } from '../../../types';
 import StatusBox from '../Shared/StatusBox';
 import DailySalesStats from './DailySalesStats';
 import OrderProcessingStats from './OrderProcessingStats';
@@ -12,9 +12,10 @@ import PostStats from './PostStats';
 interface DashboardProps {
     orders: Order[];
     products: Product[];
+    customers: Customer[];
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ orders, products }) => {
+const Dashboard: React.FC<DashboardProps> = ({ orders, products, customers }) => {
     const [dashboardSubTab, setDashboardSubTab] = useState('daily');
 
     // Current date logic
@@ -67,7 +68,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, products }) => {
 
             {/* Dashboard Tabs */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div className="flex space-x-6 border-b border-gray-100 mb-6">
+                <div className="flex space-x-6 border-b border-gray-100 mb-6 overflow-x-auto whitespace-nowrap pb-2 scrollbar-hide">
                     {tabs.map(tab => (
                         <button
                             key={tab.id}
@@ -83,10 +84,10 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, products }) => {
                 </div>
 
                 {/* Tab Content */}
-                {dashboardSubTab === 'daily' && <DailySalesStats />}
+                {dashboardSubTab === 'daily' && <DailySalesStats orders={orders} />}
                 {dashboardSubTab === 'realtime' && <RealTimeChart />}
-                {dashboardSubTab === 'order_proc' && <OrderProcessingStats />}
-                {dashboardSubTab === 'member' && <MemberPointsStats />}
+                {dashboardSubTab === 'order_proc' && <OrderProcessingStats orders={orders} />}
+                {dashboardSubTab === 'member' && <MemberPointsStats customers={customers} />}
                 {dashboardSubTab === 'posts' && <PostStats />}
             </div>
         </div>
