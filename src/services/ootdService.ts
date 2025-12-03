@@ -43,8 +43,9 @@ export const createOOTDPost = async (post: Omit<OOTDPost, 'id'>) => {
     return newPost;
 };
 
+import { db } from '../firebase';
+
 export const toggleLikeOOTDPost = async (firestoreId: string, currentLikes: number, isLiked: boolean) => {
-    const db = getFirestore();
     const postRef = doc(db, COLLECTION, firestoreId);
 
     try {

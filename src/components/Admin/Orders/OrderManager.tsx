@@ -94,11 +94,12 @@ const OrderManager: React.FC<OrderManagerProps> = ({ orders, setOrders, user }) 
     };
 
     const handleExcelDownload = () => {
-        const headers = ['Order ID', 'Date', 'Customer Name', 'Total Amount', 'Status', 'Items Count'];
+        const headers = ['Order ID', 'Date', 'Customer Name', 'Login ID', 'Total Amount', 'Status', 'Items Count'];
         const rows = orders.map(order => [
             order.id,
             order.date,
             order.customerName,
+            order.email || order.userId || '-',
             order.total,
             order.status,
             order.items.length
@@ -192,6 +193,7 @@ const OrderManager: React.FC<OrderManagerProps> = ({ orders, setOrders, user }) 
                                 <th className="px-6 py-3 font-medium">주문번호</th>
                                 <th className="px-6 py-3 font-medium">주문일자</th>
                                 <th className="px-6 py-3 font-medium">고객명</th>
+                                <th className="px-6 py-3 font-medium">로그인 아이디</th>
                                 <th className="px-6 py-3 font-medium">결제금액</th>
                                 <th className="px-6 py-3 font-medium">상태</th>
                                 <th className="px-6 py-3 font-medium text-right">상세</th>
@@ -211,6 +213,7 @@ const OrderManager: React.FC<OrderManagerProps> = ({ orders, setOrders, user }) 
                                     <td className="px-6 py-4 font-medium text-gray-900">{order.id}</td>
                                     <td className="px-6 py-4 text-gray-500">{order.date}</td>
                                     <td className="px-6 py-4 font-medium text-gray-800">{order.customerName}</td>
+                                    <td className="px-6 py-4 text-gray-600 text-xs">{order.email || order.userId || '-'}</td>
                                     <td className="px-6 py-4 text-gray-600">₩{order.total.toLocaleString()}</td>
                                     <td className="px-6 py-4">
                                         <span className={`px-2 py-1 rounded-sm text-xs font-medium ${statusColors[order.status] || 'bg-gray-100 text-gray-600'}`}>

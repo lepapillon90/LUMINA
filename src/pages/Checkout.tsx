@@ -61,7 +61,7 @@ const Checkout: React.FC = () => {
                 where('userId', '==', user.uid)
             );
             const querySnapshot = await getDocs(addressesQuery);
-            
+
             const loadedAddresses: DeliveryAddress[] = [];
             querySnapshot.forEach((doc) => {
                 loadedAddresses.push({
@@ -161,14 +161,14 @@ const Checkout: React.FC = () => {
     };
 
     const formatCouponLabel = (coupon: Coupon): string => {
-        const discountText = coupon.discountType === 'percentage' 
+        const discountText = coupon.discountType === 'percentage'
             ? `${coupon.discountValue}% 할인`
             : `₩${coupon.discountValue.toLocaleString()} 할인`;
-        
-        const minAmountText = coupon.minPurchaseAmount > 0 
+
+        const minAmountText = coupon.minPurchaseAmount > 0
             ? ` (${coupon.minPurchaseAmount.toLocaleString()}원 이상)`
             : '';
-        
+
         return `${coupon.title} - ${discountText}${minAmountText}`;
     };
 
@@ -205,7 +205,15 @@ const Checkout: React.FC = () => {
             navigate(`/checkout/success?orderId=${orderId}&total=${finalTotal}`);
         } catch (err: any) {
             console.error('[MY_LOG] Error creating order:', err);
-            setError(err?.message || '주문 처리 중 오류가 발생했습니다.');
+
+            // 권한 오류인 경우 더 명확한 메시지 표시
+            if (err?.code === 'permission-denied') {
+                setError('권한 오류가 발생했습니다. 관리자에게 문의하거나 잠시 후 다시 시도해주세요.');
+            } else if (err?.message) {
+                setError(err.message);
+            } else {
+                setError('주문 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+            }
         } finally {
             setLoading(false);
         }
@@ -221,10 +229,10 @@ const Checkout: React.FC = () => {
     }
 
     return (
-        <div className="pt-24 pb-20 min-h-screen bg-gray-50">
+        <div className="pt-28 pb-20 min-h-screen bg-gray-50">
             <div className="container mx-auto px-6 max-w-6xl">
-                <Link 
-                    to="/cart" 
+                <Link
+                    to="/cart"
                     className="inline-flex items-center gap-2 text-gray-600 hover:text-black mb-6 transition"
                 >
                     <ArrowLeft size={18} />
@@ -274,11 +282,10 @@ const Checkout: React.FC = () => {
                                         {addresses.map((address) => (
                                             <label
                                                 key={address.id}
-                                                className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition ${
-                                                    selectedAddressId === address.id
-                                                        ? 'border-primary bg-primary/5'
-                                                        : 'border-gray-200 hover:border-gray-300'
-                                                }`}
+                                                className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition ${selectedAddressId === address.id
+                                                    ? 'border-primary bg-primary/5'
+                                                    : 'border-gray-200 hover:border-gray-300'
+                                                    }`}
                                             >
                                                 <input
                                                     type="radio"
@@ -359,8 +366,8 @@ const Checkout: React.FC = () => {
                                 {availableCoupons.length === 0 ? (
                                     <div className="text-center py-4">
                                         <p className="text-gray-500 text-sm">사용 가능한 쿠폰이 없습니다.</p>
-                                        <Link 
-                                            to="/mypage?tab=membership" 
+                                        <Link
+                                            to="/mypage?tab=membership"
                                             className="text-primary text-sm hover:underline mt-2 inline-block"
                                         >
                                             쿠폰 받으러 가기
@@ -377,8 +384,8 @@ const Checkout: React.FC = () => {
                                             {availableCoupons.map((coupon) => {
                                                 const isDisabled = total < coupon.minPurchaseAmount;
                                                 return (
-                                                    <option 
-                                                        key={coupon.id} 
+                                                    <option
+                                                        key={coupon.id}
                                                         value={coupon.id}
                                                         disabled={isDisabled}
                                                     >
@@ -407,7 +414,7 @@ const Checkout: React.FC = () => {
                         <div className="lg:col-span-1">
                             <div className="bg-white p-6 rounded-lg shadow-sm sticky top-24">
                                 <h2 className="text-xl font-serif mb-6">주문 요약</h2>
-                                
+
                                 <div className="space-y-3 text-sm text-gray-600 mb-6 border-b border-gray-200 pb-6">
                                     <div className="flex justify-between">
                                         <span>상품 금액</span>

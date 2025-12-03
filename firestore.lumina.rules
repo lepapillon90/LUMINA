@@ -1,0 +1,141 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    function isAdmin() {
+      // Check existence first to prevent errors
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN';
+    }
+
+    // Users: Public read (for profiles), Owner write
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if isAuthenticated() && isOwner(userId);
+    }
+
+    // Products: Public read, Admin write, Authenticated stock update
+    match /products/{productId} {
+      allow read: if true;
+      // Allow authenticated users to update ONLY the 'stock' field
+      // OR Allow admins to update anything
+      allow update: if isAuthenticated() && (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock']) ||
+        isAdmin()
+      );
+      allow create, delete: if isAdmin();
+    }
+
+    // Orders: Owner read/write
+    match /orders/{orderId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Carts: Owner read/write
+    match /carts/{userId} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+    }
+
+    // OOTD Posts: Public read, Authenticated create, Owner/Admin update/delete
+    match /ootd_posts/{postId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || 
+        isAdmin() ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'comments', 'isLiked']))
+      );
+    }
+
+    // User Addresses: Owner read/write
+    match /user_addresses/{addressId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // User Coupons: Owner read, Admin write, Allow query
+    match /user_coupons/{couponId} {
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || 
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && (
+        request.resource.data.userId == request.auth.uid || 
+        isAdmin()
+      );
+      allow update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || 
+        isAdmin()
+      );
+      // Allow users to delete their own coupons (when used)
+      allow delete: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || 
+        isAdmin()
+      );
+    }
+
+    // Point History: Owner read, System write
+    match /point_history/{historyId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow write: if isAdmin();
+    }
+
+    // Homepage Announcement Bar: Public read, Admin write
+    match /homepage_announcement_bar/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Homepage sections: Public read, Admin write
+    match /homepage_hero/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /homepage_timesale/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /homepage_newarrivals/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /homepage_lookbooks/{lookbookId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /homepage_trending_ootd/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /homepage_magazines/{articleId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /homepage_instagram_feed/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /homepage_newsletter/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /newsletter_subscribers/{subscriberId} {
+      allow read: if isAdmin();
+      allow create: if true; // 누구나 구독 가능
+      allow update, delete: if isAdmin();
+    }
+  }
+}

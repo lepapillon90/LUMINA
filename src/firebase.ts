@@ -21,5 +21,6 @@ setPersistence(auth, browserSessionPersistence).catch((error) => {
 });
 
 export const db = getFirestore(app, 'lumina');
+console.log('[MY_LOG] Firestore initialized with DB:', db.app.options.projectId);
 export const storage = getStorage(app);
 export default app;

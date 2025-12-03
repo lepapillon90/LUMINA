@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layout, Video, Clock, Star, BookOpen, Image, Mail, TrendingUp, ImageIcon, Percent } from 'lucide-react';
+import { Layout, Video, Clock, Star, BookOpen, Image, Mail, TrendingUp, ImageIcon, Percent, Bell } from 'lucide-react';
 import { User } from '../../../types';
 import HeroSectionManager from './HeroSectionManager';
 import TimeSaleManager from './TimeSaleManager';
@@ -11,18 +11,20 @@ import InstagramFeedManager from './InstagramFeedManager';
 import NewsletterManager from './NewsletterManager';
 import BannersManager from './BannersManager';
 import PromotionsManager from './PromotionsManager';
+import AnnouncementBarManager from './AnnouncementBarManager';
 
 interface HomepageManagerProps {
     user: User | null;
 }
 
-type Section = 'overview' | 'hero' | 'timesale' | 'newarrivals' | 'lookbook' | 'trending' | 'magazine' | 'instagram' | 'newsletter' | 'banners' | 'promotions';
+type Section = 'overview' | 'hero' | 'timesale' | 'newarrivals' | 'lookbook' | 'trending' | 'magazine' | 'instagram' | 'newsletter' | 'banners' | 'promotions' | 'announcement';
 
 const HomepageManager: React.FC<HomepageManagerProps> = ({ user }) => {
     const [activeSection, setActiveSection] = useState<Section>('overview');
 
     const sections = [
         { id: 'overview', label: '개요', icon: Layout },
+        { id: 'announcement', label: '상단 알림', icon: Bell },
         { id: 'hero', label: 'Hero 섹션', icon: Video },
         { id: 'timesale', label: '타임세일', icon: Clock },
         { id: 'newarrivals', label: '신상품', icon: Star },
@@ -92,6 +94,8 @@ const HomepageManager: React.FC<HomepageManagerProps> = ({ user }) => {
                         </div>
                     </div>
                 )}
+
+                {activeSection === 'announcement' && <AnnouncementBarManager user={user} />}
 
                 {activeSection === 'hero' && <HeroSectionManager user={user} />}
 

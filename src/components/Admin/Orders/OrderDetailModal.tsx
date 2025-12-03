@@ -64,6 +64,8 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClose }) =
                                         <p className="text-sm text-gray-500 mt-1">
                                             {item.category}
                                             {item.material && ` / ${item.material}`}
+                                            {item.selectedSize && ` / Size: ${item.selectedSize}`}
+                                            {item.selectedColor && ` / Color: ${item.selectedColor}`}
                                         </p>
                                         <p className="text-sm text-gray-500 mt-1">Qty: {item.quantity}</p>
                                     </div>
@@ -84,7 +86,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClose }) =
                             </h3>
                             <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 text-sm space-y-2">
                                 <p><span className="text-gray-500 w-16 inline-block">Name:</span> {order.customerName}</p>
-                                <p><span className="text-gray-500 w-16 inline-block">ID:</span> {order.userId}</p>
+                                <p><span className="text-gray-500 w-16 inline-block">Email:</span> {order.email || order.userId || '-'}</p>
                             </div>
                         </div>
                         <div>

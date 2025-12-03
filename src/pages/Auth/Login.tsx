@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { auth } from '../../firebase';
+import { auth, db } from '../../firebase';
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { getQuery, set } from '../../services/db';
 import { where, doc, getDoc, getFirestore } from 'firebase/firestore';
@@ -40,7 +40,6 @@ const Login: React.FC = () => {
       const user = result.user;
 
       // Check if user exists in Firestore
-      const db = getFirestore();
       const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
 

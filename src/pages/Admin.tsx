@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Home, ShoppingCart, Package, Users, MessageCircle, FileText,
-  LineChart, BarChart2, Grid, Shield, Settings, LogOut, Menu, X, Layout
+  LineChart, BarChart2, Grid, Shield, Settings, LogOut, Menu, X, Layout, Headphones
 } from 'lucide-react';
 import { useAuth } from '../contexts';
 import { Navigate, useNavigate } from 'react-router-dom';
@@ -16,27 +16,26 @@ import Dashboard from '../components/Admin/Dashboard/Dashboard';
 import OrderManager from '../components/Admin/Orders/OrderManager';
 import ProductManager from '../components/Admin/Products/ProductManager';
 import CustomerManager from '../components/Admin/Customers/CustomerManager';
-import SystemManager from '../components/Admin/System/SystemManager';
+
 import CSManager from '../components/Admin/CS/CSManager';
 import AnalyticsManager from '../components/Admin/Analytics/AnalyticsManager';
 import HomepageManager from '../components/Admin/Homepage/HomepageManager';
 
 // --- Main Admin Component ---
 
-type Tab = 'home' | 'orders' | 'products' | 'customers' | 'messages' | 'board' | 'analytics' | 'stats' | 'excel' | 'system' | 'homepage';
+type Tab = 'home' | 'orders' | 'products' | 'customers' | 'cs' | 'analytics' | 'stats' | 'excel' | 'homepage';
 
 const MENU_ITEMS = [
   { id: 'home', label: '홈', icon: Home, permission: null },
   { id: 'orders', label: '주문', icon: ShoppingCart, permission: 'orders' },
   { id: 'products', label: '상품', icon: Package, permission: 'products' },
   { id: 'customers', label: '고객', icon: Users, permission: 'customers' },
-  { id: 'messages', label: '메시지', icon: MessageCircle, permission: null },
-  { id: 'board', label: '게시판', icon: FileText, permission: null },
+  { id: 'cs', label: '고객센터', icon: Headphones, permission: null },
   { id: 'homepage', label: '홈페이지 관리', icon: Layout, permission: null },
   { id: 'analytics', label: '애널리틱스', icon: LineChart, permission: 'analytics' },
   { id: 'stats', label: '통계', icon: BarChart2, permission: 'analytics' },
   { id: 'excel', label: '통합엑셀', icon: Grid, permission: null },
-  { id: 'system', label: '시스템 관리', icon: Shield, permission: 'system' },
+
 ];
 
 const Admin: React.FC = () => {
@@ -65,7 +64,7 @@ const Admin: React.FC = () => {
         }
       };
       fetchOrders();
-    } else if (activeTab === 'products' || activeTab === 'design') {
+    } else if (activeTab === 'products') {
       const fetchProducts = async () => {
         try {
           const { getProducts } = await import('../services/productService');
@@ -76,6 +75,7 @@ const Admin: React.FC = () => {
         }
       };
       fetchProducts();
+    }
   }, [activeTab]);
 
 
@@ -201,9 +201,7 @@ const Admin: React.FC = () => {
           {activeTab === 'orders' && <OrderManager orders={orders} setOrders={setOrders} user={user} />}
           {activeTab === 'products' && <ProductManager products={products} setProducts={setProducts} user={user} />}
           {activeTab === 'customers' && <CustomerManager user={user} />}
-          {activeTab === 'system' && <SystemManager user={user} />}
-          {activeTab === 'messages' && <CSManager />}
-          {activeTab === 'board' && renderPlaceholder('게시판 관리')}
+          {activeTab === 'cs' && <CSManager />}
           {activeTab === 'homepage' && <HomepageManager user={user} />}
           {activeTab === 'analytics' && <AnalyticsManager />}
           {activeTab === 'stats' && renderPlaceholder('통계')}

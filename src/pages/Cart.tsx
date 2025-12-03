@@ -40,7 +40,7 @@ const Cart: React.FC = () => {
 
 
   return (
-    <div className="pt-24 pb-20 min-h-screen bg-white">
+    <div className="pt-40 pb-20 min-h-screen bg-white">
       <div className="container mx-auto px-6 max-w-6xl">
         <h1 className="text-3xl font-serif mb-10">장바구니 ({cart.length})</h1>
 
@@ -82,7 +82,7 @@ const Cart: React.FC = () => {
                 <div className="space-y-6">
                   {cart.map(item => (
                     <div key={item.id} className="flex py-6 border-b border-gray-100">
-                      <div className="w-24 h-32 bg-gray-100 overflow-hidden">
+                      <div className="w-24 h-24 bg-gray-100 overflow-hidden">
                         <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                       </div>
                       <div className="ml-6 flex-1 flex flex-col justify-between">

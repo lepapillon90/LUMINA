@@ -8,7 +8,7 @@ import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth
 // Cart Context
 interface CartContextType {
     cart: CartItem[];
-    addToCart: (product: Product, quantity?: number) => void;
+    addToCart: (product: Product, quantity?: number, options?: { selectedSize?: string; selectedColor?: string }) => void;
     removeFromCart: (id: number) => void;
     updateQuantity: (id: number, quantity: number) => void;
     updateCartItem: (id: number, updates: Partial<CartItem>) => void;
@@ -50,13 +50,21 @@ export const Providers: React.FC<{ children: ReactNode }> = ({ children }) => {
     const openCart = () => setIsCartOpen(true);
     const closeCart = () => setIsCartOpen(false);
 
-    const addToCart = (product: Product, quantity: number = 1) => {
+    const addToCart = (product: Product, quantity: number = 1, options: { selectedSize?: string; selectedColor?: string } = {}) => {
         setCart(prev => {
-            const existing = prev.find(item => item.id === product.id);
+            const existing = prev.find(item =>
+                item.id === product.id &&
+                item.selectedSize === options.selectedSize &&
+                item.selectedColor === options.selectedColor
+            );
             if (existing) {
-                return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item);
+                return prev.map(item =>
+                    (item.id === product.id && item.selectedSize === options.selectedSize && item.selectedColor === options.selectedColor)
+                        ? { ...item, quantity: item.quantity + quantity }
+                        : item
+                );
             }
-            return [...prev, { ...product, quantity }];
+            return [...prev, { ...product, quantity, ...options }];
         });
         openCart(); // Automatically open cart when adding item
     };

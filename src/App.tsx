@@ -36,6 +36,7 @@ const Login = lazy(() => import('./pages/Auth/Login'));
 const Signup = lazy(() => import('./pages/Auth/Signup'));
 const ForgotPassword = lazy(() => import('./pages/Auth/ForgotPassword'));
 const GuestOrderTracking = lazy(() => import('./pages/GuestOrderTracking'));
+const CustomerService = lazy(() => import('./pages/CustomerService'));
 
 // --- Layout Helper ---
 const ScrollToTop = () => {
@@ -71,13 +72,14 @@ const Layout: React.FC = () => {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/order-tracking" element={<GuestOrderTracking />} />
             <Route path="/mypage" element={<MyPage />} />
+            <Route path="/cs" element={<CustomerService />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin/migrate" element={<DataMigration />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
       </main>
-      {!isAdmin && <AIStylist />}
+      {!isAdmin && !location.pathname.startsWith('/ootd') && <AIStylist />}
       {!isAdmin && <Footer />}
     </div>
   );

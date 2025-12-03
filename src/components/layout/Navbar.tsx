@@ -5,6 +5,7 @@ import { useCart, useAuth } from '../../contexts';
 import { UserRole } from '../../types';
 import CartDrawer from './CartDrawer';
 import AnnouncementBar from './AnnouncementBar';
+import TopMenuBar from './TopMenuBar';
 
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -36,6 +37,7 @@ const Navbar: React.FC = () => {
     <>
       <nav className={navClass}>
         <AnnouncementBar />
+        <TopMenuBar />
         <div className={`w-full transition-all duration-300 ${isScrolled || !isHome ? 'py-4' : 'py-6'}`}>
           <div className="container mx-auto px-6 flex justify-between items-center">
             {/* Logo */}
@@ -50,6 +52,7 @@ const Navbar: React.FC = () => {
               <Link to="/cart" className="hover:text-accent transition">장바구니</Link>
               <Link to="/magazine" className="hover:text-accent transition">매거진</Link>
               <Link to="/ootd" className="hover:text-accent transition">OOTD</Link>
+
             </div>
 
             {/* Icons */}
@@ -62,12 +65,12 @@ const Navbar: React.FC = () => {
                   <Link to="/mypage" className="hover:text-accent transition" aria-label="마이페이지">
                     <UserIcon size={20} />
                   </Link>
-                  <button 
+                  <button
                     onClick={async () => {
                       await logout();
                       navigate('/');
-                    }} 
-                    className="hover:text-accent transition" 
+                    }}
+                    className="hover:text-accent transition"
                     aria-label="로그아웃"
                   >
                     <LogOut size={20} />
@@ -111,6 +114,7 @@ const Navbar: React.FC = () => {
             <Link to="/cart" onClick={() => setIsMenuOpen(false)} className="block py-2 border-b border-gray-100">장바구니</Link>
             <Link to="/magazine" onClick={() => setIsMenuOpen(false)} className="block py-2 border-b border-gray-100">매거진</Link>
             <Link to="/ootd" onClick={() => setIsMenuOpen(false)} className="block py-2 border-b border-gray-100">OOTD</Link>
+
           </div>
         )}
       </nav>

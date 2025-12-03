@@ -70,7 +70,7 @@ const GuestOrderTracking: React.FC = () => {
     };
 
     return (
-        <div className="pt-32 pb-20 min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="pt-40 pb-20 min-h-screen bg-gray-50 flex items-center justify-center px-4">
             <div className="bg-white p-8 md:p-12 rounded-lg shadow-lg max-w-lg w-full">
                 <h1 className="text-2xl font-serif mb-2 text-center">비회원 주문 조회</h1>
                 <p className="text-gray-500 text-center mb-8 text-sm">주문 번호와 이메일을 입력하여 배송 상태를 확인하세요.</p>

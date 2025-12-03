@@ -50,6 +50,8 @@ export interface Product {
     reviewCount?: number;
     discount?: number;
     stock?: number;
+    sizeStock?: { [size: string]: number }; // 사이즈별 재고 수량 (하위 호환성)
+    sizeColorStock?: Array<{ size: string; color: string; quantity: number }>; // 사이즈-색상 조합별 재고
     images?: string[];
     shortDescription?: string;
 }
@@ -365,4 +367,14 @@ export interface NewsletterSubscriber {
     subscribedAt?: any;
     couponCode?: string;
     isActive: boolean;
+}
+
+export interface HomepageAnnouncementBar {
+    id: string;
+    messages: string[];
+    backgroundColor?: string;
+    textColor?: string;
+    rotationInterval?: number; // milliseconds
+    isActive: boolean;
+    updatedAt?: any;
 }

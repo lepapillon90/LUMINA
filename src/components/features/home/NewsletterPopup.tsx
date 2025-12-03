@@ -37,7 +37,7 @@ const NewsletterPopup: React.FC<NewsletterPopupProps> = ({ forceShow = false }) 
     // 이메일 유효성 검증 함수
     const validateEmail = (emailValue: string): string | null => {
         const trimmedEmail = emailValue.trim();
-        
+
         if (!trimmedEmail) {
             return '이메일을 입력해주세요.';
         }
@@ -81,7 +81,7 @@ const NewsletterPopup: React.FC<NewsletterPopupProps> = ({ forceShow = false }) 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
-        
+
         const trimmedEmail = email.trim();
         setEmail(trimmedEmail);
 
@@ -94,14 +94,14 @@ const NewsletterPopup: React.FC<NewsletterPopupProps> = ({ forceShow = false }) 
 
         try {
             setIsLoading(true);
-            
+
             // TODO: 실제 구독 API 연동
             // 현재는 Mock 구독 (실제 구현 시 Firebase Firestore나 백엔드 API 연동)
             await new Promise(resolve => setTimeout(resolve, 1000)); // API 호출 시뮬레이션
-            
+
             // 구독 성공
             setIsSubmitted(true);
-            
+
             // 3초 후 자동으로 닫기
             setTimeout(() => {
                 handleClose();
@@ -129,8 +129,8 @@ const NewsletterPopup: React.FC<NewsletterPopupProps> = ({ forceShow = false }) 
                 {/* Image Side */}
                 <div className="hidden md:block w-1/2 bg-gray-100">
                     <img
-                        src="https://images.unsplash.com/photo-1576016770956-debb63d92058?auto=format&fit=crop&q=80&w=600"
-                        alt="Newsletter"
+                        src="https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&q=80&w=600"
+                        alt="Premium Jewelry"
                         className="w-full h-full object-cover"
                     />
                 </div>
@@ -160,9 +160,8 @@ const NewsletterPopup: React.FC<NewsletterPopupProps> = ({ forceShow = false }) 
                                         value={email}
                                         onChange={handleEmailChange}
                                         maxLength={50}
-                                        className={`w-full pl-10 pr-4 py-3 border rounded focus:outline-none focus:border-black text-sm ${
-                                            error ? 'border-red-500' : 'border-gray-200'
-                                        }`}
+                                        className={`w-full pl-10 pr-4 py-3 border rounded focus:outline-none focus:border-black text-sm ${error ? 'border-red-500' : 'border-gray-200'
+                                            }`}
                                         disabled={isLoading}
                                         required
                                     />

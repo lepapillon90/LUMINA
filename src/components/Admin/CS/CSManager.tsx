@@ -41,7 +41,7 @@ const CSManager: React.FC = () => {
     return (
         <div className="space-y-6">
             <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                <MessageCircle size={20} /> CS 통합 관리
+                <MessageCircle size={20} /> 고객센터 관리
             </h2>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

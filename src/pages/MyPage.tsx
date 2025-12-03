@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth, useGlobalModal } from '../contexts';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import OrderHistory from '../components/MyPage/OrderHistory';
 import Wishlist from '../components/MyPage/Wishlist';
 import MyOOTD from '../components/MyPage/MyOOTD';
@@ -25,7 +25,22 @@ const MyPage: React.FC = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const { showAlert } = useGlobalModal();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [activeTab, setActiveTab] = useState<'orders' | 'wishlist' | 'ootd' | 'recent' | 'membership' | 'settings'>('orders');
+
+    // URL 파라미터에서 탭 읽기
+    useEffect(() => {
+        const tab = searchParams.get('tab') as typeof activeTab;
+        if (tab && ['orders', 'wishlist', 'ootd', 'recent', 'membership', 'settings'].includes(tab)) {
+            setActiveTab(tab);
+        }
+    }, [searchParams]);
+
+    // 탭 변경 시 URL 업데이트
+    const handleTabChange = (tab: typeof activeTab) => {
+        setActiveTab(tab);
+        setSearchParams({ tab });
+    };
     const [loading, setLoading] = useState(false);
     const [orders, setOrders] = useState<Order[]>([]);
     const [ootdPosts, setOotdPosts] = useState<OOTDPost[]>([]);
@@ -165,7 +180,7 @@ const MyPage: React.FC = () => {
 
 
     return (
-        <div className="pt-24 pb-20 bg-gray-50 min-h-screen">
+        <div className="pt-40 pb-20 bg-gray-50 min-h-screen">
             <SEO title="My Page" description="마이페이지" />
 
             <div className="container mx-auto px-6">
@@ -204,35 +219,35 @@ const MyPage: React.FC = () => {
                                     </button>
                                 )}
                                 <button
-                                    onClick={() => setActiveTab('orders')}
+                                    onClick={() => handleTabChange('orders')}
                                     className={`w-full flex items-center space-x-3 px-4 py-3 rounded-md transition-colors ${activeTab === 'orders' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-50'}`}
                                 >
                                     <Package size={18} />
                                     <span className="font-medium">주문 내역</span>
                                 </button>
                                 <button
-                                    onClick={() => setActiveTab('membership')}
+                                    onClick={() => handleTabChange('membership')}
                                     className={`w-full flex items-center space-x-3 px-4 py-3 rounded-md transition-colors ${activeTab === 'membership' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-50'}`}
                                 >
                                     <Gift size={18} />
                                     <span className="font-medium">멤버십 & 혜택</span>
                                 </button>
                                 <button
-                                    onClick={() => setActiveTab('wishlist')}
+                                    onClick={() => handleTabChange('wishlist')}
                                     className={`w-full flex items-center space-x-3 px-4 py-3 rounded-md transition-colors ${activeTab === 'wishlist' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-50'}`}
                                 >
                                     <Heart size={18} />
                                     <span className="font-medium">위시리스트</span>
                                 </button>
                                 <button
-                                    onClick={() => setActiveTab('ootd')}
+                                    onClick={() => handleTabChange('ootd')}
                                     className={`w-full flex items-center space-x-3 px-4 py-3 rounded-md transition-colors ${activeTab === 'ootd' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-50'}`}
                                 >
                                     <Camera size={18} />
                                     <span className="font-medium">My OOTD</span>
                                 </button>
                                 <button
-                                    onClick={() => setActiveTab('recent')}
+                                    onClick={() => handleTabChange('recent')}
                                     className={`w-full flex items-center space-x-3 px-4 py-3 rounded-md transition-colors ${activeTab === 'recent' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-50'}`}
                                 >
                                     <Clock size={18} />
@@ -242,7 +257,7 @@ const MyPage: React.FC = () => {
 
                             <div className="border-t border-gray-100 mt-6 pt-6 space-y-1">
                                 <button
-                                    onClick={() => setActiveTab('settings')}
+                                    onClick={() => handleTabChange('settings')}
                                     className={`w-full flex items-center space-x-3 px-4 py-3 rounded-md transition-colors ${activeTab === 'settings' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-50'}`}
                                 >
                                     <SettingsIcon size={18} />

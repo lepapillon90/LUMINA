@@ -72,7 +72,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                     ) : (
                         cart.map(item => (
                             <div key={item.id} className="flex gap-4">
-                                <div className="w-20 h-24 bg-gray-100 flex-shrink-0 overflow-hidden rounded-sm">
+                                <div className="w-20 h-20 bg-gray-100 flex-shrink-0 overflow-hidden rounded-sm">
                                     <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                                 </div>
                                 <div className="flex-1 flex flex-col justify-between">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ImageIcon, Plus, FileText, Loader2 } from 'lucide-react';
+import { ImageIcon, Plus, FileText, Loader2, X } from 'lucide-react';
 import { Product } from '../../../types';
 import { uploadImage } from '../../../services/storageService';
 import { compressImage } from '../../../utils/imageOptimizer';
@@ -21,12 +21,45 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
     const [descriptionBlocks, setDescriptionBlocks] = useState<DescriptionBlock[]>([]);
     const [uploading, setUploading] = useState(false);
     const [mainImageFile, setMainImageFile] = useState<File | null>(null);
+    const [sizes, setSizes] = useState<string[]>([]);
+    const [colors, setColors] = useState<string[]>([]);
+    const [sizeStock, setSizeStock] = useState<{ [size: string]: number }>({});
+    const [sizeColorStocks, setSizeColorStocks] = useState<Array<{ id: string; size: string; color: string; quantity: number }>>([]);
+    const [selectedCategory, setSelectedCategory] = useState<string>(product?.category || 'earring');
+
+    // 카테고리별 사이즈 옵션
+    const getSizeOptionsByCategory = (category: string): string[] => {
+        switch (category) {
+            case 'ring':
+                return ['9호', '10호', '11호', '12호', '13호', '14호', '15호', '16호', '17호'];
+            case 'necklace':
+                return ['40cm', '45cm', '50cm', '55cm'];
+            case 'bracelet':
+                return ['16cm', '17cm', '18cm', '19cm', '20cm'];
+            case 'earring':
+            default:
+                return ['Free'];
+        }
+    };
 
     useEffect(() => {
         if (isOpen) {
             setPreviewImage(product?.image || '');
             setAdditionalImages(product?.images || []);
             setMainImageFile(null);
+            setSizes(product?.sizes || []);
+            setColors(product?.colors || []);
+            setSizeStock(product?.sizeStock || {});
+            setSelectedCategory(product?.category || 'earring');
+            // sizeColorStock이 있으면 사용, 없으면 빈 배열
+            if (product?.sizeColorStock && product.sizeColorStock.length > 0) {
+                setSizeColorStocks(product.sizeColorStock.map((item, index) => ({
+                    id: `${item.size}-${item.color}-${index}`,
+                    ...item
+                })));
+            } else {
+                setSizeColorStocks([]);
+            }
 
             if (product?.description) {
                 const parsedBlocks = parseDescription(product.description);
@@ -163,25 +196,73 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                 return '';
             }).join('');
 
+            // sizeColorStocks에서 사이즈와 색상 목록 추출
+            const uniqueSizes = Array.from(new Set(sizeColorStocks.map(item => item.size).filter(s => s)));
+            const uniqueColors = Array.from(new Set(sizeColorStocks.map(item => item.color).filter(c => c)));
+            const finalSizes = uniqueSizes.length > 0 ? uniqueSizes : undefined;
+            const finalColors = uniqueColors.length > 0 ? uniqueColors : undefined;
+
+            // sizeColorStocks를 정리 (id 제거하고 필요한 데이터만)
+            const cleanedSizeColorStocks = sizeColorStocks
+                .filter(item => item.size && item.color && item.quantity >= 0)
+                .map(item => ({
+                    size: item.size,
+                    color: item.color,
+                    quantity: item.quantity
+                }));
+
+            // 필수 필드 검증
+            const productName = formData.get('name') as string;
+            const productPrice = formData.get('price') as string;
+            const productCategory = selectedCategory; // 상태에서 직접 가져오기
+
+            if (!productName || !productName.trim()) {
+                await showAlert('상품명을 입력해주세요.', '오류');
+                setUploading(false);
+                return;
+            }
+
+            if (!productPrice || isNaN(parseInt(productPrice))) {
+                await showAlert('올바른 가격을 입력해주세요.', '오류');
+                setUploading(false);
+                return;
+            }
+
+            if (!productCategory) {
+                await showAlert('카테고리를 선택해주세요.', '오류');
+                setUploading(false);
+                return;
+            }
+
+            if (!mainImageUrl) {
+                await showAlert('대표 이미지를 등록해주세요.', '오류');
+                setUploading(false);
+                return;
+            }
+
             const newProduct: Product = {
                 id: product ? product.id : Date.now(),
-                name: formData.get('name') as string,
-                price: parseInt(formData.get('price') as string),
+                name: productName.trim(),
+                price: parseInt(productPrice) || 0,
                 image: mainImageUrl,
                 images: finalAdditionalImages,
-                category: formData.get('category') as string,
+                category: productCategory,
                 description: descriptionHtml,
-                stock: parseInt(formData.get('stock') as string),
+                stock: 0, // 사이즈-색상 조합으로 관리하므로 일반 재고는 0
                 isNew: formData.get('isNew') === 'on',
                 tags: product ? product.tags : [],
-                shortDescription: formData.get('shortDescription') as string,
+                shortDescription: (formData.get('shortDescription') as string) || '',
+                sizes: finalSizes,
+                colors: finalColors,
+                sizeColorStock: cleanedSizeColorStocks.length > 0 ? cleanedSizeColorStocks : undefined,
             };
 
             await onSave(newProduct);
             onClose();
-        } catch (error) {
-            console.error('Error uploading images:', error);
-            await showAlert('이미지 업로드에 실패했습니다. 다시 시도해주세요.', '오류');
+        } catch (error: any) {
+            console.error('[MY_LOG] Error saving product:', error);
+            const errorMessage = error?.message || '상품 저장에 실패했습니다. 다시 시도해주세요.';
+            await showAlert(errorMessage, '오류');
         } finally {
             setUploading(false);
         }
@@ -286,7 +367,15 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                                 <span className="mx-2 text-xs">/</span>
                                 <select
                                     name="category"
-                                    defaultValue={product?.category || 'earring'}
+                                    value={selectedCategory}
+                                    onChange={(e) => {
+                                        setSelectedCategory(e.target.value);
+                                        // 카테고리 변경 시 현재 사이즈가 새로운 카테고리에 맞지 않으면 초기화
+                                        const newSizeOptions = getSizeOptionsByCategory(e.target.value);
+                                        setSizeColorStocks(prev => prev.filter(item => 
+                                            newSizeOptions.includes(item.size)
+                                        ).map(item => ({ ...item })));
+                                    }}
                                     className="text-black font-medium border-none focus:ring-0 p-0 cursor-pointer bg-transparent outline-none hover:underline"
                                 >
                                     <option value="earring">Earrings (귀걸이)</option>
@@ -320,34 +409,111 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                                 />
                             </div>
 
-                            {/* Price & Stock */}
-                            <div className="flex gap-8">
-                                <div className="flex-1">
-                                    <label className="block text-xs font-bold text-gray-400 mb-1">판매가 (KRW)</label>
-                                    <div className="flex items-center">
-                                        <span className="text-xl font-medium text-gray-900 mr-1">₩</span>
-                                        <input
-                                            name="price"
-                                            type="number"
-                                            min="0"
-                                            defaultValue={product?.price}
-                                            required
-                                            className="w-full text-xl font-medium text-gray-900 border-b border-gray-200 focus:border-black outline-none py-1"
-                                            placeholder="0"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="flex-1">
-                                    <label className="block text-xs font-bold text-gray-400 mb-1">재고 수량</label>
+                            {/* Price */}
+                            <div>
+                                <label className="block text-xs font-bold text-gray-400 mb-1">판매가 (KRW)</label>
+                                <div className="flex items-center">
+                                    <span className="text-xl font-medium text-gray-900 mr-1">₩</span>
                                     <input
-                                        name="stock"
+                                        name="price"
                                         type="number"
                                         min="0"
-                                        defaultValue={product?.stock ?? 0}
+                                        defaultValue={product?.price}
+                                        required
                                         className="w-full text-xl font-medium text-gray-900 border-b border-gray-200 focus:border-black outline-none py-1"
                                         placeholder="0"
                                     />
                                 </div>
+                            </div>
+
+                            {/* Size-Color-Quantity Combinations */}
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <label className="block text-xs font-bold text-gray-400">사이즈/색상/수량 조합</label>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSizeColorStocks(prev => [...prev, {
+                                                id: Date.now().toString(),
+                                                size: '',
+                                                color: '',
+                                                quantity: 0
+                                            }]);
+                                        }}
+                                        className="flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-300 rounded-sm text-xs font-medium hover:bg-gray-50 transition"
+                                    >
+                                        <Plus size={14} />
+                                        추가하기
+                                    </button>
+                                </div>
+                                
+                                {sizeColorStocks.length > 0 && (
+                                    <div className="space-y-3 border border-gray-200 rounded-sm p-4 bg-gray-50">
+                                        {sizeColorStocks.map((item, index) => (
+                                            <div key={item.id} className="flex items-center gap-2">
+                                                <div className="flex-1 grid grid-cols-3 gap-2">
+                                                    <select
+                                                        value={item.size}
+                                                        onChange={(e) => {
+                                                            const updated = [...sizeColorStocks];
+                                                            updated[index].size = e.target.value;
+                                                            setSizeColorStocks(updated);
+                                                        }}
+                                                        className="text-sm text-gray-900 border-b border-gray-300 focus:border-black outline-none py-1 bg-white"
+                                                    >
+                                                        <option value="">사이즈 선택</option>
+                                                        {getSizeOptionsByCategory(selectedCategory).map(size => (
+                                                            <option key={size} value={size}>{size}</option>
+                                                        ))}
+                                                    </select>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        value={item.quantity}
+                                                        onChange={(e) => {
+                                                            const updated = [...sizeColorStocks];
+                                                            updated[index].quantity = parseInt(e.target.value) || 0;
+                                                            setSizeColorStocks(updated);
+                                                        }}
+                                                        placeholder="수량"
+                                                        className="text-sm text-gray-900 border-b border-gray-300 focus:border-black outline-none py-1"
+                                                    />
+                                                    <select
+                                                        value={item.color}
+                                                        onChange={(e) => {
+                                                            const updated = [...sizeColorStocks];
+                                                            updated[index].color = e.target.value;
+                                                            setSizeColorStocks(updated);
+                                                        }}
+                                                        className="text-sm text-gray-900 border-b border-gray-300 focus:border-black outline-none py-1 bg-white"
+                                                    >
+                                                        <option value="">색상 선택</option>
+                                                        <option value="Gold">Gold</option>
+                                                        <option value="Silver">Silver</option>
+                                                        <option value="Rose Gold">Rose Gold</option>
+                                                        <option value="White">White</option>
+                                                        <option value="Black">Black</option>
+                                                        <option value="Red">Red</option>
+                                                        <option value="Blue">Blue</option>
+                                                        <option value="Green">Green</option>
+                                                        <option value="Pink">Pink</option>
+                                                    </select>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSizeColorStocks(prev => prev.filter(i => i.id !== item.id));
+                                                    }}
+                                                    className="text-gray-400 hover:text-red-600 transition p-1"
+                                                    title="삭제"
+                                                >
+                                                    <X size={16} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
                             </div>
 
                             {/* Description (Block Editor) */}

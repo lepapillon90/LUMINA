@@ -126,7 +126,7 @@ const Shop: React.FC = () => {
   if (loading) return <Loading />;
 
   return (
-    <div className="pt-24 pb-20 bg-white min-h-screen">
+    <div className="pt-40 pb-20 bg-white min-h-screen">
       <SEO title="Shop" description="LUMINA의 모든 컬렉션을 만나보세요." />
       <div className="container mx-auto px-6">
         <h1 className="text-4xl font-serif text-center mb-8">Collection</h1>

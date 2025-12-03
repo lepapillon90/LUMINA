@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getProductById, getProductsByCategory } from '../services/productService';
 import { Product } from '../types';
-import { useCart } from '../contexts';
+import { useCart, useAuth, useGlobalModal } from '../contexts';
 import { ChevronRight, Star, Truck, ShieldCheck, Heart } from 'lucide-react';
 import SEO from '../components/common/SEO';
 import Loading from '../components/common/Loading';
@@ -18,11 +18,41 @@ const ProductDetail: React.FC = () => {
     const [quantity, setQuantity] = useState(1);
     const [activeTab, setActiveTab] = useState<'details' | 'reviews' | 'ootd'>('details');
     const [selectedImage, setSelectedImage] = useState<string>('');
+    const [selectedSize, setSelectedSize] = useState<string>('');
+    const [selectedColor, setSelectedColor] = useState<string>('');
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
     const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
     const [isRestockModalOpen, setIsRestockModalOpen] = useState(false);
     const { addToCart } = useCart();
+    const { user, toggleWishlist } = useAuth();
+    const { showConfirm, showAlert } = useGlobalModal();
+
+    const isWishlisted = product && user?.wishlist?.includes(product.id);
+
+    const handleToggleWishlist = async () => {
+        if (!product) return;
+
+        if (!user) {
+            const confirm = await showConfirm("로그인이 필요한 서비스입니다.\n로그인 페이지로 이동하시겠습니까?", "알림");
+            if (confirm) {
+                window.location.href = '/login';
+            }
+            return;
+        }
+
+        try {
+            await toggleWishlist(product.id);
+            const isAdded = !isWishlisted;
+            await showAlert(
+                isAdded ? "관심 상품에 추가되었습니다." : "관심 상품에서 제거되었습니다.",
+                "완료"
+            );
+        } catch (error) {
+            console.error("Error toggling wishlist:", error);
+            await showAlert("오류가 발생했습니다. 다시 시도해주세요.", "오류");
+        }
+    };
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -73,13 +103,22 @@ const ProductDetail: React.FC = () => {
 
     const handleAddToCart = () => {
         if (product) {
+            // Validate options
+            if (product.sizes && product.sizes.length > 0 && !selectedSize) {
+                showAlert("사이즈를 선택해주세요.", "알림");
+                return;
+            }
+            if (product.colors && product.colors.length > 0 && !selectedColor) {
+                showAlert("색상을 선택해주세요.", "알림");
+                return;
+            }
             setIsConfirmModalOpen(true);
         }
     };
 
     const confirmAddToCart = () => {
         if (product) {
-            addToCart(product, quantity);
+            addToCart(product, quantity, { selectedSize, selectedColor });
             setIsConfirmModalOpen(false);
 
             // GA4 E-commerce Event: add_to_cart
@@ -91,7 +130,8 @@ const ProductDetail: React.FC = () => {
                     item_name: product.name,
                     item_category: product.category,
                     price: product.price,
-                    quantity: quantity
+                    quantity: quantity,
+                    item_variant: selectedSize ? `Size: ${selectedSize}` : selectedColor ? `Color: ${selectedColor}` : undefined
                 }]
             });
         }
@@ -112,7 +152,7 @@ const ProductDetail: React.FC = () => {
     const allImages = [product.image, ...(product.images || [])];
 
     return (
-        <div className="pt-24 pb-20 bg-white min-h-screen">
+        <div className="pt-40 pb-20 bg-white min-h-screen">
             <SEO
                 title={product.name}
                 description={product.description}
@@ -213,17 +253,61 @@ const ProductDetail: React.FC = () => {
                             </div>
                         )}
 
-                        {/* Size Guide Button */}
-                        <button
-                            onClick={() => setIsSizeGuideOpen(true)}
-                            className="text-xs text-gray-500 underline mb-6 hover:text-black"
-                        >
-                            사이즈 가이드 보기
-                        </button>
+
 
                         {/* Options & Quantity */}
                         <div className="border-t border-b border-gray-100 py-6 mb-8">
-                            <div className="flex items-center justify-between mb-4">
+                            {/* Size Selector */}
+                            {product.sizes && product.sizes.length > 0 && (
+                                <div className="mb-6">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-sm font-medium text-gray-900">사이즈</span>
+                                        <button
+                                            onClick={() => setIsSizeGuideOpen(true)}
+                                            className="text-xs text-gray-500 underline hover:text-black"
+                                        >
+                                            사이즈 가이드
+                                        </button>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {product.sizes.map(size => (
+                                            <button
+                                                key={size}
+                                                onClick={() => setSelectedSize(size)}
+                                                className={`min-w-[3rem] px-3 py-2 text-sm border transition ${selectedSize === size
+                                                    ? 'border-black bg-black text-white'
+                                                    : 'border-gray-200 text-gray-600 hover:border-gray-400'
+                                                    }`}
+                                            >
+                                                {size}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Color Selector */}
+                            {product.colors && product.colors.length > 0 && (
+                                <div className="mb-6">
+                                    <span className="block text-sm font-medium text-gray-900 mb-2">색상</span>
+                                    <div className="flex flex-wrap gap-2">
+                                        {product.colors.map(color => (
+                                            <button
+                                                key={color}
+                                                onClick={() => setSelectedColor(color)}
+                                                className={`px-4 py-2 text-sm border transition ${selectedColor === color
+                                                    ? 'border-black bg-black text-white'
+                                                    : 'border-gray-200 text-gray-600 hover:border-gray-400'
+                                                    }`}
+                                            >
+                                                {color}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium text-gray-900">수량</span>
                                 <div className="flex items-center border border-gray-300">
                                     <button
@@ -258,8 +342,14 @@ const ProductDetail: React.FC = () => {
                                     장바구니 담기
                                 </button>
                             )}
-                            <button className="p-4 border border-gray-300 hover:border-red-400 hover:text-red-500 transition duration-300">
-                                <Heart size={20} />
+                            <button
+                                onClick={handleToggleWishlist}
+                                className={`p-4 border transition duration-300 ${isWishlisted
+                                    ? 'border-red-500 text-red-500 bg-red-50'
+                                    : 'border-gray-300 hover:border-red-400 hover:text-red-500'
+                                    }`}
+                            >
+                                <Heart size={20} fill={isWishlisted ? "currentColor" : "none"} />
                             </button>
                         </div>
 

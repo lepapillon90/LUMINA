@@ -6,7 +6,8 @@ import {
 import {
     HomepageHero, HomepageTimeSale, HomepageNewArrivals,
     HomepageLookbook, HomepageTrendingOOTD, MagazineArticle,
-    HomepageInstagramFeed, HomepageNewsletter, NewsletterSubscriber
+    HomepageInstagramFeed, HomepageNewsletter, NewsletterSubscriber,
+    HomepageAnnouncementBar
 } from '../types';
 import { logAction } from './auditService';
 
@@ -20,6 +21,7 @@ const MAGAZINE_COLLECTION = 'homepage_magazines';
 const INSTAGRAM_FEED_COLLECTION = 'homepage_instagram_feed';
 const NEWSLETTER_COLLECTION = 'homepage_newsletter';
 const NEWSLETTER_SUBSCRIBERS_COLLECTION = 'newsletter_subscribers';
+const ANNOUNCEMENT_BAR_COLLECTION = 'homepage_announcement_bar';
 
 type AdminUser = { uid: string; username: string };
 
@@ -428,6 +430,53 @@ export const getNewsletterSubscribers = async (): Promise<NewsletterSubscriber[]
     } catch (error) {
         console.error('[MY_LOG] Error fetching newsletter subscribers:', error);
         return [];
+    }
+};
+
+// ========== Announcement Bar ==========
+const ANNOUNCEMENT_BAR_DOC_ID = 'current';
+
+export const getHomepageAnnouncementBar = async (): Promise<HomepageAnnouncementBar | null> => {
+    try {
+        const docRef = doc(db, ANNOUNCEMENT_BAR_COLLECTION, ANNOUNCEMENT_BAR_DOC_ID);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            return { id: docSnap.id, ...docSnap.data() } as HomepageAnnouncementBar;
+        }
+        return null;
+    } catch (error: any) {
+        // 권한 오류는 조용히 반환 (상위에서 처리)
+        if (error?.code !== 'permission-denied') {
+            console.warn('[MY_LOG] Error fetching homepage announcement bar:', error);
+        }
+        throw error; // 상위 컴포넌트에서 처리하도록 에러 전달
+    }
+};
+
+export const saveHomepageAnnouncementBar = async (
+    announcementBar: Omit<HomepageAnnouncementBar, 'id'>,
+    adminUser: AdminUser
+): Promise<HomepageAnnouncementBar> => {
+    try {
+        const docRef = doc(db, ANNOUNCEMENT_BAR_COLLECTION, ANNOUNCEMENT_BAR_DOC_ID);
+        const data = {
+            ...announcementBar,
+            updatedAt: serverTimestamp()
+        };
+        await setDoc(docRef, data, { merge: true });
+
+        await logAction(
+            adminUser.uid,
+            adminUser.username,
+            'UPDATE_HOMEPAGE_ANNOUNCEMENT_BAR',
+            'Announcement Bar',
+            'Updated homepage announcement bar settings'
+        );
+
+        return { id: ANNOUNCEMENT_BAR_DOC_ID, ...announcementBar } as HomepageAnnouncementBar;
+    } catch (error) {
+        console.error('[MY_LOG] Error saving homepage announcement bar:', error);
+        throw error;
     }
 };
 

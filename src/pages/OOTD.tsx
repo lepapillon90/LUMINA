@@ -17,12 +17,31 @@ const OOTD: React.FC = () => {
   const [activeCommentId, setActiveCommentId] = useState<number | null>(null);
   const [commentText, setCommentText] = useState('');
   const [activeFilter, setActiveFilter] = useState('Latest');
+  const [isScrolling, setIsScrolling] = useState(false);
   const { user } = useAuth();
   const { addToCart } = useCart();
   const { showAlert } = useGlobalModal();
 
   useEffect(() => {
     fetchPosts();
+  }, []);
+
+  useEffect(() => {
+    let scrollTimeout: NodeJS.Timeout;
+
+    const handleScroll = () => {
+      setIsScrolling(true);
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        setIsScrolling(false);
+      }, 200); // 200ms after scroll stops, show button
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(scrollTimeout);
+    };
   }, []);
 
   const fetchPosts = async () => {
@@ -293,13 +312,14 @@ const OOTD: React.FC = () => {
   };
 
   return (
-    <div className="pt-24 pb-20 bg-white min-h-screen">
+    <div className="pt-40 pb-20 bg-white min-h-screen">
       <SEO title="OOTD" description="LUMINA와 함께한 고객님들의 스타일링을 확인해보세요." />
 
       {/* Floating Action Button */}
       <button
         onClick={() => setIsModalOpen(true)}
-        className="fixed bottom-24 right-8 z-40 bg-primary text-white p-4 rounded-full shadow-lg hover:bg-primary/90 transition-transform hover:scale-105 flex items-center gap-2"
+        className={`fixed bottom-24 right-8 z-40 bg-primary text-white p-4 rounded-full shadow-lg hover:bg-primary/90 transition-all duration-300 flex items-center gap-2 ${isScrolling ? 'opacity-0 translate-y-10 pointer-events-none' : 'opacity-100 translate-y-0'
+          }`}
       >
         <Plus size={24} />
         <span className="font-medium hidden md:inline">글쓰기</span>
@@ -324,8 +344,8 @@ const OOTD: React.FC = () => {
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition ${activeFilter === filter
-                    ? 'bg-black text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-black text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
               >
                 {filter}

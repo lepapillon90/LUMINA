@@ -13,13 +13,11 @@
       }
     ]
   },
-  "firestore": [
-    {
-      "database": "lumina",
-      "rules": "firestore.rules",
-      "indexes": "firestore.indexes.json"
-    }
-  ],
+  "firestore": {
+    "database": "lumina",
+    "rules": "firestore.lumina.rules",
+    "indexes": "firestore.indexes.json"
+  },
   "storage": {
     "rules": "storage.rules"
   }
