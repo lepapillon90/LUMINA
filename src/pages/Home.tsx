@@ -51,7 +51,7 @@ const Home: React.FC = () => {
     <div className="bg-white">
       <SEO />
       {/* Hero Section */}
-      <section className="relative h-screen w-full flex items-center justify-center overflow-hidden">
+      <section className="relative h-[100dvh] w-full flex items-center justify-center overflow-hidden">
         {/* Background Video */}
         <div className="absolute inset-0 z-0">
           <video
@@ -78,7 +78,7 @@ const Home: React.FC = () => {
         </div>
 
         {/* Content */}
-        <div className="relative z-10 text-center text-white px-4">
+        <div className="relative z-10 text-center text-white px-4 pt-20">
           <p className="text-sm md:text-base tracking-[0.3em] mb-4 uppercase text-[#FFD700] font-bold drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] animate-fade-in-up">
             Timeless Elegance
           </p>

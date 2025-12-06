@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, updateDoc, query, where, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, doc, getDocs, updateDoc, query, where, setDoc, deleteDoc, deleteField } from 'firebase/firestore';
 import { db, auth, firebaseConfig } from '../firebase';
 import { User, UserRole, UserPermissions } from '../types';
 import { initializeApp, deleteApp } from 'firebase/app';
@@ -122,19 +122,23 @@ export const toggleAdminStatus = async (uid: string, isActive: boolean, adminUse
     }
 };
 
-export const deleteAdminUser = async (uid: string, adminUser: { uid: string, username: string }): Promise<void> => {
+export const demoteAdminToUser = async (uid: string, adminUser: { uid: string, username: string }): Promise<void> => {
     try {
-        await deleteDoc(doc(db, USERS_COLLECTION, uid));
+        await updateDoc(doc(db, USERS_COLLECTION, uid), {
+            role: UserRole.GUEST,
+            permissions: deleteField(),
+            isActive: true // Ensure they are active as a regular user
+        });
 
         await logAction(
             adminUser.uid,
             adminUser.username,
-            'DELETE_ADMIN',
+            'DEMOTE_ADMIN',
             `Admin ${uid}`,
-            `Deleted admin user`
+            `Demoted admin to user`
         );
     } catch (error) {
-        console.error('Error deleting admin user:', error);
+        console.error('Error demoting admin user:', error);
         throw error;
     }
 };

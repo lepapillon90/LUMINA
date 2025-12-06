@@ -8,12 +8,14 @@ import Fuse from 'fuse.js';
 import SearchBar from '../components/common/SearchBar';
 import QuickViewModal from '../components/features/products/QuickViewModal';
 import { useLocation } from 'react-router-dom';
+import { Filter } from 'lucide-react';
 
 const Shop: React.FC = () => {
   const [category, setCategory] = useState<'all' | 'earring' | 'necklace' | 'ring' | 'bracelet'>('all');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const location = useLocation();
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // Detailed Filters
   const [maxPrice, setMaxPrice] = useState<number>(100000);
@@ -138,9 +140,20 @@ const Shop: React.FC = () => {
           placeholder="상품명, 태그, 소재 등으로 검색해보세요"
         />
 
-        <div className="flex flex-col lg:flex-row gap-12 mt-12">
+        <div className="flex flex-col lg:flex-row gap-12 mt-8 lg:mt-12">
+          {/* Mobile Filter Toggle */}
+          <div className="lg:hidden flex justify-end mb-4">
+            <button
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md text-sm"
+            >
+              <Filter size={16} />
+              필터 {isFilterOpen ? '닫기' : '열기'}
+            </button>
+          </div>
+
           {/* Sidebar Filters */}
-          <aside className="lg:w-1/4 space-y-8">
+          <aside className={`lg:w-1/4 space-y-8 ${isFilterOpen ? 'block' : 'hidden lg:block'}`}>
             {/* Category */}
             <div>
               <h3 className="font-serif font-bold text-lg mb-4">Category</h3>
@@ -259,7 +272,7 @@ const Shop: React.FC = () => {
               </select>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-8">
               {filteredProducts.map(product => (
                 <ProductCard
                   key={product.id}

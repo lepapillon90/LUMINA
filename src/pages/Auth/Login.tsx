@@ -119,7 +119,7 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 pt-32">
       <div className="bg-white p-8 md:p-12 shadow-md max-w-md w-full">
         <h2 className="text-3xl font-serif text-center mb-8">로그인</h2>
         {error && <div className="mb-4 text-red-500 text-sm text-center">{error}</div>}
@@ -130,7 +130,7 @@ const Login: React.FC = () => {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition placeholder-gray-300 text-sm"
+              className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition placeholder-gray-300 text-base md:text-sm"
               placeholder="아이디를 입력해주세요"
             />
           </div>
@@ -140,7 +140,7 @@ const Login: React.FC = () => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition placeholder-gray-300 text-sm"
+              className="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-black transition placeholder-gray-300 text-base md:text-sm"
               placeholder="비밀번호를 입력해주세요"
             />
           </div>
