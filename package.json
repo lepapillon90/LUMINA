@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.30.0",
+    "@google/generative-ai": "^0.24.1",
     "@hotjar/browser": "^1.0.9",
     "@sentry/react": "^10.28.0",
     "@sentry/vite-plugin": "^4.6.1",

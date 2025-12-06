@@ -141,6 +141,13 @@ export const saveHomepageTimeSale = async (timeSale: Omit<HomepageTimeSale, 'id'
             createdAt: timeSale.createdAt || serverTimestamp(),
             updatedAt: serverTimestamp()
         };
+        // Remove undefined fields
+        Object.keys(data).forEach(key => {
+            if ((data as any)[key] === undefined) {
+                delete (data as any)[key];
+            }
+        });
+
         await setDoc(docRef, data, { merge: true });
 
         removeCache(CACHE_KEYS.TIME_SALE);

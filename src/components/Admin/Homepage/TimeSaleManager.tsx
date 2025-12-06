@@ -157,7 +157,7 @@ const TimeSaleManager: React.FC<TimeSaleManagerProps> = ({ user }) => {
     // Select all filtered products
     const selectAllFiltered = () => {
         const currentIds = timeSale.productIds || [];
-        const filteredIds = filteredProducts.map(p => p.id);
+        const filteredIds = filteredProducts.map(p => Number(p.id));
         const newIds = new Set([...currentIds, ...filteredIds]);
         setTimeSale({ ...timeSale, productIds: Array.from(newIds) });
     };
@@ -165,7 +165,7 @@ const TimeSaleManager: React.FC<TimeSaleManagerProps> = ({ user }) => {
     // Deselect all filtered products
     const deselectAllFiltered = () => {
         const currentIds = timeSale.productIds || [];
-        const filteredIds = new Set(filteredProducts.map(p => p.id));
+        const filteredIds = new Set(filteredProducts.map(p => Number(p.id)));
         setTimeSale({
             ...timeSale,
             productIds: currentIds.filter(id => !filteredIds.has(id))
@@ -416,7 +416,7 @@ const TimeSaleManager: React.FC<TimeSaleManagerProps> = ({ user }) => {
                                 ) : (
                                     <div className="divide-y divide-gray-100">
                                         {filteredProducts.map((product) => {
-                                            const isSelected = timeSale.productIds?.includes(product.id);
+                                            const isSelected = timeSale.productIds?.includes(Number(product.id));
                                             return (
                                                 <label
                                                     key={product.id}
