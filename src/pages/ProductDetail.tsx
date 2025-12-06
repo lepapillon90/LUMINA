@@ -8,6 +8,8 @@ import SEO from '../components/common/SEO';
 import Loading from '../components/common/Loading';
 import ReactGA from 'react-ga4';
 import ConfirmModal from '../components/common/ConfirmModal';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase';
 
 import RestockModal from '../components/features/products/RestockModal';
 
@@ -29,6 +31,39 @@ const ProductDetail: React.FC = () => {
     const { showConfirm, showAlert } = useGlobalModal();
 
     const isWishlisted = product && user?.wishlist?.includes(product.id);
+
+    // [MY_LOG] 재고 계산: 선택한 사이즈/색상 조합의 재고 또는 전체 재고
+    const getCurrentStock = (): number => {
+        if (!product) return 0;
+        
+        // 사이즈-색상 조합별 재고가 있는 경우
+        if (product.sizeColorStock && product.sizeColorStock.length > 0) {
+            // 사이즈와 색상이 모두 선택된 경우, 해당 조합의 재고 반환
+            if (selectedSize && selectedColor) {
+                const variant = product.sizeColorStock.find(
+                    item => item.size === selectedSize && item.color === selectedColor
+                );
+                return variant ? variant.quantity : 0;
+            }
+            // 전체 재고 합계 반환
+            return product.sizeColorStock.reduce((acc, item) => acc + item.quantity, 0);
+        }
+        
+        // 일반 재고 필드 사용
+        return product.stock || 0;
+    };
+
+    // [MY_LOG] 사이즈/색상 선택 시 재고에 맞춰 수량 자동 조정
+    useEffect(() => {
+        if (product && (selectedSize || selectedColor)) {
+            const stock = getCurrentStock();
+            if (quantity > stock && stock > 0) {
+                setQuantity(stock);
+            } else if (stock === 0) {
+                setQuantity(1);
+            }
+        }
+    }, [selectedSize, selectedColor, product, quantity]);
 
     const handleToggleWishlist = async () => {
         if (!product) return;
@@ -55,50 +90,70 @@ const ProductDetail: React.FC = () => {
     };
 
     useEffect(() => {
+        if (!id) return;
+
+        let unsubscribe: (() => void) | null = null;
+
         const fetchProduct = async () => {
-            if (id) {
-                try {
-                    const data = await getProductById(parseInt(id));
-                    setProduct(data || null);
-                    if (data) {
-                        setSelectedImage(data.image);
-                        // Fetch related products
-                        const related = await getProductsByCategory(data.category);
-                        setRelatedProducts(related.filter(p => p.id !== data.id).slice(0, 4));
+            try {
+                // 초기 데이터 로드
+                const data = await getProductById(parseInt(id));
+                if (data) {
+                    setProduct(data);
+                    setSelectedImage(data.image);
+                    
+                    // Fetch related products
+                    const related = await getProductsByCategory(data.category);
+                    setRelatedProducts(related.filter(p => p.id !== data.id).slice(0, 4));
 
-                        // Save to Recently Viewed
-                        const stored = localStorage.getItem('recentlyViewed');
-                        let recent: Product[] = stored ? JSON.parse(stored) : [];
-                        // Remove duplicates
-                        recent = recent.filter(p => p.id !== data.id);
-                        // Add to front
-                        recent.unshift(data);
-                        // Limit to 10
-                        if (recent.length > 10) recent.pop();
-                        localStorage.setItem('recentlyViewed', JSON.stringify(recent));
+                    // Save to Recently Viewed
+                    const stored = localStorage.getItem('recentlyViewed');
+                    let recent: Product[] = stored ? JSON.parse(stored) : [];
+                    recent = recent.filter(p => p.id !== data.id);
+                    recent.unshift(data);
+                    if (recent.length > 10) recent.pop();
+                    localStorage.setItem('recentlyViewed', JSON.stringify(recent));
 
-                        // GA4 E-commerce Event: view_item
-                        ReactGA.event('view_item', {
-                            currency: 'KRW',
-                            value: data.price,
-                            items: [{
-                                item_id: data.id.toString(),
-                                item_name: data.name,
-                                item_category: data.category,
-                                price: data.price,
-                                quantity: 1
-                            }]
-                        });
-                    }
-                } catch (error) {
-                    console.error("Error fetching product:", error);
-                } finally {
-                    setLoading(false);
+                    // GA4 E-commerce Event: view_item
+                    ReactGA.event('view_item', {
+                        currency: 'KRW',
+                        value: data.price,
+                        items: [{
+                            item_id: data.id.toString(),
+                            item_name: data.name,
+                            item_category: data.category,
+                            price: data.price,
+                            quantity: 1
+                        }]
+                    });
                 }
+
+                // [MY_LOG] 실시간 재고 업데이트를 위한 Firestore 리스너 설정
+                const productRef = doc(db, 'products', id);
+                unsubscribe = onSnapshot(productRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        const updatedData = { id: docSnap.id as any, ...docSnap.data() } as Product;
+                        console.log('[MY_LOG] 재고 업데이트:', updatedData.name, '재고:', updatedData.stock);
+                        setProduct(updatedData);
+                    }
+                }, (error) => {
+                    console.error('[MY_LOG] 실시간 재고 업데이트 오류:', error);
+                });
+            } catch (error) {
+                console.error('[MY_LOG] 상품 로드 오류:', error);
+            } finally {
+                setLoading(false);
             }
         };
 
         fetchProduct();
+
+        // Cleanup: 컴포넌트 언마운트 시 리스너 해제
+        return () => {
+            if (unsubscribe) {
+                unsubscribe();
+            }
+        };
     }, [id]);
 
     const handleAddToCart = () => {
@@ -112,6 +167,19 @@ const ProductDetail: React.FC = () => {
                 showAlert("색상을 선택해주세요.", "알림");
                 return;
             }
+            
+            // [MY_LOG] 재고 확인
+            if (currentStock === 0) {
+                showAlert("선택하신 옵션의 재고가 없습니다.", "알림");
+                return;
+            }
+            
+            if (quantity > currentStock) {
+                showAlert(`재고가 부족합니다. (현재 재고: ${currentStock}개)`, "알림");
+                setQuantity(currentStock);
+                return;
+            }
+            
             setIsConfirmModalOpen(true);
         }
     };
@@ -151,7 +219,7 @@ const ProductDetail: React.FC = () => {
     // Combine main image and additional images for the gallery
     const allImages = [product.image, ...(product.images || [])];
 
-    // Calculate total stock
+    const currentStock = getCurrentStock();
     const totalStock = product ? (
         (product.sizeColorStock && product.sizeColorStock.length > 0)
             ? product.sizeColorStock.reduce((acc, item) => acc + item.quantity, 0)
@@ -233,17 +301,56 @@ const ProductDetail: React.FC = () => {
                         </div>
                         <h1 className="text-3xl md:text-4xl font-serif text-primary mb-4">{product.name}</h1>
 
-                        {/* Stock Status */}
-                        {totalStock > 0 && totalStock <= 5 && (
-                            <p className="text-red-600 font-bold mb-2 animate-pulse">
-                                품절 임박! 남은 수량: {totalStock}개
-                            </p>
-                        )}
-                        {totalStock === 0 && (
-                            <p className="text-red-600 font-bold mb-2 text-xl">
-                                일시 품절 (Sold Out)
-                            </p>
-                        )}
+                        {/* Stock Status - DB 연동 실시간 재고 표시 */}
+                        {(() => {
+                            // 선택한 사이즈/색상 조합의 재고 표시
+                            if (selectedSize && selectedColor && product.sizeColorStock) {
+                                const variantStock = product.sizeColorStock.find(
+                                    item => item.size === selectedSize && item.color === selectedColor
+                                )?.quantity || 0;
+                                
+                                if (variantStock === 0) {
+                                    return (
+                                        <p className="text-red-600 font-bold mb-2 text-lg">
+                                            선택하신 옵션 품절 (Sold Out)
+                                        </p>
+                                    );
+                                } else if (variantStock <= 3) {
+                                    return (
+                                        <p className="text-red-600 font-bold mb-2 animate-pulse">
+                                            선택 옵션 재고: {variantStock}개 남음
+                                        </p>
+                                    );
+                                } else {
+                                    return (
+                                        <p className="text-green-600 font-medium mb-2 text-sm">
+                                            선택 옵션 재고: {variantStock}개
+                                        </p>
+                                    );
+                                }
+                            }
+                            
+                            // 전체 재고 표시
+                            if (totalStock > 0 && totalStock <= 5) {
+                                return (
+                                    <p className="text-red-600 font-bold mb-2 animate-pulse">
+                                        품절 임박! 남은 수량: {totalStock}개
+                                    </p>
+                                );
+                            }
+                            if (totalStock === 0) {
+                                return (
+                                    <p className="text-red-600 font-bold mb-2 text-xl">
+                                        일시 품절 (Sold Out)
+                                    </p>
+                                );
+                            }
+                            return (
+                                <p className="text-gray-600 font-medium mb-2 text-sm">
+                                    재고: {totalStock}개
+                                </p>
+                            );
+                        })()}
 
                         <p className="text-2xl font-medium text-gray-900 mb-8">₩{product.price.toLocaleString()}</p>
 
@@ -352,25 +459,35 @@ const ProductDetail: React.FC = () => {
 
                             <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium text-gray-900">수량</span>
-                                <div className="flex items-center border border-gray-300">
-                                    <button
-                                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                                        className="px-3 py-1 hover:bg-gray-100 transition disabled:opacity-50"
-                                        disabled={totalStock === 0}
-                                    >-</button>
-                                    <span className="px-3 py-1 text-sm font-medium min-w-[2rem] text-center">{quantity}</span>
-                                    <button
-                                        onClick={() => setQuantity(quantity + 1)}
-                                        className="px-3 py-1 hover:bg-gray-100 transition disabled:opacity-50"
-                                        disabled={totalStock === 0}
-                                    >+</button>
+                                <div className="flex items-center gap-2">
+                                    <div className="flex items-center border border-gray-300">
+                                        <button
+                                            onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                            className="px-3 py-1 hover:bg-gray-100 transition disabled:opacity-50"
+                                            disabled={currentStock === 0 || quantity <= 1}
+                                        >-</button>
+                                        <span className="px-3 py-1 text-sm font-medium min-w-[2rem] text-center">{quantity}</span>
+                                        <button
+                                            onClick={() => {
+                                                const maxQuantity = currentStock > 0 ? currentStock : totalStock;
+                                                setQuantity(Math.min(quantity + 1, maxQuantity));
+                                            }}
+                                            className="px-3 py-1 hover:bg-gray-100 transition disabled:opacity-50"
+                                            disabled={currentStock === 0 || quantity >= currentStock}
+                                        >+</button>
+                                    </div>
+                                    {currentStock > 0 && (
+                                        <span className="text-xs text-gray-500">
+                                            (최대 {currentStock}개)
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         </div>
 
                         {/* Actions */}
                         <div className="flex gap-4 mb-10">
-                            {totalStock === 0 ? (
+                            {currentStock === 0 ? (
                                 <button
                                     onClick={() => setIsRestockModalOpen(true)}
                                     className="flex-1 bg-gray-800 text-white py-4 uppercase tracking-widest text-sm font-medium hover:bg-black transition duration-300"
@@ -380,7 +497,8 @@ const ProductDetail: React.FC = () => {
                             ) : (
                                 <button
                                     onClick={handleAddToCart}
-                                    className="flex-1 bg-primary text-white py-4 uppercase tracking-widest text-sm font-medium hover:bg-accent transition duration-300"
+                                    disabled={currentStock === 0}
+                                    className="flex-1 bg-primary text-white py-4 uppercase tracking-widest text-sm font-medium hover:bg-accent transition duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed"
                                 >
                                     장바구니 담기
                                 </button>

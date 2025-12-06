@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ImageIcon, Plus, FileText, Loader2, X } from 'lucide-react';
 import { Product } from '../../../types';
-import { uploadImage } from '../../../services/storageService';
+import { uploadImage, deleteImage } from '../../../services/storageService';
 import { compressImage } from '../../../utils/imageOptimizer';
 import { useGlobalModal } from '../../../contexts/GlobalModalContext';
 
@@ -21,55 +21,17 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
     const [descriptionBlocks, setDescriptionBlocks] = useState<DescriptionBlock[]>([]);
     const [uploading, setUploading] = useState(false);
     const [mainImageFile, setMainImageFile] = useState<File | null>(null);
-    const [sizes, setSizes] = useState<string[]>([]);
-    const [colors, setColors] = useState<string[]>([]);
-    const [sizeStock, setSizeStock] = useState<{ [size: string]: number }>({});
-    const [sizeColorStocks, setSizeColorStocks] = useState<Array<{ id: string; size: string; color: string; quantity: number }>>([]);
     const [selectedCategory, setSelectedCategory] = useState<string>(product?.category || 'earring');
-
-    // 카테고리별 사이즈 옵션
-    const getSizeOptionsByCategory = (category: string): string[] => {
-        switch (category) {
-            case 'ring':
-                return ['9호', '10호', '11호', '12호', '13호', '14호', '15호', '16호', '17호'];
-            case 'necklace':
-                return ['40cm', '45cm', '50cm', '55cm'];
-            case 'bracelet':
-                return ['16cm', '17cm', '18cm', '19cm', '20cm'];
-            case 'earring':
-            default:
-                return ['Free'];
-        }
-    };
+    const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
     useEffect(() => {
         if (isOpen) {
             setPreviewImage(product?.image || '');
             setAdditionalImages(product?.images || []);
             setMainImageFile(null);
-            setSizes(product?.sizes || []);
-            setColors(product?.colors || []);
-            setSizeStock(product?.sizeStock || {});
             setSelectedCategory(product?.category || 'earring');
-            // sizeColorStock이 있으면 사용, 없으면 기본 카테고리 사이즈로 초기화 (신규 등록 시)
-            if (product?.sizeColorStock && product.sizeColorStock.length > 0) {
-                setSizeColorStocks(product.sizeColorStock.map((item, index) => ({
-                    id: `${item.size}-${item.color}-${index}`,
-                    ...item
-                })));
-            } else if (!product) {
-                // 신규 등록인 경우 현재 선택된 카테고리(기본값)의 사이즈로 자동 생성
-                const initialCategory = 'earring'; // Default category
-                const initialSizes = getSizeOptionsByCategory(initialCategory);
-                setSizeColorStocks(initialSizes.map((size, index) => ({
-                    id: Date.now().toString() + index,
-                    size: size,
-                    color: '',
-                    quantity: 0
-                })));
-            } else {
-                setSizeColorStocks([]);
-            }
+            setImagesToDelete([]); // Reset deletion list
 
             if (product?.description) {
                 const parsedBlocks = parseDescription(product.description);
@@ -133,7 +95,43 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
     };
 
     const handleRemoveAdditionalImage = (index: number) => {
+        const imageToRemove = additionalImages[index];
+        // If it's a firebase storage URL, mark for deletion
+        if (imageToRemove.includes('firebasestorage')) {
+            setImagesToDelete(prev => [...prev, imageToRemove]);
+        }
         setAdditionalImages(prev => prev.filter((_, i) => i !== index));
+    };
+
+    // Drag and Drop Handlers
+    const handleDragStart = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+        setDraggedIndex(index);
+        e.dataTransfer.effectAllowed = 'move';
+        // Optional: Set ghost image if needed, but default is usually fine
+    };
+
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+        e.preventDefault(); // Necessary to allow dropping
+        e.dataTransfer.dropEffect = 'move';
+
+        // Live reordering logic (Simple swap)
+        if (draggedIndex === null || draggedIndex === index) return;
+
+        // Perform the move in state immediately for visual feedback
+        const newImages = [...additionalImages];
+        const draggedItem = newImages[draggedIndex];
+
+        // Remove from old pos
+        newImages.splice(draggedIndex, 1);
+        // Insert at new pos
+        newImages.splice(index, 0, draggedItem);
+
+        setAdditionalImages(newImages);
+        setDraggedIndex(index); // Update dragged index to match new position
+    };
+
+    const handleDragEnd = () => {
+        setDraggedIndex(null);
     };
 
     const addTextBlock = () => {
@@ -163,6 +161,20 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
         try {
             const formData = new FormData(e.target as HTMLFormElement);
 
+            // 0. Delete removed images from Storage
+            if (imagesToDelete.length > 0) {
+                await Promise.all(
+                    imagesToDelete.map(async (url) => {
+                        try {
+                            await deleteImage(url);
+                        } catch (err) {
+                            console.warn('Failed to delete image:', url, err);
+                            // Ensure deletion errors don't stop the save process
+                        }
+                    })
+                );
+            }
+
             // 1. Upload main image if a new file was selected
             let mainImageUrl = previewImage;
             if (mainImageFile) {
@@ -171,7 +183,6 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
             }
 
             // 2. Upload additional images
-            // Filter out blob URLs and upload them, keep existing URLs
             const finalAdditionalImages = await Promise.all(
                 additionalImages.map(async (url) => {
                     if (url.startsWith('blob:')) {
@@ -185,7 +196,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                 })
             );
 
-            // 3. Upload description block images if they are new
+            // 3. Upload description block images
             const uploadedDescriptionBlocks = await Promise.all(
                 descriptionBlocks.map(async (block) => {
                     if (block.type === 'image' && block.content.startsWith('blob:')) {
@@ -206,25 +217,10 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                 return '';
             }).join('');
 
-            // sizeColorStocks에서 사이즈와 색상 목록 추출
-            const uniqueSizes = Array.from(new Set(sizeColorStocks.map(item => item.size).filter(s => s)));
-            const uniqueColors = Array.from(new Set(sizeColorStocks.map(item => item.color).filter(c => c)));
-            const finalSizes = uniqueSizes.length > 0 ? uniqueSizes : undefined;
-            const finalColors = uniqueColors.length > 0 ? uniqueColors : undefined;
-
-            // sizeColorStocks를 정리 (id 제거하고 필요한 데이터만)
-            const cleanedSizeColorStocks = sizeColorStocks
-                .filter(item => item.size && item.color && item.quantity >= 0)
-                .map(item => ({
-                    size: item.size,
-                    color: item.color,
-                    quantity: item.quantity
-                }));
-
             // 필수 필드 검증
             const productName = formData.get('name') as string;
             const productPrice = formData.get('price') as string;
-            const productCategory = selectedCategory; // 상태에서 직접 가져오기
+            const productCategory = selectedCategory;
 
             if (!productName || !productName.trim()) {
                 await showAlert('상품명을 입력해주세요.', '오류');
@@ -258,13 +254,13 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                 images: finalAdditionalImages,
                 category: productCategory,
                 description: descriptionHtml,
-                stock: 0, // 사이즈-색상 조합으로 관리하므로 일반 재고는 0
+                stock: 0,
                 isNew: formData.get('isNew') === 'on',
                 tags: product ? product.tags : [],
                 shortDescription: (formData.get('shortDescription') as string) || '',
-                sizes: finalSizes,
-                colors: finalColors,
-                sizeColorStock: cleanedSizeColorStocks.length > 0 ? cleanedSizeColorStocks : undefined,
+                sizes: product?.sizes, // Keep existing sizes if updating
+                colors: product?.colors, // Keep existing colors if updating
+                sizeColorStock: product?.sizeColorStock, // Keep existing stock if updating
             };
 
             await onSave(newProduct);
@@ -340,8 +336,15 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                         <label className="block text-xs font-bold text-gray-600 mb-2">추가 이미지 (최대 5장)</label>
                         <div className="flex gap-4 overflow-x-auto pb-2">
                             {additionalImages.map((img, idx) => (
-                                <div key={idx} className="relative w-20 h-24 bg-white border border-gray-200 group flex-shrink-0">
-                                    <img src={img} alt={`Sub ${idx}`} className="w-full h-full object-cover" />
+                                <div
+                                    key={idx}
+                                    className={`relative w-20 h-24 bg-white border border-gray-200 group flex-shrink-0 cursor-move ${draggedIndex === idx ? 'opacity-50 ring-2 ring-black' : ''}`}
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, idx)}
+                                    onDragOver={(e) => handleDragOver(e, idx)}
+                                    onDragEnd={handleDragEnd}
+                                >
+                                    <img src={img} alt={`Sub ${idx}`} className="w-full h-full object-cover pointer-events-none" />
                                     <button
                                         type="button"
                                         onClick={() => handleRemoveAdditionalImage(idx)}
@@ -378,20 +381,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                                 <select
                                     name="category"
                                     value={selectedCategory}
-                                    onChange={(e) => {
-                                        const newCategory = e.target.value;
-                                        setSelectedCategory(newCategory);
-
-                                        // 카테고리 변경 시 해당 카테고리의 모든 사이즈로 리스트 자동 생성
-                                        const newSizeOptions = getSizeOptionsByCategory(newCategory);
-                                        const newStocks = newSizeOptions.map((size, index) => ({
-                                            id: Date.now().toString() + index,
-                                            size: size,
-                                            color: '', // 색상은 사용자가 선택
-                                            quantity: 0
-                                        }));
-                                        setSizeColorStocks(newStocks);
-                                    }}
+                                    onChange={(e) => setSelectedCategory(e.target.value)}
                                     className="text-black font-medium border-none focus:ring-0 p-0 cursor-pointer bg-transparent outline-none hover:underline"
                                 >
                                     <option value="earring">Earrings (귀걸이)</option>
@@ -442,87 +432,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                                 </div>
                             </div>
 
-                            {/* Size-Color-Quantity Combinations */}
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <label className="block text-xs font-bold text-gray-400">사이즈/색상/수량 조합</label>
-                                    {/* 추가하기 버튼 제거됨 (자동 생성 사용) */}
-                                </div>
-
-                                {sizeColorStocks.length > 0 && (
-                                    <div className="space-y-3 border border-gray-200 rounded-sm p-4 bg-gray-50">
-                                        {sizeColorStocks.map((item, index) => (
-                                            <div key={item.id} className="flex items-center gap-2">
-                                                <div className="flex-1 grid grid-cols-3 gap-2">
-                                                    <select
-                                                        value={item.size}
-                                                        onChange={(e) => {
-                                                            const updated = [...sizeColorStocks];
-                                                            updated[index].size = e.target.value;
-                                                            setSizeColorStocks(updated);
-                                                        }}
-                                                        className="text-sm text-gray-900 border-b border-gray-300 focus:border-black outline-none py-1 bg-gray-100 text-gray-500 cursor-not-allowed"
-                                                        disabled={true} // 사이즈는 항상 자동생성된 값 사용
-                                                    >
-                                                        <option value="">사이즈 선택</option>
-                                                        {getSizeOptionsByCategory(selectedCategory).map(size => (
-                                                            <option key={size} value={size}>{size}</option>
-                                                        ))}
-                                                    </select>
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        value={item.quantity}
-                                                        onChange={(e) => {
-                                                            const updated = [...sizeColorStocks];
-                                                            updated[index].quantity = parseInt(e.target.value) || 0;
-                                                            setSizeColorStocks(updated);
-                                                        }}
-                                                        placeholder="수량"
-                                                        className={`text-sm text-gray-900 border-b border-gray-300 focus:border-black outline-none py-1 ${product ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
-                                                        disabled={!!product}
-                                                        title={product ? "재고 수량은 '재고 관리' 메뉴에서 변경해주세요." : "초기 재고 수량"}
-                                                    />
-                                                    <select
-                                                        value={item.color}
-                                                        onChange={(e) => {
-                                                            const updated = [...sizeColorStocks];
-                                                            updated[index].color = e.target.value;
-                                                            setSizeColorStocks(updated);
-                                                        }}
-                                                        className={`text-sm text-gray-900 border-b border-gray-300 focus:border-black outline-none py-1 ${product ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white'}`}
-                                                        disabled={!!product} // 상품 수정 시 색상 변경 불가
-                                                    >
-                                                        <option value="">색상 선택</option>
-                                                        <option value="Gold">Gold</option>
-                                                        <option value="Silver">Silver</option>
-                                                        <option value="Rose Gold">Rose Gold</option>
-                                                        <option value="White">White</option>
-                                                        <option value="Black">Black</option>
-                                                        <option value="Red">Red</option>
-                                                        <option value="Blue">Blue</option>
-                                                        <option value="Green">Green</option>
-                                                        <option value="Pink">Pink</option>
-                                                    </select>
-                                                </div>
-                                                {!product && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setSizeColorStocks(prev => prev.filter(i => i.id !== item.id));
-                                                        }}
-                                                        className="text-gray-400 hover:text-red-600 transition p-1"
-                                                        title="삭제"
-                                                    >
-                                                        <X size={16} />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-
-                            </div>
+                            {/* Inventory Section Removed as requested */}
 
                             {/* Description (Block Editor) */}
                             <div>

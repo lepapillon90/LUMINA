@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import MagazineDetailModal from './MagazineDetailModal';
+import { FadeInUp, StaggerFadeIn } from '../../common/AnimatedElements';
 
 interface MagazineSectionProps {
     showViewAll?: boolean;
@@ -141,23 +142,25 @@ const MagazineSection: React.FC<MagazineSectionProps> = ({ showViewAll = true })
     return (
         <section className="py-16 md:py-24 bg-white">
             <div className="container mx-auto px-6">
-                <div className="flex justify-between items-end mb-12">
-                    <div>
-                        <h2 className="text-3xl font-serif text-primary mb-2">Lumina Magazine</h2>
-                        <p className="text-gray-500">스타일링 팁부터 브랜드 스토리까지</p>
+                <FadeInUp>
+                    <div className="flex justify-between items-end mb-12">
+                        <div>
+                            <h2 className="text-3xl font-serif text-primary mb-2">Lumina Magazine</h2>
+                            <p className="text-gray-500">스타일링 팁부터 브랜드 스토리까지</p>
+                        </div>
+                        {showViewAll && (
+                            <Link to="/magazine" className="hidden md:flex items-center gap-2 text-sm font-medium hover:gap-3 transition-all">
+                                더 보기 <ArrowRight size={16} />
+                            </Link>
+                        )}
                     </div>
-                    {showViewAll && (
-                        <Link to="/magazine" className="hidden md:flex items-center gap-2 text-sm font-medium hover:gap-3 transition-all">
-                            더 보기 <ArrowRight size={16} />
-                        </Link>
-                    )}
-                </div>
+                </FadeInUp>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <StaggerFadeIn childSelector=".magazine-card" stagger={0.15} className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {articles.map((article) => (
                         <article
                             key={article.id}
-                            className="group cursor-pointer"
+                            className="magazine-card group cursor-pointer"
                             onClick={() => handleArticleClick(article)}
                         >
                             <div className="overflow-hidden rounded-lg mb-6 aspect-[4/3]">
@@ -179,14 +182,16 @@ const MagazineSection: React.FC<MagazineSectionProps> = ({ showViewAll = true })
                             </div>
                         </article>
                     ))}
-                </div>
+                </StaggerFadeIn>
 
                 {showViewAll && (
-                    <div className="mt-10 text-center md:hidden">
-                        <Link to="/magazine" className="inline-flex items-center gap-2 text-sm font-medium border-b border-black pb-1">
-                            더 많은 매거진 보기 <ArrowRight size={16} />
-                        </Link>
-                    </div>
+                    <FadeInUp delay={0.3}>
+                        <div className="mt-10 text-center md:hidden">
+                            <Link to="/magazine" className="inline-flex items-center gap-2 text-sm font-medium border-b border-black pb-1">
+                                더 많은 매거진 보기 <ArrowRight size={16} />
+                            </Link>
+                        </div>
+                    </FadeInUp>
                 )}
             </div>
 
@@ -200,3 +205,4 @@ const MagazineSection: React.FC<MagazineSectionProps> = ({ showViewAll = true })
 };
 
 export default MagazineSection;
+

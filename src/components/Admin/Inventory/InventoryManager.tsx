@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Search, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Package, Search, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
 import { Product } from '../../../types';
 import { getProducts } from '../../../services/productService';
 import { useGlobalModal } from '../../../contexts/GlobalModalContext';
 import InventoryDetailModal from './InventoryDetailModal';
+import { syncAllProductsStock } from '../../../services/inventoryService';
 
 interface InventoryManagerProps {
     user: { uid: string; username: string } | null;
@@ -17,6 +18,7 @@ const InventoryManager: React.FC<InventoryManagerProps> = ({ user }) => {
     const [filterCategory, setFilterCategory] = useState<string>('all');
     const [filterLowStock, setFilterLowStock] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+    const [syncing, setSyncing] = useState(false);
 
     useEffect(() => {
         fetchProducts();
@@ -32,6 +34,28 @@ const InventoryManager: React.FC<InventoryManagerProps> = ({ user }) => {
             await showAlert('상품 목록을 불러오는데 실패했습니다.', '오류');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleSyncStock = async () => {
+        if (!user) {
+            await showAlert('관리자 권한이 필요합니다.', '오류');
+            return;
+        }
+
+        const confirmed = await showConfirm('모든 상품의 총 재고를 동기화하시겠습니까?\n이 작업은 sizeColorStock의 합계를 stock 필드에 반영합니다.');
+        if (!confirmed) return;
+
+        setSyncing(true);
+        try {
+            const result = await syncAllProductsStock(user);
+            await showAlert(`동기화 완료!\n성공: ${result.success}개, 실패: ${result.failed}개`, '재고 동기화');
+            await fetchProducts(); // 목록 새로고침
+        } catch (error) {
+            console.error('Error syncing stock:', error);
+            await showAlert('재고 동기화 중 오류가 발생했습니다.', '오류');
+        } finally {
+            setSyncing(false);
         }
     };
 
@@ -72,6 +96,14 @@ const InventoryManager: React.FC<InventoryManagerProps> = ({ user }) => {
                 <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                     <Package size={20} /> 재고 관리
                 </h2>
+                <button
+                    onClick={handleSyncStock}
+                    disabled={syncing}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                >
+                    <RefreshCw size={16} className={syncing ? 'animate-spin' : ''} />
+                    {syncing ? '동기화 중...' : '재고 동기화'}
+                </button>
             </div>
 
             {/* Filters */}

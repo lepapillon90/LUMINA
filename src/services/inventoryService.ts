@@ -60,10 +60,13 @@ export const processStockIn = async (
             updatedStock = [...currentStock, { size, color, quantity: afterQuantity }];
         }
 
-        // 상품 재고 업데이트
+        // 총 재고 계산 (모든 사이즈/색상 합계)
+        const totalStock = updatedStock.reduce((sum, item) => sum + item.quantity, 0);
+
+        // 상품 재고 업데이트 (sizeColorStock + 총 재고 stock 동기화)
         await updateProduct(
             productId,
-            { sizeColorStock: updatedStock },
+            { sizeColorStock: updatedStock, stock: totalStock },
             adminUser
         );
 
@@ -141,10 +144,13 @@ export const processStockOut = async (
             );
         }
 
-        // 상품 재고 업데이트
+        // 총 재고 계산 (모든 사이즈/색상 합계)
+        const totalStock = updatedStock.reduce((sum, item) => sum + item.quantity, 0);
+
+        // 상품 재고 업데이트 (sizeColorStock + 총 재고 stock 동기화)
         await updateProduct(
             productId,
-            { sizeColorStock: updatedStock },
+            { sizeColorStock: updatedStock, stock: totalStock },
             adminUser
         );
 
@@ -304,3 +310,46 @@ export const logInventoryChange = async (
         // 로그 기록 실패가 전체 프로세스를 막지 않도록 에러를 던지지 않음
     }
 };
+
+/**
+ * 모든 상품의 stock 필드를 sizeColorStock 합계로 동기화
+ * (기존 데이터 마이그레이션용)
+ */
+export const syncAllProductsStock = async (
+    adminUser: { uid: string; username: string }
+): Promise<{ success: number; failed: number }> => {
+    try {
+        const { getProducts } = await import('./productService');
+        const products = await getProducts();
+
+        let success = 0;
+        let failed = 0;
+
+        for (const product of products) {
+            try {
+                const sizeColorStock = product.sizeColorStock || [];
+                const totalStock = sizeColorStock.reduce((sum, item) => sum + item.quantity, 0);
+
+                // stock 필드가 다른 경우에만 업데이트
+                if (product.stock !== totalStock) {
+                    await updateProduct(
+                        product.id,
+                        { stock: totalStock },
+                        adminUser
+                    );
+                    console.log(`Synced product ${product.id} (${product.name}): stock ${product.stock} -> ${totalStock}`);
+                }
+                success++;
+            } catch (error) {
+                console.error(`Failed to sync product ${product.id}:`, error);
+                failed++;
+            }
+        }
+
+        return { success, failed };
+    } catch (error) {
+        console.error('Error syncing all products stock:', error);
+        throw error;
+    }
+};
+

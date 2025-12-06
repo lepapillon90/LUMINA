@@ -1,18 +1,18 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Product } from '../../../types';
-import { Eye, Heart } from 'lucide-react';
-import { useAuth } from '../../../contexts';
+import { Heart, ShoppingBag } from 'lucide-react';
+import { useAuth, useCart } from '../../../contexts';
 import { useGlobalModal } from '../../../contexts/GlobalModalContext';
 import OptimizedImage from '../../common/OptimizedImage';
 
 interface ProductCardProps {
     product: Product;
-    onQuickView?: (product: Product) => void;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     const { user, toggleWishlist } = useAuth();
+    const { addToCart } = useCart();
     const { showAlert } = useGlobalModal();
     const isWishlisted = user?.wishlist?.includes(product.id);
 
@@ -24,6 +24,17 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
             return;
         }
         await toggleWishlist(product.id);
+    };
+
+    const handleAddToCart = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (product.stock === 0) {
+            await showAlert("품절된 상품입니다.", "알림");
+            return;
+        }
+        addToCart(product, 1);
+        await showAlert("장바구니에 담겼습니다.", "장바구니");
     };
 
     return (
@@ -38,17 +49,17 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
                             className="w-full h-full object-cover"
                         />
                     </div>
-                    {/* Overlay or Badge if needed */}
-                    {/* Badges Container */}
-                    <div className="absolute top-3 left-3 flex flex-col gap-1 z-10">
-                        {product.stock !== undefined && product.stock > 0 && product.stock <= 5 && (
-                            <div className="bg-red-600 text-white px-2 py-1 text-[10px] font-bold tracking-widest uppercase shadow-sm">
-                                Low Stock
+
+                    {/* Badges Container - Matching Homepage New Arrivals Style */}
+                    <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
+                        {product.isNew && (
+                            <div className="bg-black text-white text-[10px] font-bold px-2 py-1">
+                                NEW
                             </div>
                         )}
-                        {product.isNew && (
-                            <div className="bg-white/90 px-2 py-1 text-[10px] font-medium tracking-widest uppercase shadow-sm">
-                                New
+                        {product.stock !== undefined && product.stock > 0 && product.stock <= 5 && (
+                            <div className="bg-red-600 text-white px-2 py-1 text-[10px] font-bold tracking-wider uppercase">
+                                Low Stock
                             </div>
                         )}
                     </div>
@@ -62,34 +73,29 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
                         </div>
                     )}
 
-                    {/* Wishlist Button - Top Right */}
-                    <button
-                        onClick={handleWishlistClick}
-                        className={`absolute top-3 right-3 p-2 rounded-full shadow-md transition-all duration-300 z-20 ${isWishlisted
-                            ? 'bg-red-500 text-white'
-                            : 'bg-white/80 text-gray-600 hover:bg-white hover:text-red-500 opacity-0 group-hover:opacity-100'
-                            }`}
-                        title={isWishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
-                    >
-                        <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-current' : ''}`} />
-                    </button>
+                    {/* Action Buttons - Right Side */}
+                    <div className="absolute top-2 right-2 flex flex-col gap-2 z-20">
+                        {/* Wishlist Button */}
+                        <button
+                            onClick={handleWishlistClick}
+                            className={`p-2.5 rounded-full shadow-md transition-all duration-300 ${isWishlisted
+                                ? 'bg-red-500 text-white'
+                                : 'bg-white/90 text-gray-600 hover:bg-white hover:text-red-500'
+                                }`}
+                            title={isWishlisted ? "찜 해제" : "찜하기"}
+                        >
+                            <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} />
+                        </button>
 
-                    {/* Quick View Button */}
-                    {onQuickView && (
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/10 pointer-events-none">
-                            <button
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    onQuickView(product);
-                                }}
-                                className="bg-white text-black p-3 rounded-full shadow-lg hover:bg-gray-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 pointer-events-auto"
-                                title="Quick View"
-                            >
-                                <Eye className="w-5 h-5" />
-                            </button>
-                        </div>
-                    )}
+                        {/* Cart Button */}
+                        <button
+                            onClick={handleAddToCart}
+                            className="p-2.5 rounded-full shadow-md transition-all duration-300 bg-white/90 text-gray-600 hover:bg-black hover:text-white"
+                            title="장바구니 담기"
+                        >
+                            <ShoppingBag className="w-5 h-5" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Product Info */}
@@ -107,3 +113,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
 };
 
 export default ProductCard;
+
+
+

@@ -9,6 +9,7 @@ import { getOOTDPosts, createOOTDPost, toggleLikeOOTDPost, addCommentToOOTDPost 
 import { useAuth, useCart } from '../contexts';
 import Loading from '../components/common/Loading';
 import { useGlobalModal } from '../contexts/GlobalModalContext';
+import { FadeInUp, StaggerFadeIn } from '../components/common/AnimatedElements';
 
 const OOTD: React.FC = () => {
   const [posts, setPosts] = useState<OOTDPost[]>([]);
@@ -170,7 +171,7 @@ const OOTD: React.FC = () => {
     const isBest = post.likes > 10; // Mock logic for Best Reviewer
 
     return (
-      <div className="bg-white border border-gray-100 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition flex flex-col mb-6 break-inside-avoid">
+      <div className="ootd-post bg-white border border-gray-100 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition flex flex-col mb-6 break-inside-avoid">
         {/* Header */}
         <div className="p-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -333,46 +334,51 @@ const OOTD: React.FC = () => {
       )}
 
       <div className="container mx-auto px-6 max-w-6xl">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-serif mb-4">#LuminaOOTD</h1>
-          <p className="text-gray-500 mb-8">당신의 빛나는 순간을 공유해주세요. @lumina_official 태그와 함께.</p>
+        <FadeInUp>
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-serif mb-4">#LuminaOOTD</h1>
+            <p className="text-gray-500 mb-8">당신의 빛나는 순간을 공유해주세요. @lumina_official 태그와 함께.</p>
 
-          {/* Filter Bar */}
-          <div className="flex justify-center flex-wrap gap-2">
-            {['Latest', 'Popular', 'Summer', 'Winter', 'Casual', 'Formal'].map(filter => (
-              <button
-                key={filter}
-                onClick={() => setActiveFilter(filter)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition ${activeFilter === filter
-                  ? 'bg-black text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-              >
-                {filter}
-              </button>
-            ))}
+            {/* Filter Bar */}
+            <div className="flex justify-center flex-wrap gap-2">
+              {['Latest', 'Popular', 'Summer', 'Winter', 'Casual', 'Formal'].map(filter => (
+                <button
+                  key={filter}
+                  onClick={() => setActiveFilter(filter)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition ${activeFilter === filter
+                    ? 'bg-black text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                >
+                  {filter}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        </FadeInUp>
 
-        {/* Masonry Grid */}
+        {/* Masonry Grid with Stagger Animation */}
         <div className="flex flex-col md:flex-row gap-6">
-          <div className="flex-1 flex flex-col gap-6">
+          <StaggerFadeIn childSelector=".ootd-post" stagger={0.15} className="flex-1 flex flex-col gap-6">
             {leftColumn.map(post => <PostCard key={post.id} post={post} />)}
-          </div>
-          <div className="flex-1 flex flex-col gap-6">
+          </StaggerFadeIn>
+          <StaggerFadeIn childSelector=".ootd-post" stagger={0.15} delay={0.1} className="flex-1 flex flex-col gap-6">
             {rightColumn.map(post => <PostCard key={post.id} post={post} />)}
-          </div>
+          </StaggerFadeIn>
         </div>
 
         {/* Infinite Scroll Trigger (Mock) */}
-        <div className="text-center mt-12">
-          <button className="px-6 py-3 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 transition">
-            Load More
-          </button>
-        </div>
+        <FadeInUp delay={0.3}>
+          <div className="text-center mt-12">
+            <button className="px-6 py-3 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 transition">
+              Load More
+            </button>
+          </div>
+        </FadeInUp>
       </div>
     </div>
   );
 };
 
 export default OOTD;
+

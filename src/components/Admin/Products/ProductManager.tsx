@@ -23,7 +23,6 @@ const ProductManager: React.FC<ProductManagerProps> = ({ products, setProducts, 
     const [deletingProductId, setDeletingProductId] = useState<number | null>(null);
     const { showToast } = useToast();
 
-
     // Fetch products from Firestore on component mount
     useEffect(() => {
         fetchProducts();
@@ -44,36 +43,49 @@ const ProductManager: React.FC<ProductManagerProps> = ({ products, setProducts, 
     };
 
     const handleSaveProduct = async (product: Product) => {
-        if (!user) {
-            showToast('사용자 정보를 찾을 수 없습니다.', 'error');
-            return;
-        }
-        try {
-            if (editingProduct) {
-                // Update existing product
+        console.log('[DEBUG] handleSaveProduct started', product);
 
+        try {
+            if (!user) {
+                console.error('[DEBUG] No user found');
+                showToast('사용자 정보를 찾을 수 없습니다.', 'error');
+                return;
+            }
+
+            if (editingProduct) {
+                console.log('[DEBUG] Editing product mode');
                 // If image URL changed, delete old image from Storage
                 if (editingProduct.image !== product.image && editingProduct.image) {
-                    try {
-                        await deleteImage(editingProduct.image);
-                    } catch (imgError) {
-                        console.warn('Failed to delete old product image:', imgError);
-                        // Continue even if deletion fails
+                    // Check if it's a firebase storage URL
+                    if (editingProduct.image.includes('firebasestorage')) {
+                        try {
+                            await deleteImage(editingProduct.image);
+                        } catch (e) {
+                            console.warn('Failed to delete old image:', e);
+                        }
                     }
                 }
 
+                console.log('[DEBUG] Calling updateProduct');
                 await updateProduct(product.id, product, { uid: user.uid, username: user.username });
+
+                // [IMMEDIATE UPDATE] Update local state
                 setProducts(prev => prev.map(p => p.id === product.id ? product : p));
+
                 showToast('상품이 수정되었습니다.', 'success');
             } else {
-                // Create new product
+                console.log('[DEBUG] Creating new product mode');
                 const { id, ...productData } = product;
+
+                console.log('[DEBUG] Calling createProduct with:', productData);
                 const newProduct = await createProduct(productData, { uid: user.uid, username: user.username });
+                console.log('[DEBUG] createProduct returned:', newProduct);
 
                 // Log initial stock if any
                 if (newProduct.sizeColorStock && newProduct.sizeColorStock.length > 0) {
+                    console.log('[DEBUG] Logging initial stock for', newProduct.sizeColorStock.length, 'items');
                     for (const stockItem of newProduct.sizeColorStock) {
-                        if (stockItem.quantity > 0) {
+                        try {
                             await logInventoryChange(
                                 newProduct.id,
                                 newProduct.name,
@@ -86,35 +98,35 @@ const ProductManager: React.FC<ProductManagerProps> = ({ products, setProducts, 
                                 'Initial Stock Registration',
                                 { uid: user.uid, username: user.username }
                             );
+                        } catch (logErr) {
+                            console.warn('Failed to log inventory change:', logErr);
                         }
                     }
                 }
 
-                setProducts(prev => [...prev, newProduct]);
+                // [IMMEDIATE UPDATE] Add to local state
+                setProducts(prev => [newProduct, ...prev]);
+
                 showToast('상품이 등록되었습니다.', 'success');
             }
+
+            // [IMMEDIATE UPDATE] Skip full fetch to avoid loading spinner
+            // await fetchProducts(); 
+
             setIsProductModalOpen(false);
             setEditingProduct(null);
-        } catch (err) {
-            console.error('Error saving product:', err);
-            showToast('상품 저장에 실패했습니다. 다시 시도해주세요.', 'error');
+        } catch (error: any) {
+            console.error('[DEBUG] Error saving product (STACK TRACE):', error);
+            if (error.stack) console.error(error.stack);
+
+            const errorMsg = error?.message || '상품 저장에 실패했습니다. 다시 시도해주세요.';
+            showToast(`상품 저장 실패: ${errorMsg}`, 'error');
         }
     };
 
     const handleDeleteProduct = (id: number) => {
         setDeletingProductId(id);
         setIsDeleteModalOpen(true);
-    };
-
-    // Extract image URLs from description HTML
-    const extractImageUrls = (html: string): string[] => {
-        const imgRegex = /<img[^>]+src="([^"]+)"/g;
-        const urls: string[] = [];
-        let match;
-        while ((match = imgRegex.exec(html)) !== null) {
-            urls.push(match[1]);
-        }
-        return urls;
     };
 
     const confirmDelete = async () => {
@@ -125,52 +137,20 @@ const ProductManager: React.FC<ProductManagerProps> = ({ products, setProducts, 
         }
 
         try {
-            // Find the product to get its image URLs
             const productToDelete = products.find(p => p.id === deletingProductId);
 
-            // Delete from Firestore first
+            // Call the enhanced deleteProduct service which now handles all cleanup
             await deleteProduct(deletingProductId, { uid: user.uid, username: user.username });
 
-            // Delete main image from Storage
-            if (productToDelete?.image) {
-                try {
-                    await deleteImage(productToDelete.image);
-                } catch (imgError) {
-                    console.warn('Failed to delete main product image:', imgError);
-                }
-            }
-
-            // Delete additional images from Storage
-            if (productToDelete?.images && productToDelete.images.length > 0) {
-                for (const imageUrl of productToDelete.images) {
-                    try {
-                        await deleteImage(imageUrl);
-                    } catch (imgError) {
-                        console.warn('Failed to delete additional image:', imgError);
-                    }
-                }
-            }
-
-            // Delete description images from Storage
-            if (productToDelete?.description) {
-                const descriptionImageUrls = extractImageUrls(productToDelete.description);
-                for (const imageUrl of descriptionImageUrls) {
-                    try {
-                        await deleteImage(imageUrl);
-                    } catch (imgError) {
-                        console.warn('Failed to delete description image:', imgError);
-                    }
-                }
-            }
-
             setProducts(prev => prev.filter(p => p.id !== deletingProductId));
-            showToast('상품이 삭제되었습니다.', 'success');
+            showToast(`'${productToDelete?.name}' 상품이 완전히 삭제되었습니다.`, 'success');
         } catch (err) {
             console.error('Error deleting product:', err);
-            showToast('상품 삭제에 실패했습니다. 다시 시도해주세요.', 'error');
+            showToast('상품 삭제에 실패했습니다. 관리자에게 문의하세요.', 'error');
         }
 
         setDeletingProductId(null);
+        setIsDeleteModalOpen(false);
     };
 
     if (loading) {
@@ -229,7 +209,11 @@ const ProductManager: React.FC<ProductManagerProps> = ({ products, setProducts, 
                             </tr>
                         ) : (
                             products.map(product => (
-                                <tr key={product.id} className="hover:bg-gray-50 transition group">
+                                <tr
+                                    key={product.id}
+                                    className="hover:bg-gray-50 transition group cursor-pointer"
+                                    onClick={() => { setEditingProduct(product); setIsProductModalOpen(true); }}
+                                >
                                     <td className="px-6 py-4 font-medium text-gray-800">
                                         <div className="flex items-center gap-3">
                                             <img
@@ -247,14 +231,21 @@ const ProductManager: React.FC<ProductManagerProps> = ({ products, setProducts, 
                                     <td className="px-6 py-4 text-gray-500">{product.category}</td>
                                     <td className="px-6 py-4 text-right">
                                         <button
-                                            onClick={() => { setEditingProduct(product); setIsProductModalOpen(true); }}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setEditingProduct(product);
+                                                setIsProductModalOpen(true);
+                                            }}
                                             className="text-gray-400 hover:text-blue-600 mr-2"
                                             title="수정"
                                         >
                                             <Edit3 size={18} />
                                         </button>
                                         <button
-                                            onClick={() => handleDeleteProduct(product.id)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDeleteProduct(product.id);
+                                            }}
                                             className="text-gray-400 hover:text-red-600"
                                             title="삭제"
                                         >

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Clock, Save, Package, Eye } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Clock, Save, Package, Eye, Search, Star, Check } from 'lucide-react';
 import { HomepageTimeSale, User, Product } from '../../../types';
 import { getHomepageTimeSale, saveHomepageTimeSale } from '../../../services/homepageService';
 import { getProducts } from '../../../services/productService';
@@ -19,6 +19,12 @@ const TimeSaleManager: React.FC<TimeSaleManagerProps> = ({ user }) => {
     const [saving, setSaving] = useState(false);
     const [allProducts, setAllProducts] = useState<Product[]>([]);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+    // Product filter states
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterCategory, setFilterCategory] = useState<string>('all');
+    const [filterNewOnly, setFilterNewOnly] = useState(false);
+
     const [timeSale, setTimeSale] = useState<Partial<HomepageTimeSale>>({
         title: 'Flash Sale: 24 Hours Only',
         description: '오늘 자정까지만 진행되는 특별한 혜택. 엄선된 베스트셀러 아이템을 최대 30% 할인된 가격으로 만나보세요.',
@@ -64,6 +70,24 @@ const TimeSaleManager: React.FC<TimeSaleManagerProps> = ({ user }) => {
             setLoading(false);
         }
     };
+
+    // Get unique categories from products
+    const categories = useMemo(() => {
+        const cats = new Set(allProducts.map(p => p.category));
+        return Array.from(cats);
+    }, [allProducts]);
+
+    // Filter products based on search, category, and new arrivals
+    const filteredProducts = useMemo(() => {
+        return allProducts.filter(product => {
+            const matchesSearch = searchTerm === '' ||
+                product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                product.category.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesCategory = filterCategory === 'all' || product.category === filterCategory;
+            const matchesNew = !filterNewOnly || product.isNew;
+            return matchesSearch && matchesCategory && matchesNew;
+        });
+    }, [allProducts, searchTerm, filterCategory, filterNewOnly]);
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -130,6 +154,24 @@ const TimeSaleManager: React.FC<TimeSaleManagerProps> = ({ user }) => {
         }
     };
 
+    // Select all filtered products
+    const selectAllFiltered = () => {
+        const currentIds = timeSale.productIds || [];
+        const filteredIds = filteredProducts.map(p => p.id);
+        const newIds = new Set([...currentIds, ...filteredIds]);
+        setTimeSale({ ...timeSale, productIds: Array.from(newIds) });
+    };
+
+    // Deselect all filtered products
+    const deselectAllFiltered = () => {
+        const currentIds = timeSale.productIds || [];
+        const filteredIds = new Set(filteredProducts.map(p => p.id));
+        setTimeSale({
+            ...timeSale,
+            productIds: currentIds.filter(id => !filteredIds.has(id))
+        });
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center py-12">
@@ -141,6 +183,17 @@ const TimeSaleManager: React.FC<TimeSaleManagerProps> = ({ user }) => {
     const selectedProducts = allProducts.filter(p =>
         timeSale.productIds?.includes(p.id)
     );
+
+    // Category name mapping
+    const getCategoryName = (cat: string) => {
+        const map: { [key: string]: string } = {
+            'earring': '귀걸이',
+            'necklace': '목걸이',
+            'ring': '반지',
+            'bracelet': '팔찌'
+        };
+        return map[cat] || cat;
+    };
 
     // Construct preview data
     const previewData = {
@@ -293,38 +346,115 @@ const TimeSaleManager: React.FC<TimeSaleManagerProps> = ({ user }) => {
                     <div className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                                <Package size={16} /> 타임세일 상품 선택 ({selectedProducts.length}개)
+                                <Package size={16} /> 타임세일 상품 선택 ({selectedProducts.length}개 선택됨)
                             </label>
-                            <div className="bg-white border border-gray-200 rounded-lg max-h-[500px] overflow-y-auto">
-                                {allProducts.length === 0 ? (
-                                    <div className="p-8 text-center text-gray-400">상품이 없습니다.</div>
+
+                            {/* Product Filters */}
+                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-3 space-y-3">
+                                {/* Search */}
+                                <div className="relative">
+                                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="상품명 검색..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                                    />
+                                </div>
+
+                                {/* Category & New Arrivals Filter */}
+                                <div className="flex flex-wrap gap-2">
+                                    <select
+                                        value={filterCategory}
+                                        onChange={(e) => setFilterCategory(e.target.value)}
+                                        className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                                    >
+                                        <option value="all">전체 카테고리</option>
+                                        {categories.map(cat => (
+                                            <option key={cat} value={cat}>{getCategoryName(cat)}</option>
+                                        ))}
+                                    </select>
+
+                                    <label className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 rounded-md text-sm cursor-pointer hover:bg-gray-50">
+                                        <input
+                                            type="checkbox"
+                                            checked={filterNewOnly}
+                                            onChange={(e) => setFilterNewOnly(e.target.checked)}
+                                            className="w-3.5 h-3.5 text-gray-900 border-gray-300 rounded focus:ring-gray-900"
+                                        />
+                                        <Star size={14} className="text-yellow-500" />
+                                        신상품만
+                                    </label>
+                                </div>
+
+                                {/* Quick Actions */}
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={selectAllFiltered}
+                                        className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition"
+                                    >
+                                        필터 결과 전체 선택 ({filteredProducts.length})
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={deselectAllFiltered}
+                                        className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition"
+                                    >
+                                        필터 결과 선택 해제
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Product List */}
+                            <div className="bg-white border border-gray-200 rounded-lg max-h-[400px] overflow-y-auto">
+                                {filteredProducts.length === 0 ? (
+                                    <div className="p-8 text-center text-gray-400">
+                                        {allProducts.length === 0 ? '상품이 없습니다.' : '검색 결과가 없습니다.'}
+                                    </div>
                                 ) : (
                                     <div className="divide-y divide-gray-100">
-                                        {allProducts.map((product) => {
+                                        {filteredProducts.map((product) => {
                                             const isSelected = timeSale.productIds?.includes(product.id);
                                             return (
                                                 <label
                                                     key={product.id}
-                                                    className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50 ${isSelected ? 'bg-blue-50' : ''
-                                                        }`}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        toggleProduct(product.id);
+                                                    }}
+                                                    className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50 select-none transition-colors ${isSelected ? 'bg-blue-50' : ''}`}
                                                 >
                                                     <input
                                                         type="checkbox"
-                                                        checked={!!isSelected}
+                                                        checked={isSelected || false}
                                                         onChange={() => toggleProduct(product.id)}
-                                                        className="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-900"
+                                                        className="sr-only"
+                                                        onClick={(e) => e.stopPropagation()}
                                                     />
+                                                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors flex-shrink-0 ${isSelected ? 'bg-black border-black text-white' : 'bg-white border-gray-300'}`}>
+                                                        {isSelected && <Check size={14} strokeWidth={3} />}
+                                                    </div>
+
                                                     <img
                                                         src={product.image}
                                                         alt={product.name}
-                                                        className="w-12 h-12 object-cover rounded border border-gray-100"
+                                                        className="w-12 h-12 object-cover rounded border border-gray-100 flex-shrink-0 pointer-events-none"
                                                         onError={(e) => {
                                                             e.currentTarget.src = 'https://via.placeholder.com/48?text=No+Image';
                                                         }}
                                                     />
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="text-sm font-medium text-gray-800 truncate">{product.name}</p>
-                                                        <p className="text-xs text-gray-500">₩{product.price.toLocaleString()}</p>
+                                                    <div className="flex-1 min-w-0 pointer-events-none">
+                                                        <div className="flex items-center gap-1">
+                                                            <p className="text-sm font-medium text-gray-800 truncate">{product.name}</p>
+                                                            {product.isNew && (
+                                                                <span className="px-1.5 py-0.5 bg-black text-white text-[10px] rounded">NEW</span>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-xs text-gray-500">
+                                                            {getCategoryName(product.category)} · ₩{product.price.toLocaleString()}
+                                                        </p>
                                                     </div>
                                                 </label>
                                             );
@@ -375,3 +505,4 @@ const TimeSaleManager: React.FC<TimeSaleManagerProps> = ({ user }) => {
 };
 
 export default TimeSaleManager;
+

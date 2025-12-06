@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { OOTD_POSTS } from '../../../constants';
 import { Heart, ArrowRight } from 'lucide-react';
+import { FadeInUp, StaggerFadeIn } from '../../common/AnimatedElements';
 
 const TrendingOOTDSection: React.FC = () => {
     // Sort by likes descending and take top 3
@@ -16,26 +17,28 @@ const TrendingOOTDSection: React.FC = () => {
     return (
         <section className="py-16 bg-gray-50">
             <div className="container mx-auto px-6">
-                <div className="flex justify-between items-end mb-8">
-                    <div>
-                        <h2 className="text-3xl md:text-4xl font-serif text-primary mb-3">Trending OOTD</h2>
-                        <p className="text-gray-500 font-light">지금 가장 사랑받는 스타일을 만나보세요</p>
+                <FadeInUp>
+                    <div className="flex justify-between items-end mb-8">
+                        <div>
+                            <h2 className="text-3xl md:text-4xl font-serif text-primary mb-3">Trending OOTD</h2>
+                            <p className="text-gray-500 font-light">지금 가장 사랑받는 스타일을 만나보세요</p>
+                        </div>
+                        <Link
+                            to="/ootd"
+                            className="hidden md:flex items-center text-sm font-medium text-gray-900 hover:text-primary transition group"
+                        >
+                            더 보기
+                            <ArrowRight size={16} className="ml-2 transform group-hover:translate-x-1 transition" />
+                        </Link>
                     </div>
-                    <Link
-                        to="/ootd"
-                        className="hidden md:flex items-center text-sm font-medium text-gray-900 hover:text-primary transition group"
-                    >
-                        더 보기
-                        <ArrowRight size={16} className="ml-2 transform group-hover:translate-x-1 transition" />
-                    </Link>
-                </div>
+                </FadeInUp>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <StaggerFadeIn childSelector=".ootd-card" stagger={0.12} className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {trendingPosts.map((post, index) => (
                         <Link
                             to="/ootd"
                             key={post.id}
-                            className="group block bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1"
+                            className="ootd-card group block bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1"
                         >
                             <div className="relative aspect-[4/5] overflow-hidden">
                                 <img
@@ -66,20 +69,23 @@ const TrendingOOTDSection: React.FC = () => {
                             </div>
                         </Link>
                     ))}
-                </div>
+                </StaggerFadeIn>
 
-                <div className="mt-8 text-center md:hidden">
-                    <Link
-                        to="/ootd"
-                        className="inline-flex items-center text-sm font-medium text-gray-900 hover:text-primary transition"
-                    >
-                        더 많은 스타일 보기
-                        <ArrowRight size={16} className="ml-2" />
-                    </Link>
-                </div>
+                <FadeInUp delay={0.3}>
+                    <div className="mt-8 text-center md:hidden">
+                        <Link
+                            to="/ootd"
+                            className="inline-flex items-center text-sm font-medium text-gray-900 hover:text-primary transition"
+                        >
+                            더 많은 스타일 보기
+                            <ArrowRight size={16} className="ml-2" />
+                        </Link>
+                    </div>
+                </FadeInUp>
             </div>
         </section>
     );
 };
 
 export default TrendingOOTDSection;
+

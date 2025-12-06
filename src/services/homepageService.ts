@@ -10,6 +10,7 @@ import {
     HomepageAnnouncementBar
 } from '../types';
 import { logAction } from './auditService';
+import { getCache, setCache, removeCache, CACHE_KEYS, DEFAULT_TTL } from '../utils/cache';
 
 // Collection names
 const HERO_COLLECTION = 'homepage_hero';
@@ -29,16 +30,29 @@ type AdminUser = { uid: string; username: string };
 const HERO_DOC_ID = 'current';
 
 export const getHomepageHero = async (): Promise<HomepageHero | null> => {
+    // Try cache first
+    const cached = getCache<HomepageHero>(CACHE_KEYS.HERO);
+    if (cached) {
+        // Update in background
+        fetchHeroFromFirebase().catch(() => { });
+        return cached;
+    }
+    return await fetchHeroFromFirebase();
+};
+
+const fetchHeroFromFirebase = async (): Promise<HomepageHero | null> => {
     try {
         const docRef = doc(db, HERO_COLLECTION, HERO_DOC_ID);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-            return { id: docSnap.id, ...docSnap.data() } as HomepageHero;
+            const data = { id: docSnap.id, ...docSnap.data() } as HomepageHero;
+            setCache(CACHE_KEYS.HERO, data, { ttl: DEFAULT_TTL.MEDIUM });
+            return data;
         }
         return null;
     } catch (error) {
         console.error('[MY_LOG] Error fetching homepage hero:', error);
-        return null;
+        return getCache<HomepageHero>(CACHE_KEYS.HERO) || null;
     }
 };
 
@@ -50,6 +64,9 @@ export const saveHomepageHero = async (hero: Omit<HomepageHero, 'id'>, adminUser
             updatedAt: serverTimestamp()
         };
         await setDoc(docRef, data, { merge: true });
+
+        // Clear cache so next load gets fresh data
+        removeCache(CACHE_KEYS.HERO);
 
         await logAction(
             adminUser.uid,
@@ -70,16 +87,49 @@ export const saveHomepageHero = async (hero: Omit<HomepageHero, 'id'>, adminUser
 const TIMESALE_DOC_ID = 'current';
 
 export const getHomepageTimeSale = async (): Promise<HomepageTimeSale | null> => {
+    // Try cache first
+    const cached = getCache<HomepageTimeSale>(CACHE_KEYS.TIME_SALE);
+    if (cached) {
+        fetchTimeSaleFromFirebase().catch(() => { });
+        return cached;
+    }
+    return await fetchTimeSaleFromFirebase();
+};
+
+const fetchTimeSaleFromFirebase = async (): Promise<HomepageTimeSale | null> => {
     try {
         const docRef = doc(db, TIMESALE_COLLECTION, TIMESALE_DOC_ID);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-            return { id: docSnap.id, ...docSnap.data() } as HomepageTimeSale;
+            const data = { id: docSnap.id, ...docSnap.data() } as HomepageTimeSale;
+
+            // 종료일이 지난 경우 자동 비활성화
+            if (data.isActive && data.endDate) {
+                const endDate = new Date(data.endDate);
+                endDate.setHours(23, 59, 59, 999); // 종료일 자정까지 유효
+                const now = new Date();
+
+                if (now > endDate) {
+                    // 자동 비활성화 - Firebase 업데이트
+                    try {
+                        await setDoc(docRef, { isActive: false, updatedAt: serverTimestamp() }, { merge: true });
+                        console.log('[TimeSale] Auto-deactivated due to expired endDate');
+                        removeCache(CACHE_KEYS.TIME_SALE);
+                    } catch (updateError) {
+                        console.error('[TimeSale] Failed to auto-deactivate:', updateError);
+                    }
+                    // 비활성화된 데이터 반환
+                    return { ...data, isActive: false };
+                }
+            }
+
+            setCache(CACHE_KEYS.TIME_SALE, data, { ttl: DEFAULT_TTL.SHORT });
+            return data;
         }
         return null;
     } catch (error) {
         console.error('[MY_LOG] Error fetching homepage timesale:', error);
-        return null;
+        return getCache<HomepageTimeSale>(CACHE_KEYS.TIME_SALE) || null;
     }
 };
 
@@ -92,6 +142,8 @@ export const saveHomepageTimeSale = async (timeSale: Omit<HomepageTimeSale, 'id'
             updatedAt: serverTimestamp()
         };
         await setDoc(docRef, data, { merge: true });
+
+        removeCache(CACHE_KEYS.TIME_SALE);
 
         await logAction(
             adminUser.uid,
@@ -437,11 +489,23 @@ export const getNewsletterSubscribers = async (): Promise<NewsletterSubscriber[]
 const ANNOUNCEMENT_BAR_DOC_ID = 'current';
 
 export const getHomepageAnnouncementBar = async (): Promise<HomepageAnnouncementBar | null> => {
+    // Try cache first
+    const cached = getCache<HomepageAnnouncementBar>(CACHE_KEYS.ANNOUNCEMENT_BAR);
+    if (cached) {
+        fetchAnnouncementBarFromFirebase().catch(() => { });
+        return cached;
+    }
+    return await fetchAnnouncementBarFromFirebase();
+};
+
+const fetchAnnouncementBarFromFirebase = async (): Promise<HomepageAnnouncementBar | null> => {
     try {
         const docRef = doc(db, ANNOUNCEMENT_BAR_COLLECTION, ANNOUNCEMENT_BAR_DOC_ID);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-            return { id: docSnap.id, ...docSnap.data() } as HomepageAnnouncementBar;
+            const data = { id: docSnap.id, ...docSnap.data() } as HomepageAnnouncementBar;
+            setCache(CACHE_KEYS.ANNOUNCEMENT_BAR, data, { ttl: DEFAULT_TTL.MEDIUM });
+            return data;
         }
         return null;
     } catch (error: any) {
@@ -449,7 +513,10 @@ export const getHomepageAnnouncementBar = async (): Promise<HomepageAnnouncement
         if (error?.code !== 'permission-denied') {
             console.warn('[MY_LOG] Error fetching homepage announcement bar:', error);
         }
-        throw error; // 상위 컴포넌트에서 처리하도록 에러 전달
+        // Return cached data on error
+        const cached = getCache<HomepageAnnouncementBar>(CACHE_KEYS.ANNOUNCEMENT_BAR);
+        if (cached) return cached;
+        throw error;
     }
 };
 
@@ -464,6 +531,8 @@ export const saveHomepageAnnouncementBar = async (
             updatedAt: serverTimestamp()
         };
         await setDoc(docRef, data, { merge: true });
+
+        removeCache(CACHE_KEYS.ANNOUNCEMENT_BAR);
 
         await logAction(
             adminUser.uid,

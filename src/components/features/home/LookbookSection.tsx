@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus } from 'lucide-react';
+import { SlideIn, Parallax } from '../../common/AnimatedElements';
 
 interface Hotspot {
     id: number;
@@ -44,11 +45,11 @@ const LookbookSection: React.FC = () => {
     ];
 
     return (
-        <section className="py-24 bg-gray-50">
+        <section className="py-24 bg-gray-50 overflow-hidden">
             <div className="container mx-auto px-6">
                 <div className="flex flex-col md:flex-row items-center gap-12">
-                    {/* Text Content */}
-                    <div className="md:w-1/3 text-center md:text-left">
+                    {/* Text Content - Slide in from left */}
+                    <SlideIn direction="left" className="md:w-1/3 text-center md:text-left">
                         <h2 className="text-3xl md:text-4xl font-serif text-primary mb-6">Winter Lookbook</h2>
                         <p className="text-gray-600 leading-relaxed mb-8">
                             차가운 겨울 공기 속에서도 빛나는 당신을 위한 스타일링.
@@ -60,15 +61,17 @@ const LookbookSection: React.FC = () => {
                         >
                             Shop the Collection
                         </Link>
-                    </div>
+                    </SlideIn>
 
-                    {/* Interactive Image */}
+                    {/* Interactive Image - with Parallax */}
                     <div className="md:w-2/3 relative w-full aspect-[4/3] md:aspect-[16/9] bg-gray-200 rounded-lg overflow-hidden group">
-                        <img
-                            src="https://images.unsplash.com/photo-1615655406736-b37c4fabf923?auto=format&fit=crop&q=80&w=1200"
-                            alt="Winter Lookbook"
-                            className="w-full h-full object-cover"
-                        />
+                        <Parallax speed={0.2} className="absolute inset-0 w-full h-[120%] -top-[10%]">
+                            <img
+                                src="https://images.unsplash.com/photo-1615655406736-b37c4fabf923?auto=format&fit=crop&q=80&w=1200"
+                                alt="Winter Lookbook"
+                                className="w-full h-full object-cover"
+                            />
+                        </Parallax>
 
                         {/* Hotspots */}
                         {hotspots.map((spot) => (

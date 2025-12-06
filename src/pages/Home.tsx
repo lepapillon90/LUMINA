@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth, useGlobalModal } from '../contexts';
+import { useAuth, useGlobalModal, useCart } from '../contexts';
 import { getProducts } from '../services/productService';
 import { Product } from '../types';
 import LookbookSection from '../components/features/home/LookbookSection';
@@ -10,34 +10,58 @@ import PurchaseNotification from '../components/features/home/PurchaseNotificati
 import MagazineSection from '../components/features/home/MagazineSection';
 import TimeSale from '../components/features/home/TimeSale';
 import InstagramFeed from '../components/features/home/InstagramFeed';
-import { ChevronLeft, ChevronRight, Heart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Heart, ShoppingBag } from 'lucide-react';
 import SEO from '../components/common/SEO';
 import OptimizedImage from '../components/common/OptimizedImage';
 
 import TrendingOOTDSection from '../components/features/home/TrendingOOTDSection';
 import HeroSection from '../components/features/home/HeroSection';
+import { getCache, setCache, CACHE_KEYS, DEFAULT_TTL } from '../utils/cache';
+import { FadeInUp, AnimatedSection } from '../components/common/AnimatedElements';
+import { getHomepageTimeSale } from '../services/homepageService';
+import { HomepageTimeSale } from '../types';
 
 const Home: React.FC = () => {
-  const [newArrivals, setNewArrivals] = useState<Product[]>([]);
+  // Initialize with cached data for instant display (productService handles main caching)
+  const [newArrivals, setNewArrivals] = useState<Product[]>(() => {
+    const cached = getCache<Product[]>(CACHE_KEYS.NEW_ARRIVALS);
+    return cached || [];
+  });
   const sliderRef = useRef<HTMLDivElement>(null);
   const { user, toggleWishlist } = useAuth();
-  const { showConfirm } = useGlobalModal();
+  const { addToCart } = useCart();
+  const { showConfirm, showAlert } = useGlobalModal();
   const navigate = useNavigate();
+  const [timeSaleData, setTimeSaleData] = useState<HomepageTimeSale | null>(null);
 
   useEffect(() => {
     const fetchNewArrivals = async () => {
       try {
+        // getProducts now has built-in caching
         const allProducts = await getProducts();
-        // Filter for new products. If none, maybe show latest 5? 
-        // For now, strictly following "isNew" as requested.
         const newProducts = allProducts.filter(p => p.isNew);
         setNewArrivals(newProducts);
+        // Cache new arrivals specifically for faster initial load
+        setCache(CACHE_KEYS.NEW_ARRIVALS, newProducts, { ttl: DEFAULT_TTL.MEDIUM });
       } catch (error) {
         console.error("Failed to fetch products:", error);
       }
     };
 
     fetchNewArrivals();
+  }, []);
+
+  // Fetch TimeSale data
+  useEffect(() => {
+    const fetchTimeSale = async () => {
+      try {
+        const data = await getHomepageTimeSale();
+        setTimeSaleData(data);
+      } catch (error) {
+        console.error('Failed to fetch TimeSale:', error);
+      }
+    };
+    fetchTimeSale();
   }, []);
 
   const scroll = (direction: 'left' | 'right') => {
@@ -54,16 +78,19 @@ const Home: React.FC = () => {
       {/* Hero Section */}
       <HeroSection />
 
-      {/* Time Sale */}
-      <TimeSale />
+      {/* Time Sale - only show if active */}
+      {timeSaleData?.isActive && (
+        <FadeInUp>
+          <TimeSale previewData={timeSaleData} />
+        </FadeInUp>
+      )}
 
       {/* Featured Section (New Arrivals) */}
-      {/* Featured Section (New Arrivals) */}
-      <section className="py-16 md:py-24 bg-white overflow-hidden">
-        <div className="container mx-auto px-6 mb-12">
+      <AnimatedSection className="py-16 md:py-24 bg-white overflow-hidden">
+        <FadeInUp className="container mx-auto px-6 mb-12">
           <h2 className="text-3xl md:text-4xl font-serif text-primary mb-3">New Arrivals</h2>
           <p className="text-gray-500 font-light">가장 먼저 만나는 루미나의 새로운 컬렉션</p>
-        </div>
+        </FadeInUp>
 
         {/* Navigation Buttons */}
         <div className="relative container mx-auto">
@@ -87,9 +114,10 @@ const Home: React.FC = () => {
             style={{ scrollBehavior: 'smooth' }}
           >
             {newArrivals.length > 0 ? (
-              newArrivals.map((product) => (
-                <div
+              newArrivals.map((product, index) => (
+                <FadeInUp
                   key={product.id}
+                  delay={index * 0.1}
                   className="flex-none w-[45%] md:w-[30%] lg:w-[22%] xl:w-[18%] snap-start group cursor-pointer"
                 >
                   <Link to={`/product/${product.id}`} className="block relative">
@@ -106,24 +134,38 @@ const Home: React.FC = () => {
                       <div className="absolute top-2 left-2 bg-black text-white text-[10px] font-bold px-2 py-1 z-10">
                         NEW
                       </div>
-                      {/* Wishlist Button */}
-                      <button
-                        className="absolute top-2 right-2 p-2 bg-white/80 rounded-full hover:bg-white transition shadow-sm z-10"
-                        onClick={async (e) => {
-                          e.preventDefault();
-                          if (!user) {
-                            const confirmed = await showConfirm("로그인이 필요한 서비스입니다.\n로그인 페이지로 이동하시겠습니까?");
-                            if (confirmed) navigate('/login');
-                            return;
-                          }
-                          await toggleWishlist(product.id);
-                        }}
-                      >
-                        <Heart
-                          size={16}
-                          className={`transition ${user?.wishlist?.includes(product.id) ? 'fill-red-500 text-red-500' : 'text-gray-600 hover:fill-red-500 hover:text-red-500'}`}
-                        />
-                      </button>
+                      {/* Action Buttons */}
+                      <div className="absolute top-2 right-2 flex flex-col gap-2 z-10">
+                        {/* Wishlist Button */}
+                        <button
+                          className={`p-2 rounded-full shadow-sm transition ${user?.wishlist?.includes(product.id) ? 'bg-red-500 text-white' : 'bg-white/80 hover:bg-white text-gray-600 hover:text-red-500'}`}
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            if (!user) {
+                              const confirmed = await showConfirm("로그인이 필요한 서비스입니다.\n로그인 페이지로 이동하시겠습니까?");
+                              if (confirmed) navigate('/login');
+                              return;
+                            }
+                            await toggleWishlist(product.id);
+                          }}
+                        >
+                          <Heart
+                            size={16}
+                            className={user?.wishlist?.includes(product.id) ? 'fill-current' : ''}
+                          />
+                        </button>
+                        {/* Cart Button */}
+                        <button
+                          className="p-2 rounded-full shadow-sm transition bg-white/80 hover:bg-black text-gray-600 hover:text-white"
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            addToCart(product, 1);
+                            await showAlert("장바구니에 담겼습니다.", "장바구니");
+                          }}
+                        >
+                          <ShoppingBag size={16} />
+                        </button>
+                      </div>
                     </div>
                     <div className="mt-4">
                       <h3 className="text-sm text-gray-900 font-medium group-hover:text-gray-600 transition truncate">
@@ -134,7 +176,7 @@ const Home: React.FC = () => {
                       </p>
                     </div>
                   </Link>
-                </div>
+                </FadeInUp>
               ))
             ) : (
               <div className="w-full text-center py-10 text-gray-400">
@@ -143,29 +185,27 @@ const Home: React.FC = () => {
             )}
           </div>
         </div>
-      </section>
+      </AnimatedSection>
 
       {/* Lookbook Section */}
-      <LookbookSection />
-
-
-
-
-
-
+      <FadeInUp>
+        <LookbookSection />
+      </FadeInUp>
 
       {/* Trending OOTD Section */}
-      <TrendingOOTDSection />
-
-
+      <FadeInUp>
+        <TrendingOOTDSection />
+      </FadeInUp>
 
       {/* Magazine Section */}
-      <MagazineSection />
+      <FadeInUp>
+        <MagazineSection />
+      </FadeInUp>
 
       {/* Instagram Feed */}
-      <InstagramFeed />
-
-
+      <FadeInUp>
+        <InstagramFeed />
+      </FadeInUp>
 
       {/* Newsletter Popup */}
       <NewsletterPopup />
@@ -176,3 +216,4 @@ const Home: React.FC = () => {
 };
 
 export default Home;
+

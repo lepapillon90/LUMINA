@@ -15,6 +15,7 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import Loading from './components/common/Loading';
 import RouteTracker from './components/common/RouteTracker';
 import GTM from './components/common/GTM';
+import SmoothScroller from './components/common/SmoothScroller';
 
 // Initialize GA4 (Replace with actual Measurement ID)
 ReactGA.initialize("G-MEASUREMENT_ID");
@@ -42,7 +43,14 @@ const CustomerService = lazy(() => import('./pages/CustomerService'));
 const ScrollToTop = () => {
   const { pathname } = useLocation();
   useEffect(() => {
-    window.scrollTo(0, 0);
+    // Use Lenis scrollTo if available, otherwise fallback
+    // @ts-ignore
+    if (window.lenis) {
+      // @ts-ignore
+      window.lenis.scrollTo(0, { immediate: true });
+    } else {
+      window.scrollTo(0, 0);
+    }
   }, [pathname]);
   return null;
 };
@@ -53,35 +61,37 @@ const Layout: React.FC = () => {
   const isAdmin = location.pathname.startsWith('/admin');
 
   return (
-    <div className="flex flex-col min-h-screen text-primary overflow-x-hidden">
-      <ScrollToTop />
-      {!isAdmin && <Navbar />}
-      <main className="flex-grow">
-        <Suspense fallback={<Loading />}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/shop" element={<Shop />} />
-            <Route path="/product/:id" element={<ProductDetail />} />
-            <Route path="/ootd" element={<OOTD />} />
-            <Route path="/magazine" element={<Magazine />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/checkout/success" element={<CheckoutSuccess />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/order-tracking" element={<GuestOrderTracking />} />
-            <Route path="/mypage" element={<MyPage />} />
-            <Route path="/cs" element={<CustomerService />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/admin/migrate" element={<DataMigration />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-      </main>
-      {!isAdmin && !location.pathname.startsWith('/ootd') && <AIStylist />}
-      {!isAdmin && <Footer />}
-    </div>
+    <SmoothScroller>
+      <div className="flex flex-col min-h-screen text-primary overflow-x-hidden">
+        <ScrollToTop />
+        {!isAdmin && <Navbar />}
+        <main className="flex-grow">
+          <Suspense fallback={<Loading />}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/shop" element={<Shop />} />
+              <Route path="/product/:id" element={<ProductDetail />} />
+              <Route path="/ootd" element={<OOTD />} />
+              <Route path="/magazine" element={<Magazine />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/checkout/success" element={<CheckoutSuccess />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/order-tracking" element={<GuestOrderTracking />} />
+              <Route path="/mypage" element={<MyPage />} />
+              <Route path="/cs" element={<CustomerService />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/admin/migrate" element={<DataMigration />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+        </main>
+        {!isAdmin && !location.pathname.startsWith('/ootd') && <AIStylist />}
+        {!isAdmin && <Footer />}
+      </div>
+    </SmoothScroller>
   );
 };
 

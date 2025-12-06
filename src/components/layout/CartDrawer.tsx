@@ -1,7 +1,9 @@
-import React from 'react';
-import { X, Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Minus, Plus, ShoppingBag, ChevronDown } from 'lucide-react';
 import { useCart } from '../../contexts';
 import { Link, useNavigate } from 'react-router-dom';
+import { getProductById } from '../../services/productService';
+import { Product } from '../../types';
 
 interface CartDrawerProps {
     isOpen: boolean;
@@ -9,10 +11,82 @@ interface CartDrawerProps {
 }
 
 const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
-    const { cart, removeFromCart, updateQuantity } = useCart();
+    const { cart, removeFromCart, updateQuantity, updateCartItem } = useCart();
     const navigate = useNavigate();
+    const [productDetails, setProductDetails] = useState<{ [id: number]: Product }>({});
 
     const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
+    // Fetch product details for size/color stock info
+    useEffect(() => {
+        const fetchProductDetails = async () => {
+            const details: { [id: number]: Product } = {};
+            for (const item of cart) {
+                if (!productDetails[item.id]) {
+                    try {
+                        const product = await getProductById(item.id);
+                        if (product) {
+                            details[item.id] = product;
+                        }
+                    } catch (error) {
+                        console.error(`Failed to fetch product ${item.id}:`, error);
+                    }
+                }
+            }
+            if (Object.keys(details).length > 0) {
+                setProductDetails(prev => ({ ...prev, ...details }));
+            }
+        };
+
+        if (isOpen && cart.length > 0) {
+            fetchProductDetails();
+        }
+    }, [isOpen, cart]);
+
+    // Get available sizes for a product
+    const getAvailableSizes = (productId: number): string[] => {
+        const product = productDetails[productId];
+        if (!product?.sizeColorStock) return product?.sizes || [];
+        const sizes = [...new Set(product.sizeColorStock.map(item => item.size))];
+        return sizes;
+    };
+
+    // Get available colors for a specific size
+    const getAvailableColors = (productId: number, size?: string): { color: string; quantity: number }[] => {
+        const product = productDetails[productId];
+        if (!product?.sizeColorStock) {
+            return (product?.colors || []).map(c => ({ color: c, quantity: 999 }));
+        }
+        if (!size) return [];
+        return product.sizeColorStock
+            .filter(item => item.size === size)
+            .map(item => ({ color: item.color, quantity: item.quantity }));
+    };
+
+    // Get stock quantity for a specific size/color combination
+    const getStockQuantity = (productId: number, size?: string, color?: string): number => {
+        const product = productDetails[productId];
+        if (!product?.sizeColorStock) return 999;
+        const stock = product.sizeColorStock.find(
+            item => item.size === size && item.color === color
+        );
+        return stock?.quantity || 0;
+    };
+
+    // Handle size change
+    const handleSizeChange = (itemId: number, newSize: string) => {
+        const colors = getAvailableColors(itemId, newSize);
+        const availableColor = colors.find(c => c.quantity > 0)?.color;
+        updateCartItem(itemId, {
+            selectedSize: newSize,
+            selectedColor: availableColor || colors[0]?.color
+        });
+    };
+
+    // Handle color change
+    const handleColorChange = (itemId: number, newColor: string) => {
+        updateCartItem(itemId, { selectedColor: newColor });
+    };
 
     if (!isOpen) return null;
 
@@ -70,47 +144,105 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                             </button>
                         </div>
                     ) : (
-                        cart.map(item => (
-                            <div key={item.id} className="flex gap-4">
-                                <div className="w-20 h-20 bg-gray-100 flex-shrink-0 overflow-hidden rounded-sm">
-                                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                                </div>
-                                <div className="flex-1 flex flex-col justify-between">
-                                    <div>
-                                        <div className="flex justify-between items-start">
-                                            <h3 className="font-medium text-sm line-clamp-2">{item.name}</h3>
-                                            <button
-                                                onClick={() => removeFromCart(item.id)}
-                                                className="text-gray-300 hover:text-red-500 transition ml-2"
-                                            >
-                                                <X size={16} />
-                                            </button>
-                                        </div>
-                                        <p className="text-sm text-gray-500 mt-1">₩{item.price.toLocaleString()}</p>
-                                    </div>
+                        cart.map(item => {
+                            const sizes = getAvailableSizes(item.id);
+                            const colors = getAvailableColors(item.id, item.selectedSize);
+                            const hasSizeColorStock = productDetails[item.id]?.sizeColorStock && productDetails[item.id]?.sizeColorStock!.length > 0;
 
-                                    <div className="flex justify-between items-center mt-2">
-                                        <div className="flex items-center border border-gray-200 rounded-sm">
-                                            <button
-                                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                                disabled={item.quantity <= 1}
-                                                className="px-2 py-1 text-gray-500 hover:bg-gray-50 disabled:opacity-30 transition"
-                                            >
-                                                <Minus size={12} />
-                                            </button>
-                                            <span className="text-xs font-medium w-6 text-center">{item.quantity}</span>
-                                            <button
-                                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                                className="px-2 py-1 text-gray-500 hover:bg-gray-50 transition"
-                                            >
-                                                <Plus size={12} />
-                                            </button>
+                            return (
+                                <div key={`${item.id}-${item.selectedSize}-${item.selectedColor}`} className="flex gap-4">
+                                    <div className="w-20 h-20 bg-gray-100 flex-shrink-0 overflow-hidden rounded-sm">
+                                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                    </div>
+                                    <div className="flex-1 flex flex-col justify-between">
+                                        <div>
+                                            <div className="flex justify-between items-start">
+                                                <h3 className="font-medium text-sm line-clamp-1">{item.name}</h3>
+                                                <button
+                                                    onClick={() => removeFromCart(item.id)}
+                                                    className="text-gray-300 hover:text-red-500 transition ml-2"
+                                                >
+                                                    <X size={16} />
+                                                </button>
+                                            </div>
+                                            <p className="text-sm text-gray-500 mt-0.5">₩{item.price.toLocaleString()}</p>
                                         </div>
-                                        <p className="font-medium text-sm">₩{(item.price * item.quantity).toLocaleString()}</p>
+
+                                        {/* Size/Color Selection */}
+                                        {hasSizeColorStock && sizes.length > 0 && (
+                                            <div className="flex gap-2 mt-2">
+                                                {/* Size Selector */}
+                                                <div className="relative flex-1">
+                                                    <select
+                                                        value={item.selectedSize || ''}
+                                                        onChange={(e) => handleSizeChange(item.id, e.target.value)}
+                                                        className="w-full text-xs border border-gray-200 rounded px-2 py-1.5 pr-6 appearance-none bg-white focus:outline-none focus:border-black"
+                                                    >
+                                                        <option value="" disabled>사이즈</option>
+                                                        {sizes.map(size => (
+                                                            <option key={size} value={size}>{size}</option>
+                                                        ))}
+                                                    </select>
+                                                    <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                                                </div>
+
+                                                {/* Color Selector */}
+                                                {colors.length > 0 && (
+                                                    <div className="relative flex-1">
+                                                        <select
+                                                            value={item.selectedColor || ''}
+                                                            onChange={(e) => handleColorChange(item.id, e.target.value)}
+                                                            className="w-full text-xs border border-gray-200 rounded px-2 py-1.5 pr-6 appearance-none bg-white focus:outline-none focus:border-black"
+                                                        >
+                                                            <option value="" disabled>색상</option>
+                                                            {colors.map(({ color, quantity }) => (
+                                                                <option
+                                                                    key={color}
+                                                                    value={color}
+                                                                    disabled={quantity === 0}
+                                                                >
+                                                                    {color} {quantity === 0 ? '(품절)' : quantity <= 5 ? `(${quantity}개)` : ''}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                        <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Display selected options if no stock system */}
+                                        {!hasSizeColorStock && (item.selectedSize || item.selectedColor) && (
+                                            <p className="text-xs text-gray-400 mt-1">
+                                                {item.selectedSize && <span>{item.selectedSize}</span>}
+                                                {item.selectedSize && item.selectedColor && <span> / </span>}
+                                                {item.selectedColor && <span>{item.selectedColor}</span>}
+                                            </p>
+                                        )}
+
+                                        <div className="flex justify-between items-center mt-2">
+                                            <div className="flex items-center border border-gray-200 rounded-sm">
+                                                <button
+                                                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                                    disabled={item.quantity <= 1}
+                                                    className="px-2 py-1 text-gray-500 hover:bg-gray-50 disabled:opacity-30 transition"
+                                                >
+                                                    <Minus size={12} />
+                                                </button>
+                                                <span className="text-xs font-medium w-6 text-center">{item.quantity}</span>
+                                                <button
+                                                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                                    className="px-2 py-1 text-gray-500 hover:bg-gray-50 transition"
+                                                >
+                                                    <Plus size={12} />
+                                                </button>
+                                            </div>
+                                            <p className="font-medium text-sm">₩{(item.price * item.quantity).toLocaleString()}</p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))
+                            );
+                        })
                     )}
                 </div>
 
@@ -144,3 +276,4 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
 };
 
 export default CartDrawer;
+

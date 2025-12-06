@@ -9,11 +9,21 @@ import SearchBar from '../components/common/SearchBar';
 import QuickViewModal from '../components/features/products/QuickViewModal';
 import { useLocation } from 'react-router-dom';
 import { Filter } from 'lucide-react';
+import { getCache, CACHE_KEYS } from '../utils/cache';
+import { FadeInUp, StaggerFadeIn } from '../components/common/AnimatedElements';
 
 const Shop: React.FC = () => {
   const [category, setCategory] = useState<'all' | 'earring' | 'necklace' | 'ring' | 'bracelet'>('all');
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Initialize with cached products for instant display
+  const [products, setProducts] = useState<Product[]>(() => {
+    const cached = getCache<Product[]>(CACHE_KEYS.PRODUCTS);
+    return cached || [];
+  });
+  const [loading, setLoading] = useState(() => {
+    // Only show loading if no cached data
+    const cached = getCache<Product[]>(CACHE_KEYS.PRODUCTS);
+    return !cached || cached.length === 0;
+  });
   const location = useLocation();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
@@ -40,6 +50,7 @@ const Shop: React.FC = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
+        // getProducts now has built-in caching
         const data = await getProducts();
         setProducts(data);
       } catch (error) {
@@ -131,14 +142,19 @@ const Shop: React.FC = () => {
     <div className="pt-40 pb-20 bg-white min-h-screen">
       <SEO title="Shop" description="LUMINA의 모든 컬렉션을 만나보세요." />
       <div className="container mx-auto px-6">
-        <h1 className="text-4xl font-serif text-center mb-8">Collection</h1>
+        {/* Animated Header */}
+        <FadeInUp>
+          <h1 className="text-4xl font-serif text-center mb-8">Collection</h1>
+        </FadeInUp>
 
         {/* Search Bar */}
-        <SearchBar
-          onSearch={setSearchQuery}
-          suggestions={searchSuggestions}
-          placeholder="상품명, 태그, 소재 등으로 검색해보세요"
-        />
+        <FadeInUp delay={0.1}>
+          <SearchBar
+            onSearch={setSearchQuery}
+            suggestions={searchSuggestions}
+            placeholder="상품명, 태그, 소재 등으로 검색해보세요"
+          />
+        </FadeInUp>
 
         <div className="flex flex-col lg:flex-row gap-12 mt-8 lg:mt-12">
           {/* Mobile Filter Toggle */}
@@ -152,154 +168,162 @@ const Shop: React.FC = () => {
             </button>
           </div>
 
-          {/* Sidebar Filters */}
-          <aside className={`lg:w-1/4 space-y-8 ${isFilterOpen ? 'block' : 'hidden lg:block'}`}>
-            {/* Category */}
-            <div>
-              <h3 className="font-serif font-bold text-lg mb-4">Category</h3>
-              <div className="flex flex-wrap gap-2">
-                {categories.map(cat => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setCategory(cat.id as any)}
-                    className={`px-4 py-2 text-xs uppercase tracking-wide border rounded-full transition-all ${category === cat.id
-                      ? 'bg-primary text-white border-primary'
-                      : 'bg-white text-gray-500 border-gray-200 hover:border-gray-800 hover:text-black'
-                      }`}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
+          {/* Sidebar Filters - Animated */}
+          <FadeInUp delay={0.2} className={`lg:w-1/4 ${isFilterOpen ? 'block' : 'hidden lg:block'}`}>
+            <aside className="space-y-8">
+              {/* Category */}
+              <div>
+                <h3 className="font-serif font-bold text-lg mb-4">Category</h3>
+                <div className="flex flex-wrap gap-2">
+                  {categories.map(cat => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setCategory(cat.id as any)}
+                      className={`px-4 py-2 text-xs uppercase tracking-wide border rounded-full transition-all ${category === cat.id
+                        ? 'bg-primary text-white border-primary'
+                        : 'bg-white text-gray-500 border-gray-200 hover:border-gray-800 hover:text-black'
+                        }`}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Price Range */}
-            <div>
-              <h3 className="font-serif font-bold text-lg mb-4">Price</h3>
-              <input
-                type="range"
-                min="0"
-                max="100000"
-                step="5000"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(Number(e.target.value))}
-                className="w-full accent-primary"
-              />
-              <div className="flex justify-between text-sm text-gray-500 mt-2">
-                <span>0원</span>
-                <span>{maxPrice.toLocaleString()}원 이하</span>
+              {/* Price Range */}
+              <div>
+                <h3 className="font-serif font-bold text-lg mb-4">Price</h3>
+                <input
+                  type="range"
+                  min="0"
+                  max="100000"
+                  step="5000"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(Number(e.target.value))}
+                  className="w-full accent-primary"
+                />
+                <div className="flex justify-between text-sm text-gray-500 mt-2">
+                  <span>0원</span>
+                  <span>{maxPrice.toLocaleString()}원 이하</span>
+                </div>
               </div>
-            </div>
 
-            {/* Material */}
-            <div>
-              <h3 className="font-serif font-bold text-lg mb-4">Material</h3>
-              <div className="space-y-2">
-                {materials.map(mat => (
-                  <label key={mat} className="flex items-center space-x-2 cursor-pointer group">
-                    <div className={`w-4 h-4 border rounded flex items-center justify-center transition ${selectedMaterials.includes(mat) ? 'bg-primary border-primary' : 'border-gray-300 group-hover:border-primary'}`}>
-                      {selectedMaterials.includes(mat) && <div className="w-2 h-2 bg-white rounded-full" />}
-                    </div>
-                    <input
-                      type="checkbox"
-                      className="hidden"
-                      checked={selectedMaterials.includes(mat)}
-                      onChange={() => toggleFilter(mat, selectedMaterials, setSelectedMaterials)}
-                    />
-                    <span className={`text-sm ${selectedMaterials.includes(mat) ? 'text-gray-900 font-medium' : 'text-gray-500 group-hover:text-gray-800'}`}>{mat}</span>
-                  </label>
-                ))}
+              {/* Material */}
+              <div>
+                <h3 className="font-serif font-bold text-lg mb-4">Material</h3>
+                <div className="space-y-2">
+                  {materials.map(mat => (
+                    <label key={mat} className="flex items-center space-x-2 cursor-pointer group">
+                      <div className={`w-4 h-4 border rounded flex items-center justify-center transition ${selectedMaterials.includes(mat) ? 'bg-primary border-primary' : 'border-gray-300 group-hover:border-primary'}`}>
+                        {selectedMaterials.includes(mat) && <div className="w-2 h-2 bg-white rounded-full" />}
+                      </div>
+                      <input
+                        type="checkbox"
+                        className="hidden"
+                        checked={selectedMaterials.includes(mat)}
+                        onChange={() => toggleFilter(mat, selectedMaterials, setSelectedMaterials)}
+                      />
+                      <span className={`text-sm ${selectedMaterials.includes(mat) ? 'text-gray-900 font-medium' : 'text-gray-500 group-hover:text-gray-800'}`}>{mat}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Color */}
-            <div>
-              <h3 className="font-serif font-bold text-lg mb-4">Color</h3>
-              <div className="flex flex-wrap gap-2">
-                {["Gold", "Silver", "Rose Gold", "White", "Black", "Red", "Blue", "Green", "Pink"].map(color => (
-                  <button
-                    key={color}
-                    onClick={() => toggleFilter(color, selectedColors, setSelectedColors)}
-                    className={`w-6 h-6 rounded-full border transition-all ${selectedColors.includes(color) ? 'ring-2 ring-offset-2 ring-primary border-transparent' : 'border-gray-300 hover:border-gray-400'}`}
-                    style={{ backgroundColor: color.toLowerCase().replace(' ', '') === 'rose gold' ? '#B76E79' : color.toLowerCase() }}
-                    title={color}
-                  >
-                    {/* Checkmark for selected */}
-                    {selectedColors.includes(color) && (
-                      <span className="flex items-center justify-center h-full text-white text-[10px]">✓</span>
-                    )}
-                  </button>
-                ))}
+              {/* Color */}
+              <div>
+                <h3 className="font-serif font-bold text-lg mb-4">Color</h3>
+                <div className="flex flex-wrap gap-2">
+                  {["Gold", "Silver", "Rose Gold", "White", "Black", "Red", "Blue", "Green", "Pink"].map(color => (
+                    <button
+                      key={color}
+                      onClick={() => toggleFilter(color, selectedColors, setSelectedColors)}
+                      className={`w-6 h-6 rounded-full border transition-all ${selectedColors.includes(color) ? 'ring-2 ring-offset-2 ring-primary border-transparent' : 'border-gray-300 hover:border-gray-400'}`}
+                      style={{ backgroundColor: color.toLowerCase().replace(' ', '') === 'rose gold' ? '#B76E79' : color.toLowerCase() }}
+                      title={color}
+                    >
+                      {/* Checkmark for selected */}
+                      {selectedColors.includes(color) && (
+                        <span className="flex items-center justify-center h-full text-white text-[10px]">✓</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Size */}
-            <div>
-              <h3 className="font-serif font-bold text-lg mb-4">Size</h3>
-              <div className="flex flex-wrap gap-2">
-                {sizes.map(size => (
-                  <button
-                    key={size}
-                    onClick={() => toggleFilter(size, selectedSizes, setSelectedSizes)}
-                    className={`px-3 py-1 text-xs border rounded transition-colors ${selectedSizes.includes(size)
-                      ? 'bg-gray-900 text-white border-gray-900'
-                      : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
-                      }`}
-                  >
-                    {size}
-                  </button>
-                ))}
+              {/* Size */}
+              <div>
+                <h3 className="font-serif font-bold text-lg mb-4">Size</h3>
+                <div className="flex flex-wrap gap-2">
+                  {sizes.map(size => (
+                    <button
+                      key={size}
+                      onClick={() => toggleFilter(size, selectedSizes, setSelectedSizes)}
+                      className={`px-3 py-1 text-xs border rounded transition-colors ${selectedSizes.includes(size)
+                        ? 'bg-gray-900 text-white border-gray-900'
+                        : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                        }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          </aside>
+            </aside>
+          </FadeInUp>
 
           {/* Product Grid */}
           <div className="lg:w-3/4">
-            <div className="mb-6 flex justify-between items-center">
-              <span className="text-gray-500 text-sm">Showing {filteredProducts.length} results</span>
+            <FadeInUp delay={0.3}>
+              <div className="mb-6 flex justify-between items-center">
+                <span className="text-gray-500 text-sm">Showing {filteredProducts.length} results</span>
 
-              {/* Sort Dropdown */}
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:border-primary"
-              >
-                <option value="newest">신상품순</option>
-                <option value="popularity">인기순</option>
-                <option value="priceLow">낮은 가격순</option>
-                <option value="priceHigh">높은 가격순</option>
-                <option value="reviews">리뷰 많은순</option>
-              </select>
-            </div>
+                {/* Sort Dropdown */}
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:border-primary"
+                >
+                  <option value="newest">신상품순</option>
+                  <option value="popularity">인기순</option>
+                  <option value="priceLow">낮은 가격순</option>
+                  <option value="priceHigh">높은 가격순</option>
+                  <option value="reviews">리뷰 많은순</option>
+                </select>
+              </div>
+            </FadeInUp>
 
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-8">
+            {/* Product Grid with Stagger Animation */}
+            <StaggerFadeIn childSelector=".product-card" stagger={0.08} className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-8">
               {filteredProducts.map(product => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onQuickView={setSelectedProduct}
-                />
+                <div key={product.id} className="product-card">
+                  <ProductCard
+                    product={product}
+                    onQuickView={setSelectedProduct}
+                  />
+                </div>
               ))}
-            </div>
+            </StaggerFadeIn>
 
             {filteredProducts.length === 0 && (
-              <div className="text-center text-gray-400 py-20 border border-dashed border-gray-200 rounded-lg">
-                <p>선택한 조건에 맞는 상품이 없습니다.</p>
-                <button
-                  onClick={() => {
-                    setCategory('all');
-                    setMaxPrice(100000);
-                    setSelectedMaterials([]);
-                    setSelectedMaterials([]);
-                    setSelectedColors([]);
-                    setSelectedSizes([]);
-                    setSearchQuery('');
-                  }}
-                  className="mt-4 text-primary underline hover:text-black"
-                >
-                  필터 초기화
-                </button>
-              </div>
+              <FadeInUp>
+                <div className="text-center text-gray-400 py-20 border border-dashed border-gray-200 rounded-lg">
+                  <p>선택한 조건에 맞는 상품이 없습니다.</p>
+                  <button
+                    onClick={() => {
+                      setCategory('all');
+                      setMaxPrice(100000);
+                      setSelectedMaterials([]);
+                      setSelectedMaterials([]);
+                      setSelectedColors([]);
+                      setSelectedSizes([]);
+                      setSearchQuery('');
+                    }}
+                    className="mt-4 text-primary underline hover:text-black"
+                  >
+                    필터 초기화
+                  </button>
+                </div>
+              </FadeInUp>
             )}
           </div>
         </div>

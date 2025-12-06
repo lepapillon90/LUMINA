@@ -8,6 +8,14 @@
     <meta property="og:title" content="LUMINA - Timeless Elegance" />
     <meta property="og:description" content="당신의 빛나는 순간을 위한 프리미엄 주얼리." />
     <meta property="og:image" content="/hero_banner.png" />
+    
+    <!-- Preconnect to Google Fonts for faster loading -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Preload critical fonts to prevent layout shift -->
+    <link rel="preload" href="https://fonts.gstatic.com/s/cinzel/v23/8vIU7ww63mVu7gtzTUHeJKJNEg.woff2" as="font" type="font/woff2" crossorigin>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Serif+KR:wght@400;600&display=swap" rel="stylesheet">
     <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
@@ -32,6 +40,8 @@
       }
     </script>
     <style>
+      /* Font loading is handled by Google Fonts with display=swap */
+      
       body {
         font-family: 'Noto Sans KR', sans-serif;
         word-break: keep-all;
@@ -47,8 +57,14 @@
         -ms-overflow-style: none;
         scrollbar-width: none;
       }
+      
+      /* Critical CSS for Hero section - prevent FOUC */
+      .hero-placeholder {
+        min-height: 100dvh;
+        background-color: #1a1a1a;
+      }
     </style>
-</head>
+  </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/index.tsx"></script>
