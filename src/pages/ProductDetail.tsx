@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { getProductById, getProductsByCategory } from '../services/productService';
 import { Product } from '../types';
 import { useCart, useAuth, useGlobalModal } from '../contexts';
-import { ChevronRight, Star, Truck, ShieldCheck, Heart } from 'lucide-react';
+import { ChevronRight, Star, Truck, ShieldCheck, Heart, Ruler } from 'lucide-react';
 import SEO from '../components/common/SEO';
 import Loading from '../components/common/Loading';
 import ReactGA from 'react-ga4';
@@ -32,10 +32,67 @@ const ProductDetail: React.FC = () => {
 
     const isWishlisted = product && user?.wishlist?.includes(product.id);
 
+    // [MY_LOG] HTML 내용에서 텍스트의 띄어쓰기 처리 (엔터, 스페이스바 자동 처리)
+    const normalizeDescriptionSpacing = (html: string): string => {
+        if (!html) return html;
+        
+        // HTML 태그를 임시로 보호하면서 텍스트만 처리
+        const tempMarkers: { [key: string]: string } = {};
+        let markerIndex = 0;
+        
+        // HTML 태그를 임시 마커로 교체
+        let processed = html.replace(/<[^>]+>/g, (match) => {
+            const marker = `__HTML_TAG_${markerIndex}__`;
+            tempMarkers[marker] = match;
+            markerIndex++;
+            return marker;
+        });
+        
+        // 텍스트 부분의 띄어쓰기 처리
+        // 1. 탭을 공백으로 변환 (탭은 공백 4개로 처리)
+        processed = processed.replace(/\t/g, '    ');
+        
+        // 2. 연속된 공백은 CSS의 white-space: pre-wrap으로 처리하므로 유지
+        // 단, 5개 이상의 연속 공백은 정리 (실수로 입력된 경우)
+        processed = processed.replace(/[ ]{5,}/g, '    ');
+        
+        // 3. 줄바꿈은 유지 (CSS로 처리)
+        // 줄바꿈 전후의 불필요한 공백만 제거
+        processed = processed.replace(/[ ]{2,}\n/g, '\n');
+        processed = processed.replace(/\n[ ]{2,}/g, '\n');
+        
+        // 4. 문장 시작/끝의 과도한 공백만 제거 (1개는 유지)
+        processed = processed.replace(/^[ ]{2,}/gm, ' ');
+        processed = processed.replace(/[ ]{2,}$/gm, ' ');
+        
+        // 5. 연속된 줄바꿈은 유지 (CSS로 처리)
+        // 단, 4개 이상의 연속 줄바꿈은 최대 3개로 제한
+        processed = processed.replace(/\n{4,}/g, '\n\n\n');
+        
+        // 6. 줄바꿈을 <br> 태그로 변환 (HTML에서 줄바꿈 표시를 위해)
+        // 단, 이미 <br>이나 <p> 태그가 있는 경우는 제외하기 위해 마커 복원 후 처리
+        Object.keys(tempMarkers).forEach(marker => {
+            processed = processed.replace(marker, tempMarkers[marker]);
+        });
+        
+        // 7. HTML 태그 사이의 줄바꿈과 공백 정리
+        // 태그 사이의 공백/줄바꿈 제거 (가독성을 위해)
+        processed = processed.replace(/>\s+</g, '><');
+        // 단, </p><p> 같은 경우는 줄바꿈 유지
+        processed = processed.replace(/<\/p>\s*<p/g, '</p>\n<p');
+        processed = processed.replace(/<\/div>\s*<div/g, '</div>\n<div');
+        
+        // 8. 텍스트 노드 내의 줄바꿈을 <br>로 변환
+        // 태그가 아닌 부분의 줄바꿈을 <br>로 변환
+        processed = processed.replace(/([^>])\n([^<])/g, '$1<br>$2');
+        
+        return processed;
+    };
+
     // [MY_LOG] 재고 계산: 선택한 사이즈/색상 조합의 재고 또는 전체 재고
     const getCurrentStock = (): number => {
         if (!product) return 0;
-        
+
         // 사이즈-색상 조합별 재고가 있는 경우
         if (product.sizeColorStock && product.sizeColorStock.length > 0) {
             // 사이즈와 색상이 모두 선택된 경우, 해당 조합의 재고 반환
@@ -48,13 +105,35 @@ const ProductDetail: React.FC = () => {
             // 전체 재고 합계 반환
             return product.sizeColorStock.reduce((acc, item) => acc + item.quantity, 0);
         }
-        
+
         // 일반 재고 필드 사용
         return product.stock || 0;
     };
 
-    // [MY_LOG] 사이즈/색상 선택 시 재고에 맞춰 수량 자동 조정
+    // [MY_LOG] 사이즈/색상 선택 시 재고에 맞춰 수량 자동 조정 및 유효하지 않은 선택 해제
     useEffect(() => {
+        if (product && product.sizeColorStock && product.sizeColorStock.length > 0) {
+            // 사이즈 선택 시, 선택한 사이즈와 조합되어 재고가 없는 색상이 선택되어 있으면 해제
+            if (selectedSize && selectedColor) {
+                const variant = product.sizeColorStock.find(
+                    item => item.size === selectedSize && item.color === selectedColor
+                );
+                if (!variant || variant.quantity === 0) {
+                    setSelectedColor('');
+                }
+            }
+            // 색상 선택 시, 선택한 색상과 조합되어 재고가 없는 사이즈가 선택되어 있으면 해제
+            if (selectedColor && selectedSize) {
+                const variant = product.sizeColorStock.find(
+                    item => item.size === selectedSize && item.color === selectedColor
+                );
+                if (!variant || variant.quantity === 0) {
+                    setSelectedSize('');
+                }
+            }
+        }
+
+        // 수량 자동 조정
         if (product && (selectedSize || selectedColor)) {
             const stock = getCurrentStock();
             if (quantity > stock && stock > 0) {
@@ -101,7 +180,7 @@ const ProductDetail: React.FC = () => {
                 if (data) {
                     setProduct(data);
                     setSelectedImage(data.image);
-                    
+
                     // Fetch related products
                     const related = await getProductsByCategory(data.category);
                     setRelatedProducts(related.filter(p => p.id !== data.id).slice(0, 4));
@@ -167,19 +246,19 @@ const ProductDetail: React.FC = () => {
                 showAlert("색상을 선택해주세요.", "알림");
                 return;
             }
-            
+
             // [MY_LOG] 재고 확인
             if (currentStock === 0) {
                 showAlert("선택하신 옵션의 재고가 없습니다.", "알림");
                 return;
             }
-            
+
             if (quantity > currentStock) {
                 showAlert(`재고가 부족합니다. (현재 재고: ${currentStock}개)`, "알림");
                 setQuantity(currentStock);
                 return;
             }
-            
+
             setIsConfirmModalOpen(true);
         }
     };
@@ -308,7 +387,7 @@ const ProductDetail: React.FC = () => {
                                 const variantStock = product.sizeColorStock.find(
                                     item => item.size === selectedSize && item.color === selectedColor
                                 )?.quantity || 0;
-                                
+
                                 if (variantStock === 0) {
                                     return (
                                         <p className="text-red-600 font-bold mb-2 text-lg">
@@ -329,7 +408,7 @@ const ProductDetail: React.FC = () => {
                                     );
                                 }
                             }
-                            
+
                             // 전체 재고 표시
                             if (totalStock > 0 && totalStock <= 5) {
                                 return (
@@ -371,91 +450,211 @@ const ProductDetail: React.FC = () => {
 
                         {/* Options & Quantity */}
                         <div className="border-t border-b border-gray-100 py-6 mb-8">
-                            {/* Size Selector */}
-                            {product.sizes && product.sizes.length > 0 && (
-                                <div className="mb-6">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <span className="text-sm font-medium text-gray-900">사이즈</span>
-                                        <button
-                                            onClick={() => setIsSizeGuideOpen(true)}
-                                            className="text-xs text-gray-500 underline hover:text-black"
-                                        >
-                                            사이즈 가이드
-                                        </button>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {product.sizes.map(size => {
-                                            // Check availability
-                                            let isAvailable = true;
-                                            if (product.sizeColorStock && product.sizeColorStock.length > 0) {
-                                                if (selectedColor) {
-                                                    // If color is selected, check specific combination
-                                                    const variant = product.sizeColorStock.find(item => item.size === size && item.color === selectedColor);
-                                                    isAvailable = variant ? variant.quantity > 0 : false;
-                                                } else {
-                                                    // If no color selected, check if size exists in any quantity
-                                                    isAvailable = product.sizeColorStock.some(item => item.size === size && item.quantity > 0);
-                                                }
-                                            }
+                            {/* Size Guide Button - Always visible */}
+                            <div className="flex justify-end mb-4">
+                                <button
+                                    onClick={() => setIsSizeGuideOpen(true)}
+                                    className="text-sm font-medium text-gray-500 underline hover:text-black flex items-center gap-1.5"
+                                >
+                                    <Ruler size={16} /> 사이즈 가이드
+                                </button>
+                            </div>
 
-                                            return (
+                            {/* Size Selector - DB 재고가 있는 사이즈만 표시 */}
+                            {(() => {
+                                // [MY_LOG] sizeColorStock에서 사이즈 추출 또는 product.sizes 사용
+                                let allSizes: string[] = [];
+                                
+                                if (product.sizeColorStock && product.sizeColorStock.length > 0) {
+                                    // sizeColorStock에서 고유한 사이즈 추출
+                                    allSizes = Array.from(new Set(product.sizeColorStock.map(item => item.size).filter(s => s)));
+                                } else if (product.sizes && product.sizes.length > 0) {
+                                    allSizes = product.sizes;
+                                }
+
+                                // 재고가 있는 사이즈만 필터링
+                                let availableSizes = allSizes;
+                                
+                                if (product.sizeColorStock && product.sizeColorStock.length > 0) {
+                                    if (selectedColor) {
+                                        // 색상이 선택된 경우, 해당 색상과 조합된 사이즈 중 재고가 있는 것만
+                                        availableSizes = allSizes.filter(size => {
+                                            const variant = product.sizeColorStock!.find(
+                                                item => item.size === size && item.color === selectedColor
+                                            );
+                                            return variant && variant.quantity > 0;
+                                        });
+                                    } else {
+                                        // 색상이 선택되지 않은 경우, 어떤 색상과든 조합되어 재고가 있는 사이즈만
+                                        availableSizes = allSizes.filter(size => {
+                                            return product.sizeColorStock!.some(
+                                                item => item.size === size && item.quantity > 0
+                                            );
+                                        });
+                                    }
+                                } else if (product.stock !== undefined) {
+                                    // 일반 재고가 있는 경우에만 사이즈 표시
+                                    if (product.stock <= 0) {
+                                        availableSizes = [];
+                                    }
+                                }
+
+                                // 사이즈가 하나도 없으면 표시하지 않음
+                                if (allSizes.length === 0) {
+                                    return null;
+                                }
+
+                                if (availableSizes.length === 0) {
+                                    return (
+                                        <div className="mb-6">
+                                            <span className="text-sm font-medium text-gray-900 mb-2 block">사이즈</span>
+                                            <p className="text-sm text-red-600">재고가 있는 사이즈가 없습니다.</p>
+                                        </div>
+                                    );
+                                }
+
+                                return (
+                                    <div className="mb-6">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="text-sm font-medium text-gray-900">사이즈</span>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            {availableSizes.map(size => (
                                                 <button
                                                     key={size}
-                                                    onClick={() => isAvailable && setSelectedSize(size)}
-                                                    disabled={!isAvailable}
-                                                    className={`min-w-[3rem] px-3 py-2 text-sm border transition ${!isAvailable
-                                                            ? 'border-red-200 text-red-300 bg-red-50 cursor-not-allowed decoration-red-300 line-through'
-                                                            : selectedSize === size
-                                                                ? 'border-black bg-black text-white'
-                                                                : 'border-gray-200 text-gray-600 hover:border-gray-400'
-                                                        }`}
+                                                    onClick={() => setSelectedSize(size)}
+                                                    className={`min-w-[3rem] px-3 py-2 text-sm border transition ${
+                                                        selectedSize === size
+                                                            ? 'border-black bg-black text-white'
+                                                            : 'border-gray-200 text-gray-600 hover:border-gray-400'
+                                                    }`}
                                                 >
                                                     {size}
                                                 </button>
-                                            );
-                                        })}
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                );
+                            })()}
 
-                            {/* Color Selector */}
-                            {product.colors && product.colors.length > 0 && (
-                                <div className="mb-6">
-                                    <span className="block text-sm font-medium text-gray-900 mb-2">색상</span>
-                                    <div className="flex flex-wrap gap-2">
-                                        {product.colors.map(color => {
-                                            // Check availability
-                                            let isAvailable = true;
-                                            if (product.sizeColorStock && product.sizeColorStock.length > 0) {
-                                                if (selectedSize) {
-                                                    // If size is selected, check specific combination
-                                                    const variant = product.sizeColorStock.find(item => item.size === selectedSize && item.color === color);
-                                                    isAvailable = variant ? variant.quantity > 0 : false;
-                                                } else {
-                                                    // If no size selected, check if color exists in any quantity
-                                                    isAvailable = product.sizeColorStock.some(item => item.color === color && item.quantity > 0);
-                                                }
-                                            }
+                            {/* Color Selector - DB 재고가 있는 색상만 표시 */}
+                            {(() => {
+                                // [MY_LOG] sizeColorStock에서 색상 추출 또는 product.colors 사용
+                                let allColors: string[] = [];
+                                
+                                if (product.sizeColorStock && product.sizeColorStock.length > 0) {
+                                    // sizeColorStock에서 고유한 색상 추출
+                                    allColors = Array.from(new Set(product.sizeColorStock.map(item => item.color).filter(c => c)));
+                                } else if (product.colors && product.colors.length > 0) {
+                                    allColors = product.colors;
+                                }
 
-                                            return (
+                                // 재고가 있는 색상만 필터링
+                                let availableColors = allColors;
+                                
+                                if (product.sizeColorStock && product.sizeColorStock.length > 0) {
+                                    if (selectedSize) {
+                                        // 사이즈가 선택된 경우, 해당 사이즈와 조합된 색상 중 재고가 있는 것만
+                                        availableColors = allColors.filter(color => {
+                                            const variant = product.sizeColorStock!.find(
+                                                item => item.size === selectedSize && item.color === color
+                                            );
+                                            return variant && variant.quantity > 0;
+                                        });
+                                    } else {
+                                        // 사이즈가 선택되지 않은 경우, 어떤 사이즈와든 조합되어 재고가 있는 색상만
+                                        availableColors = allColors.filter(color => {
+                                            return product.sizeColorStock!.some(
+                                                item => item.color === color && item.quantity > 0
+                                            );
+                                        });
+                                    }
+                                } else if (product.stock !== undefined) {
+                                    // 일반 재고가 있는 경우에만 색상 표시
+                                    if (product.stock <= 0) {
+                                        availableColors = [];
+                                    }
+                                }
+
+                                // 색상이 하나도 없으면 표시하지 않음
+                                if (allColors.length === 0) {
+                                    return null;
+                                }
+
+                                if (availableColors.length === 0) {
+                                    return (
+                                        <div className="mb-6">
+                                            <span className="block text-sm font-medium text-gray-900 mb-2">색상</span>
+                                            <p className="text-sm text-red-600">재고가 있는 색상이 없습니다.</p>
+                                        </div>
+                                    );
+                                }
+
+                                return (
+                                    <div className="mb-6">
+                                        <span className="block text-sm font-medium text-gray-900 mb-2">색상</span>
+                                        <div className="flex flex-wrap gap-2">
+                                            {availableColors.map(color => (
                                                 <button
                                                     key={color}
-                                                    onClick={() => isAvailable && setSelectedColor(color)}
-                                                    disabled={!isAvailable}
-                                                    className={`px-4 py-2 text-sm border transition ${!isAvailable
-                                                            ? 'border-red-200 text-red-300 bg-red-50 cursor-not-allowed decoration-red-300 line-through'
-                                                            : selectedColor === color
-                                                                ? 'border-black bg-black text-white'
-                                                                : 'border-gray-200 text-gray-600 hover:border-gray-400'
-                                                        }`}
+                                                    onClick={() => setSelectedColor(color)}
+                                                    className={`px-4 py-2 text-sm border transition ${
+                                                        selectedColor === color
+                                                            ? 'border-black bg-black text-white'
+                                                            : 'border-gray-200 text-gray-600 hover:border-gray-400'
+                                                    }`}
                                                 >
                                                     {color}
                                                 </button>
-                                            );
-                                        })}
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                );
+                            })()}
+
+                            {/* 재고 정보 - 수량 선택기 위쪽 표시 */}
+                            {(() => {
+                                if (selectedSize && selectedColor && product.sizeColorStock) {
+                                    const variantStock = product.sizeColorStock.find(
+                                        item => item.size === selectedSize && item.color === selectedColor
+                                    )?.quantity || 0;
+                                    
+                                    if (variantStock > 0) {
+                                        return (
+                                            <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-md">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm font-medium text-gray-700">현재 선택 옵션 재고</span>
+                                                    <span className={`text-sm font-bold ${
+                                                        variantStock <= 3 ? 'text-red-600' : 'text-gray-900'
+                                                    }`}>
+                                                        {variantStock}개
+                                                    </span>
+                                                </div>
+                                                {variantStock <= 3 && (
+                                                    <p className="text-xs text-red-600 mt-1">품절 임박! 서둘러 주문해주세요.</p>
+                                                )}
+                                            </div>
+                                        );
+                                    }
+                                } else if (totalStock > 0) {
+                                    return (
+                                        <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-md">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm font-medium text-gray-700">전체 재고</span>
+                                                <span className={`text-sm font-bold ${
+                                                    totalStock <= 5 ? 'text-red-600' : 'text-gray-900'
+                                                }`}>
+                                                    {totalStock}개
+                                                </span>
+                                            </div>
+                                            {totalStock <= 5 && (
+                                                <p className="text-xs text-red-600 mt-1">품절 임박! 서둘러 주문해주세요.</p>
+                                            )}
+                                        </div>
+                                    );
+                                }
+                                return null;
+                            })()}
 
                             <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium text-gray-900">수량</span>
@@ -552,7 +751,8 @@ const ProductDetail: React.FC = () => {
                         {activeTab === 'details' && (
                             <div
                                 className="prose prose-lg max-w-none text-gray-600 leading-relaxed"
-                                dangerouslySetInnerHTML={{ __html: product.description }}
+                                style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+                                dangerouslySetInnerHTML={{ __html: normalizeDescriptionSpacing(product.description) }}
                             />
                         )}
                         {activeTab === 'reviews' && (
@@ -616,31 +816,90 @@ const ProductDetail: React.FC = () => {
                         >
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
-                        <h3 className="text-2xl font-serif mb-6 text-center">Size Guide</h3>
-                        <div className="space-y-6">
-                            <div>
-                                <h4 className="font-bold mb-2 border-b pb-1">Ring Size (KR)</h4>
-                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div className="flex justify-between"><span>6호</span><span>49mm</span></div>
-                                    <div className="flex justify-between"><span>7호</span><span>50mm</span></div>
-                                    <div className="flex justify-between"><span>8호</span><span>51mm</span></div>
-                                    <div className="flex justify-between"><span>9호</span><span>52mm</span></div>
-                                    <div className="flex justify-between"><span>10호</span><span>53mm</span></div>
-                                    <div className="flex justify-between"><span>11호</span><span>54mm</span></div>
-                                    <div className="flex justify-between"><span>12호</span><span>55mm</span></div>
-                                    <div className="flex justify-between"><span>13호</span><span>56mm</span></div>
+                        <h3 className="text-2xl font-serif mb-6 text-center">사이즈 가이드</h3>
+                        <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+                            {/* Ring Guide */}
+                            {(product.category === 'ring') && (
+                                <div>
+                                    <h4 className="font-bold mb-3 border-b pb-2">Ring Size (KR)</h4>
+                                    <div className="grid grid-cols-3 gap-2 text-sm text-center">
+                                        <div className="bg-gray-50 p-2 rounded">6호 (49mm)</div>
+                                        <div className="bg-gray-50 p-2 rounded">7호 (50mm)</div>
+                                        <div className="bg-gray-50 p-2 rounded">8호 (51mm)</div>
+                                        <div className="bg-gray-50 p-2 rounded">9호 (52mm)</div>
+                                        <div className="bg-gray-50 p-2 rounded">10호 (53mm)</div>
+                                        <div className="bg-gray-50 p-2 rounded">11호 (54mm)</div>
+                                        <div className="bg-gray-50 p-2 rounded">12호 (55mm)</div>
+                                        <div className="bg-gray-50 p-2 rounded">13호 (56mm)</div>
+                                        <div className="bg-gray-50 p-2 rounded">14호 (57mm)</div>
+                                        <div className="bg-gray-50 p-2 rounded">15호 (58mm)</div>
+                                        <div className="bg-gray-50 p-2 rounded">16호 (59mm)</div>
+                                        <div className="bg-gray-50 p-2 rounded">17호 (60mm)</div>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-2">
+                                        * 종이를 띠로 잘라 손가락 둘레를 측정한 후 mm 단위를 확인하세요.
+                                    </p>
                                 </div>
-                            </div>
-                            <div>
-                                <h4 className="font-bold mb-2 border-b pb-1">Necklace Length</h4>
-                                <ul className="text-sm space-y-1">
-                                    <li>• 40cm: 쇄골 라인 (Choker)</li>
-                                    <li>• 42cm: 기본 길이 (Princess)</li>
-                                    <li>• 45cm: 여유로운 길이 (Matinee)</li>
-                                    <li>• 50cm: 가슴 윗선 (Opera)</li>
-                                </ul>
-                            </div>
-                            <p className="text-xs text-gray-500 mt-4">* 측정 방법에 따라 1-2mm 오차가 있을 수 있습니다.</p>
+                            )}
+
+                            {/* Necklace Guide */}
+                            {(product.category === 'necklace') && (
+                                <div>
+                                    <h4 className="font-bold mb-3 border-b pb-2">Necklace Length Guide</h4>
+                                    <div className="space-y-3 text-sm">
+                                        <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                                            <span className="font-medium">Choker (35-40cm)</span>
+                                            <span className="text-gray-500">목에 딱 맞는 길이</span>
+                                        </div>
+                                        <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                                            <span className="font-medium">Princess (42-45cm)</span>
+                                            <span className="text-gray-500">쇄골 라인에 걸치는 기본 길이</span>
+                                        </div>
+                                        <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                                            <span className="font-medium">Matinee (50-55cm)</span>
+                                            <span className="text-gray-500">가슴 윗부분까지 오는 길이</span>
+                                        </div>
+                                        <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                                            <span className="font-medium">Opera (60cm~)</span>
+                                            <span className="text-gray-500">가슴 중앙까지 오는 긴 길이</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Bracelet Guide */}
+                            {(product.category === 'bracelet') && (
+                                <div>
+                                    <h4 className="font-bold mb-3 border-b pb-2">Bracelet Size Guide</h4>
+                                    <ul className="text-sm space-y-2 text-gray-600">
+                                        <li><strong>S (15-16cm)</strong>: 손목이 얇은 체형</li>
+                                        <li><strong>M (17-18cm)</strong>: 보통 체형 (가장 대중적)</li>
+                                        <li><strong>L (19-20cm)</strong>: 여유 있는 착용감</li>
+                                    </ul>
+                                    <div className="mt-4 bg-gray-50 p-3 rounded text-xs text-gray-500">
+                                        TIP: 손목 가장 튀어나온 뼈 부분의 둘레를 측정한 후 +1.5cm~2cm를 더한 사이즈를 추천드립니다.
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Earring/Common Guide */}
+                            {(product.category !== 'ring' && product.category !== 'necklace' && product.category !== 'bracelet') && (
+                                <div>
+                                    <h4 className="font-bold mb-3 border-b pb-2">General Size Info</h4>
+                                    <p className="text-sm text-gray-600 mb-4">
+                                        대부분의 제품은 Free Size로 제작되거나 상세 페이지에 별도 표기된 사이즈를 따릅니다.
+                                    </p>
+                                    <ul className="text-sm text-gray-600 space-y-2">
+                                        <li>• 제품의 소재 특성에 따라 미세한 오차가 있을 수 있습니다.</li>
+                                        <li>• 알러지 방지 처리가 되어 있으나, 개인차에 따라 반응이 다를 수 있습니다.</li>
+                                    </ul>
+                                </div>
+                            )}
+
+                            <p className="text-xs text-gray-400 mt-6 pt-4 border-t">
+                                * 측정 방법에 따라 1-3mm 정도의 오차가 발생할 수 있습니다.<br />
+                                * 정확한 사이즈 측정 후 구매를 권장드립니다.
+                            </p>
                         </div>
                     </div>
                 </div>

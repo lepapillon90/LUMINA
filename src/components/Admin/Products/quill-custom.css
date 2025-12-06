@@ -1,0 +1,45 @@
+/* Custom styles for React Quill */
+.quill {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.ql-toolbar.ql-snow {
+    border-color: #e5e7eb;
+    border-radius: 0.125rem 0.125rem 0 0;
+    background-color: #f9fafb;
+}
+
+.ql-container.ql-snow {
+    flex: 1;
+    border-color: #e5e7eb;
+    border-radius: 0 0 0.125rem 0.125rem;
+    font-family: inherit;
+    font-size: 0.875rem;
+    overflow-y: auto;
+}
+
+.ql-editor {
+    min-height: 200px;
+    font-family: inherit;
+    line-height: 1.625;
+    color: #374151;
+}
+
+.ql-editor p {
+    margin-bottom: 1rem;
+}
+
+.ql-editor img {
+    max-width: 100%;
+    border-radius: 0.5rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Placeholder color */
+.ql-editor.ql-blank::before {
+    color: #9ca3af;
+    font-style: normal;
+}

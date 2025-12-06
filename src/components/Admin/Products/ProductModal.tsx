@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ImageIcon, Plus, FileText, Loader2, X } from 'lucide-react';
+import { ImageIcon, Plus, FileText, Loader2 } from 'lucide-react';
 import { Product } from '../../../types';
 import { uploadImage, deleteImage } from '../../../services/storageService';
 import { compressImage } from '../../../utils/imageOptimizer';
@@ -146,8 +146,33 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
         }
     };
 
+    // [MY_LOG] 띄어쓰기 처리 함수
+    const normalizeSpacing = (text: string): string => {
+        if (!text) return text;
+
+        // 연속된 공백을 하나로 통합 (단, 줄바꿈은 유지)
+        let normalized = text.replace(/[ \t]+/g, ' ');
+
+        // 줄바꿈 전후 공백 제거
+        normalized = normalized.replace(/[ \t]*\n[ \t]*/g, '\n');
+
+        // 문장 시작/끝 공백 제거 (단, 줄바꿈은 유지)
+        normalized = normalized.replace(/^[ \t]+/gm, '');
+        normalized = normalized.replace(/[ \t]+$/gm, '');
+
+        // 연속된 줄바꿈을 최대 2개로 제한
+        normalized = normalized.replace(/\n{3,}/g, '\n\n');
+
+        return normalized;
+    };
+
     const updateBlock = (id: string, content: string) => {
-        setDescriptionBlocks(prev => prev.map(b => b.id === id ? { ...b, content } : b));
+        // [MY_LOG] 텍스트 블록인 경우 띄어쓰기 처리
+        const processedContent = descriptionBlocks.find(b => b.id === id)?.type === 'text'
+            ? normalizeSpacing(content)
+            : content;
+
+        setDescriptionBlocks(prev => prev.map(b => b.id === id ? { ...b, content: processedContent } : b));
     };
 
     const removeBlock = (id: string) => {
@@ -219,17 +244,11 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
 
             // 필수 필드 검증
             const productName = formData.get('name') as string;
-            const productPrice = formData.get('price') as string;
+            // const productPrice = formData.get('price') as string;
             const productCategory = selectedCategory;
 
             if (!productName || !productName.trim()) {
                 await showAlert('상품명을 입력해주세요.', '오류');
-                setUploading(false);
-                return;
-            }
-
-            if (!productPrice || isNaN(parseInt(productPrice))) {
-                await showAlert('올바른 가격을 입력해주세요.', '오류');
                 setUploading(false);
                 return;
             }
@@ -249,7 +268,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
             const newProduct: Product = {
                 id: product ? product.id : Date.now(),
                 name: productName.trim(),
-                price: parseInt(productPrice) || 0,
+                price: product ? product.price : 0,
                 image: mainImageUrl,
                 images: finalAdditionalImages,
                 category: productCategory,
@@ -415,26 +434,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                                 />
                             </div>
 
-                            {/* Price */}
-                            <div>
-                                <label className="block text-xs font-bold text-gray-400 mb-1">판매가 (KRW)</label>
-                                <div className="flex items-center">
-                                    <span className="text-xl font-medium text-gray-900 mr-1">₩</span>
-                                    <input
-                                        name="price"
-                                        type="number"
-                                        min="0"
-                                        defaultValue={product?.price}
-                                        required
-                                        className="w-full text-xl font-medium text-gray-900 border-b border-gray-200 focus:border-black outline-none py-1"
-                                        placeholder="0"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Inventory Section Removed as requested */}
-
-                            {/* Description (Block Editor) */}
+                            {/* Description (Block Editor - RESTORED) */}
                             <div>
                                 <label className="block text-xs font-bold text-gray-400 mb-2">상품 상세 설명 (블로그형 에디터)</label>
                                 <div className="border border-gray-200 rounded-sm p-4 space-y-4 bg-gray-50 min-h-[300px]">

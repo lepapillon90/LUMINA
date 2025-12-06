@@ -72,16 +72,18 @@ const InventoryDetailModal: React.FC<InventoryDetailModalProps> = ({ product, on
     };
 
     const getSizeOptionsByCategory = (category: string): string[] => {
-        switch (category) {
+        const cat = category.toLowerCase();
+        switch (cat) {
             case 'ring':
-                return ['9호', '10호', '11호', '12호', '13호', '14호', '15호', '16호', '17호'];
+                // Generate sizes 1 to 30, plus Free
+                return ['Free', ...Array.from({ length: 30 }, (_, i) => `${i + 1}호`)];
             case 'necklace':
-                return ['40cm', '45cm', '50cm', '55cm'];
+                return ['Free', '35cm', '38cm', '40cm', '42cm', '45cm', '48cm', '50cm', '55cm', '60cm', '70cm'];
             case 'bracelet':
-                return ['16cm', '17cm', '18cm', '19cm', '20cm'];
+                return ['Free', '13cm', '14cm', '15cm', '16cm', '16.5cm', '17cm', '17.5cm', '18cm', '19cm', '20cm', '21cm'];
             case 'earring':
             default:
-                return ['Free'];
+                return ['Free', 'XS', 'S', 'M', 'L', 'XL', 'XXL'];
         }
     };
 

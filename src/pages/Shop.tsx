@@ -95,7 +95,6 @@ const Shop: React.FC = () => {
     // 3. Detailed Filters
     result = result.filter(p => p.price <= maxPrice)
       .filter(p => selectedMaterials.length === 0 || (p.material && selectedMaterials.includes(p.material)))
-      .filter(p => selectedMaterials.length === 0 || (p.material && selectedMaterials.includes(p.material)))
       .filter(p => selectedColors.length === 0 || (p.colors && p.colors.some(c => selectedColors.includes(c))))
       .filter(p => selectedSizes.length === 0 || (p.sizes && p.sizes.some(s => selectedSizes.includes(s))));
 
@@ -312,7 +311,6 @@ const Shop: React.FC = () => {
                     onClick={() => {
                       setCategory('all');
                       setMaxPrice(100000);
-                      setSelectedMaterials([]);
                       setSelectedMaterials([]);
                       setSelectedColors([]);
                       setSelectedSizes([]);

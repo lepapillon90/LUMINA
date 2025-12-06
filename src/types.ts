@@ -54,6 +54,7 @@ export interface Product {
     sizeColorStock?: Array<{ size: string; color: string; quantity: number }>; // 사이즈-색상 조합별 재고
     images?: string[];
     shortDescription?: string;
+    isManualCalculation?: boolean; // 손익 계산기로 작업한 상품 여부
 }
 
 export interface CartItem extends Product {

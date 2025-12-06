@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Home, ShoppingCart, Package, Users, MessageCircle, FileText,
-  LineChart, BarChart2, Grid, Shield, Settings, LogOut, Menu, X, Layout, Warehouse
+  LineChart, BarChart2, Grid, Shield, Settings, LogOut, Menu, X, Layout, Warehouse, Calculator
 } from 'lucide-react';
 import { useAuth } from '../contexts';
 import { Navigate, useNavigate } from 'react-router-dom';
@@ -22,10 +22,11 @@ import AnalyticsManager from '../components/Admin/Analytics/AnalyticsManager';
 import HomepageManager from '../components/Admin/Homepage/HomepageManager';
 import AdminAccountManager from '../components/Admin/Accounts/AdminAccountManager';
 import InventoryManager from '../components/Admin/Inventory/InventoryManager';
+import OperationManager from '../components/Admin/Operations/OperationManager';
 
 // --- Main Admin Component ---
 
-type Tab = 'home' | 'orders' | 'products' | 'customers' | 'analytics' | 'excel' | 'homepage' | 'accounts' | 'inventory';
+type Tab = 'home' | 'orders' | 'products' | 'customers' | 'analytics' | 'excel' | 'homepage' | 'accounts' | 'inventory' | 'operations';
 
 const MENU_ITEMS = [
   { id: 'home', label: '홈', icon: Home, permission: null },
@@ -34,6 +35,7 @@ const MENU_ITEMS = [
   { id: 'orders', label: '주문', icon: ShoppingCart, permission: 'orders' },
   { id: 'products', label: '상품', icon: Package, permission: 'products' },
   { id: 'inventory', label: '재고', icon: Warehouse, permission: 'products' },
+  { id: 'operations', label: '쇼핑몰 운영관리', icon: Calculator, permission: 'products' },
   { id: 'analytics', label: '데이터 분석', icon: LineChart, permission: 'analytics' },
   { id: 'excel', label: '통합엑셀', icon: Grid, permission: null },
   { id: 'accounts', label: '관리자 계정', icon: Shield, permission: 'system' },
@@ -107,9 +109,6 @@ const Admin: React.FC = () => {
       fetchCustomers();
     }
   }, [activeTab]);
-
-
-
 
   // Access Control for Inactive Admins
   if (user && user.role === UserRole.ADMIN && user.isActive === false) {
@@ -231,6 +230,7 @@ const Admin: React.FC = () => {
           {activeTab === 'orders' && <OrderManager orders={orders} setOrders={setOrders} user={user} />}
           {activeTab === 'products' && <ProductManager products={products} setProducts={setProducts} user={user} />}
           {activeTab === 'inventory' && <InventoryManager user={user} />}
+          {activeTab === 'operations' && <OperationManager user={user} />}
           {activeTab === 'customers' && <CustomerManager user={user} customers={customers} setCustomers={setCustomers} />}
           {activeTab === 'homepage' && <HomepageManager user={user} />}
           {activeTab === 'accounts' && <AdminAccountManager user={user} />}

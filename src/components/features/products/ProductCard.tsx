@@ -1,16 +1,17 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Product } from '../../../types';
-import { Heart, ShoppingBag } from 'lucide-react';
+import { Heart, ShoppingBag, Eye } from 'lucide-react';
 import { useAuth, useCart } from '../../../contexts';
 import { useGlobalModal } from '../../../contexts/GlobalModalContext';
 import OptimizedImage from '../../common/OptimizedImage';
 
 interface ProductCardProps {
     product: Product;
+    onQuickView?: (product: Product) => void;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
     const { user, toggleWishlist } = useAuth();
     const { addToCart } = useCart();
     const { showAlert } = useGlobalModal();
@@ -35,6 +36,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         }
         addToCart(product, 1);
         await showAlert("장바구니에 담겼습니다.", "장바구니");
+    };
+
+    const handleQuickView = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (onQuickView) {
+            onQuickView(product);
+        }
     };
 
     return (
@@ -86,6 +95,17 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                         >
                             <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} />
                         </button>
+
+                        {/* Quick View Button */}
+                        {onQuickView && (
+                            <button
+                                onClick={handleQuickView}
+                                className="p-2.5 rounded-full shadow-md transition-all duration-300 bg-white/90 text-gray-600 hover:bg-black hover:text-white"
+                                title="미리보기"
+                            >
+                                <Eye className="w-5 h-5" />
+                            </button>
+                        )}
 
                         {/* Cart Button */}
                         <button
