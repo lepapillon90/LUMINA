@@ -240,14 +240,24 @@ export interface PointHistory {
 }
 
 // Homepage Management Types
+export interface TextStyle {
+    fontSize: string;
+    color: string;
+    fontWeight?: string;
+    letterSpacing?: string;
+}
+
 export interface HomepageHero {
     id: string;
     videoUrl?: string;
     imageUrl?: string;
     posterUrl: string;
     title: string;
+    titleStyle?: TextStyle;
     subtitle: string;
+    subtitleStyle?: TextStyle;
     description: string;
+    descriptionStyle?: TextStyle;
     buttonText: string;
     buttonLink: string;
     isActive: boolean;
@@ -257,10 +267,17 @@ export interface HomepageHero {
     updatedAt?: any;
 }
 
+export interface BadgeStyle extends TextStyle {
+    backgroundColor?: string;
+}
+
 export interface HomepageTimeSale {
     id: string;
     title: string;
+    titleStyle?: TextStyle;
     description: string;
+    descriptionStyle?: TextStyle;
+    badgeStyle?: BadgeStyle;
     discountPercentage: number;
     productIds: number[];
     countdownEndTime: any;

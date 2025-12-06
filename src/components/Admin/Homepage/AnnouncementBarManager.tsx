@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Plus, Trash2, MoveUp, MoveDown, Save } from 'lucide-react';
+import { Bell, Plus, Trash2, MoveUp, MoveDown, Save, Eye } from 'lucide-react';
 import { HomepageAnnouncementBar, User } from '../../../types';
 import { getHomepageAnnouncementBar, saveHomepageAnnouncementBar } from '../../../services/homepageService';
 import { useGlobalModal } from '../../../contexts';
+import PreviewModal from '../Shared/PreviewModal';
+import AnnouncementBar from '../../layout/AnnouncementBar';
 
 interface AnnouncementBarManagerProps {
     user: User | null;
@@ -11,6 +13,7 @@ interface AnnouncementBarManagerProps {
 const AnnouncementBarManager: React.FC<AnnouncementBarManagerProps> = ({ user }) => {
     const { showAlert } = useGlobalModal();
     const [loading, setLoading] = useState(false);
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [announcementBar, setAnnouncementBar] = useState<Partial<HomepageAnnouncementBar>>({
         messages: [],
         backgroundColor: '#000000',
@@ -118,6 +121,15 @@ const AnnouncementBarManager: React.FC<AnnouncementBarManagerProps> = ({ user })
             </div>
         );
     }
+
+    // Construct preview data
+    const previewData = {
+        messages: announcementBar.messages || [],
+        backgroundColor: announcementBar.backgroundColor,
+        textColor: announcementBar.textColor,
+        rotationInterval: announcementBar.rotationInterval,
+        isActive: announcementBar.isActive
+    };
 
     return (
         <div className="space-y-6">
@@ -257,7 +269,15 @@ const AnnouncementBarManager: React.FC<AnnouncementBarManagerProps> = ({ user })
                 </div>
 
                 {/* 저장 버튼 */}
-                <div className="pt-4 border-t border-gray-200">
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                    <button
+                        type="button"
+                        onClick={() => setIsPreviewOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50 transition"
+                    >
+                        <Eye size={16} />
+                        미리보기
+                    </button>
                     <button
                         onClick={handleSave}
                         className="flex items-center gap-2 bg-gray-900 text-white px-6 py-2.5 rounded-md text-sm font-medium hover:bg-gray-800 transition"
@@ -267,9 +287,33 @@ const AnnouncementBarManager: React.FC<AnnouncementBarManagerProps> = ({ user })
                     </button>
                 </div>
             </div>
+
+            <PreviewModal
+                isOpen={isPreviewOpen}
+                onClose={() => setIsPreviewOpen(false)}
+                title="상단 알림 바"
+            >
+                <div className="relative w-full h-full bg-white flex flex-col">
+                    {/* Header Mockup */}
+                    <div className="w-full">
+                        <AnnouncementBar previewData={previewData} />
+                        <div className="border-b border-gray-200 p-4 flex justify-between items-center bg-white">
+                            <div className="font-serif font-bold text-xl">LUMINA</div>
+                            <div className="flex gap-4 text-sm text-gray-600">
+                                <span>Shop</span>
+                                <span>About</span>
+                                <span>Journal</span>
+                            </div>
+                        </div>
+                    </div>
+                    {/* Body Mockup */}
+                    <div className="flex-1 bg-gray-50 p-8 flex items-center justify-center text-gray-400">
+                        본문 영역 예시
+                    </div>
+                </div>
+            </PreviewModal>
         </div>
     );
 };
 
 export default AnnouncementBarManager;
-

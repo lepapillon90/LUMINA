@@ -3,6 +3,10 @@ import { Video, Save, Eye } from 'lucide-react';
 import { HomepageHero, User } from '../../../types';
 import { getHomepageHero, saveHomepageHero } from '../../../services/homepageService';
 import { useGlobalModal } from '../../../contexts';
+import PreviewModal from '../Shared/PreviewModal';
+import HeroSection from '../../features/home/HeroSection';
+import FileUpload from '../Shared/FileUpload';
+import TextStyleControl from '../Shared/TextStyleControl';
 
 interface HeroSectionManagerProps {
     user: User | null;
@@ -12,6 +16,7 @@ const HeroSectionManager: React.FC<HeroSectionManagerProps> = ({ user }) => {
     const { showAlert } = useGlobalModal();
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [hero, setHero] = useState<Partial<HomepageHero>>({
         videoUrl: '',
         imageUrl: '',
@@ -22,6 +27,9 @@ const HeroSectionManager: React.FC<HeroSectionManagerProps> = ({ user }) => {
         buttonText: '컬렉션 보기',
         buttonLink: '/shop',
         isActive: true,
+        titleStyle: { fontSize: '64px', color: '#FFFFFF', fontWeight: '700', letterSpacing: 'normal' },
+        subtitleStyle: { fontSize: '16px', color: '#FFD700', fontWeight: '700', letterSpacing: '0.3em' },
+        descriptionStyle: { fontSize: '18px', color: '#FFFFFF', fontWeight: '300', letterSpacing: 'normal' },
     });
 
     useEffect(() => {
@@ -33,7 +41,12 @@ const HeroSectionManager: React.FC<HeroSectionManagerProps> = ({ user }) => {
         try {
             const currentHero = await getHomepageHero();
             if (currentHero) {
-                setHero(currentHero);
+                setHero({
+                    ...currentHero,
+                    titleStyle: currentHero.titleStyle || { fontSize: '64px', color: '#FFFFFF', fontWeight: '700', letterSpacing: 'normal' },
+                    subtitleStyle: currentHero.subtitleStyle || { fontSize: '16px', color: '#FFD700', fontWeight: '700', letterSpacing: '0.3em' },
+                    descriptionStyle: currentHero.descriptionStyle || { fontSize: '18px', color: '#FFFFFF', fontWeight: '300', letterSpacing: 'normal' },
+                });
             }
         } catch (error) {
             console.error('[MY_LOG] Error loading hero data:', error);
@@ -74,6 +87,22 @@ const HeroSectionManager: React.FC<HeroSectionManagerProps> = ({ user }) => {
         );
     }
 
+    // Construct preview data
+    const previewData = {
+        videoUrl: hero.videoUrl,
+        imageUrl: hero.imageUrl,
+        posterUrl: hero.posterUrl,
+        title: hero.title,
+        titleStyle: hero.titleStyle,
+        subtitle: hero.subtitle,
+        subtitleStyle: hero.subtitleStyle,
+        description: hero.description,
+        descriptionStyle: hero.descriptionStyle,
+        buttonText: hero.buttonText,
+        buttonLink: hero.buttonLink,
+        isActive: hero.isActive
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -89,42 +118,32 @@ const HeroSectionManager: React.FC<HeroSectionManagerProps> = ({ user }) => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Left Column: Form */}
                     <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">비디오 URL</label>
-                            <input
-                                type="url"
-                                value={hero.videoUrl || ''}
-                                onChange={(e) => setHero({ ...hero, videoUrl: e.target.value })}
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                                placeholder="https://videos.pexels.com/video-files/..."
-                            />
-                            <p className="text-xs text-gray-500 mt-1">비디오가 없으면 이미지가 표시됩니다.</p>
-                        </div>
+                        <FileUpload
+                            label="비디오 파일"
+                            value={hero.videoUrl || ''}
+                            onUpload={(url) => setHero({ ...hero, videoUrl: url })}
+                            accept="video/*"
+                            storagePath="homepage/hero"
+                            helperText="비디오가 없으면 이미지가 표시됩니다."
+                        />
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">이미지 URL (Fallback)</label>
-                            <input
-                                type="url"
-                                value={hero.imageUrl || ''}
-                                onChange={(e) => setHero({ ...hero, imageUrl: e.target.value })}
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                                placeholder="/hero_poster.png"
-                            />
-                        </div>
+                        <FileUpload
+                            label="이미지 파일 (Fallback)"
+                            value={hero.imageUrl || ''}
+                            onUpload={(url) => setHero({ ...hero, imageUrl: url })}
+                            accept="image/*"
+                            storagePath="homepage/hero"
+                        />
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">포스터 이미지 URL</label>
-                            <input
-                                type="url"
-                                value={hero.posterUrl || ''}
-                                onChange={(e) => setHero({ ...hero, posterUrl: e.target.value })}
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                                placeholder="/hero_poster.png"
-                                required
-                            />
-                        </div>
+                        <FileUpload
+                            label="포스터 이미지"
+                            value={hero.posterUrl || ''}
+                            onUpload={(url) => setHero({ ...hero, posterUrl: url })}
+                            accept="image/*"
+                            storagePath="homepage/hero"
+                        />
 
-                        <div>
+                        <div className="space-y-2">
                             <label className="block text-sm font-medium text-gray-700 mb-1">제목 (영문)</label>
                             <input
                                 type="text"
@@ -134,9 +153,14 @@ const HeroSectionManager: React.FC<HeroSectionManagerProps> = ({ user }) => {
                                 placeholder="LUMINA"
                                 required
                             />
+                            <TextStyleControl
+                                label="제목 스타일"
+                                value={hero.titleStyle}
+                                onChange={(style) => setHero({ ...hero, titleStyle: style })}
+                            />
                         </div>
 
-                        <div>
+                        <div className="space-y-2">
                             <label className="block text-sm font-medium text-gray-700 mb-1">부제목</label>
                             <input
                                 type="text"
@@ -145,9 +169,14 @@ const HeroSectionManager: React.FC<HeroSectionManagerProps> = ({ user }) => {
                                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                                 placeholder="Timeless Elegance"
                             />
+                            <TextStyleControl
+                                label="부제목 스타일"
+                                value={hero.subtitleStyle}
+                                onChange={(style) => setHero({ ...hero, subtitleStyle: style })}
+                            />
                         </div>
 
-                        <div>
+                        <div className="space-y-2">
                             <label className="block text-sm font-medium text-gray-700 mb-1">설명</label>
                             <textarea
                                 value={hero.description || ''}
@@ -155,6 +184,11 @@ const HeroSectionManager: React.FC<HeroSectionManagerProps> = ({ user }) => {
                                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                                 rows={3}
                                 placeholder="내면의 빛을 발견하세요..."
+                            />
+                            <TextStyleControl
+                                label="설명 스타일"
+                                value={hero.descriptionStyle}
+                                onChange={(style) => setHero({ ...hero, descriptionStyle: style })}
                             />
                         </div>
 
@@ -197,11 +231,22 @@ const HeroSectionManager: React.FC<HeroSectionManagerProps> = ({ user }) => {
                     {/* Right Column: Preview */}
                     <div className="space-y-4">
                         <div className="bg-gray-50 rounded-lg p-4">
-                            <div className="flex items-center gap-2 mb-4">
-                                <Eye size={16} className="text-gray-600" />
-                                <h3 className="font-medium text-gray-800">미리보기</h3>
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <Eye size={16} className="text-gray-600" />
+                                    <h3 className="font-medium text-gray-800">미리보기</h3>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsPreviewOpen(true)}
+                                    className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue700 transition"
+                                >
+                                    전체 화면 미리보기
+                                </button>
                             </div>
-                            <div className="relative aspect-video bg-gray-200 rounded-lg overflow-hidden mb-4">
+
+                            {/* Small Preview */}
+                            <div className="relative aspect-video bg-gray-200 rounded-lg overflow-hidden mb-4 group cursor-pointer" onClick={() => setIsPreviewOpen(true)}>
                                 {hero.videoUrl ? (
                                     <video
                                         src={hero.videoUrl}
@@ -224,23 +269,10 @@ const HeroSectionManager: React.FC<HeroSectionManagerProps> = ({ user }) => {
                                         이미지 또는 비디오를 추가하세요
                                     </div>
                                 )}
-                                <div className="absolute inset-0 bg-black/30"></div>
-                            </div>
-                            <div className="text-center text-white bg-black/80 p-4 rounded-lg">
-                                <p className="text-xs mb-2 text-[#FFD700] font-bold">
-                                    {hero.subtitle || 'Timeless Elegance'}
-                                </p>
-                                <h1 className="text-2xl font-serif font-bold mb-2">
-                                    {hero.title || 'LUMINA'}
-                                </h1>
-                                <p className="text-sm opacity-95 mb-4">
-                                    {hero.description || '내면의 빛을 발견하세요...'}
-                                </p>
-                                {hero.buttonText && (
-                                    <button className="px-6 py-2 border border-white text-white text-xs hover:bg-white hover:text-black transition">
-                                        {hero.buttonText}
-                                    </button>
-                                )}
+                                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition"></div>
+                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                                    <Eye className="text-white w-8 h-8" />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -264,9 +296,16 @@ const HeroSectionManager: React.FC<HeroSectionManagerProps> = ({ user }) => {
                     </button>
                 </div>
             </form>
+
+            <PreviewModal
+                isOpen={isPreviewOpen}
+                onClose={() => setIsPreviewOpen(false)}
+                title="Hero 섹션"
+            >
+                <HeroSection previewData={previewData} />
+            </PreviewModal>
         </div>
     );
 };
 
 export default HeroSectionManager;
-

@@ -15,6 +15,7 @@ import SEO from '../components/common/SEO';
 import OptimizedImage from '../components/common/OptimizedImage';
 
 import TrendingOOTDSection from '../components/features/home/TrendingOOTDSection';
+import HeroSection from '../components/features/home/HeroSection';
 
 const Home: React.FC = () => {
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);
@@ -51,54 +52,7 @@ const Home: React.FC = () => {
     <div className="bg-white">
       <SEO />
       {/* Hero Section */}
-      <section className="relative h-[100dvh] w-full flex items-center justify-center overflow-hidden">
-        {/* Background Video */}
-        <div className="absolute inset-0 z-0">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            poster="/hero_poster.png"
-            className="w-full h-full object-cover"
-          >
-            <source src="https://videos.pexels.com/video-files/5359634/5359634-uhd_2560_1440_25fps.mp4" type="video/mp4" />
-            {/* Fallback Image */}
-            <OptimizedImage
-              src="/hero_poster.png"
-              alt="Hero Background"
-              className="w-full h-full object-cover"
-              loading="eager"
-              // @ts-ignore
-              fetchPriority="high"
-            />
-          </video>
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-black/30"></div>
-        </div>
-
-        {/* Content */}
-        <div className="relative z-10 text-center text-white px-4 pt-20">
-          <p className="text-sm md:text-base tracking-[0.3em] mb-4 uppercase text-[#FFD700] font-bold drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] animate-fade-in-up">
-            Timeless Elegance
-          </p>
-          <h1
-            className="text-4xl md:text-[64px] font-serif font-bold mb-6 drop-shadow-md animate-fade-in-up delay-100"
-            style={{ fontFamily: "'Cinzel', serif" }}
-          >
-            LUMINA
-          </h1>
-          <p className="text-lg font-light mb-8 max-w-lg mx-auto opacity-95 text-shadow animate-fade-in-up delay-200">
-            내면의 빛을 발견하세요. 당신을 위해 수작업으로 완성된 모던 악세서리.
-          </p>
-          <Link
-            to="/shop"
-            className="inline-block px-10 py-4 border border-white text-white hover:bg-white hover:text-black transition duration-300 uppercase tracking-widest text-sm backdrop-blur-sm animate-fade-in-up delay-300"
-          >
-            컬렉션 보기
-          </Link>
-        </div>
-      </section>
+      <HeroSection />
 
       {/* Time Sale */}
       <TimeSale />

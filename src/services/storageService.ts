@@ -140,3 +140,47 @@ export const deleteImage = async (imageUrl: string): Promise<void> => {
         throw error;
     }
 };
+
+/**
+ * Uploads a generic file (video, etc.) to Firebase Storage
+ * @param file The file to upload
+ * @param path The path in storage
+ * @returns Promise resolving to the download URL
+ */
+export const uploadFile = async (file: File, path: string = 'uploads'): Promise<string> => {
+    try {
+        const timestamp = Date.now();
+        const randomString = Math.random().toString(36).substring(2, 8);
+        const extension = file.name.split('.').pop()?.toLowerCase() || 'bin';
+        const filename = `${timestamp}_${randomString}.${extension}`;
+
+        const storageRef = ref(storage, `${path}/${filename}`);
+
+        const snapshot = await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+
+        return downloadURL;
+    } catch (error) {
+        console.error("Error uploading file:", error);
+        throw error;
+    }
+};
+
+/**
+ * Extracts the storage path from a Firebase Storage download URL
+ * @param url The download URL
+ * @returns The decoded storage path (e.g., 'products/image.jpg') or the original URL if extraction fails
+ */
+export const getStoragePathFromUrl = (url: string): string => {
+    try {
+        if (!url.includes('firebasestorage.googleapis.com')) return url;
+        const urlObj = new URL(url);
+        const pathMatch = urlObj.pathname.match(/\/o\/(.+?)(\?|$)/);
+        if (pathMatch && pathMatch[1]) {
+            return decodeURIComponent(pathMatch[1]);
+        }
+        return url;
+    } catch (error) {
+        return url;
+    }
+};

@@ -2,7 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { getHomepageAnnouncementBar } from '../../services/homepageService';
 
-const AnnouncementBar: React.FC = () => {
+import { HomepageAnnouncementBar } from '../../types';
+
+interface AnnouncementBarProps {
+    previewData?: Partial<HomepageAnnouncementBar>;
+}
+
+const AnnouncementBar: React.FC<AnnouncementBarProps> = ({ previewData }) => {
     const [isVisible, setIsVisible] = useState(true);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [announcements, setAnnouncements] = useState<string[]>([]);
@@ -12,8 +18,20 @@ const AnnouncementBar: React.FC = () => {
     const [isActive, setIsActive] = useState(true);
 
     useEffect(() => {
-        loadAnnouncementBar();
-    }, []);
+        if (previewData) {
+            if (previewData.isActive !== false && previewData.messages && previewData.messages.length > 0) {
+                setAnnouncements(previewData.messages.filter(msg => msg.trim().length > 0));
+                setBackgroundColor(previewData.backgroundColor || '#000000');
+                setTextColor(previewData.textColor || '#ffffff');
+                setRotationInterval(previewData.rotationInterval || 4000);
+                setIsActive(previewData.isActive ?? true);
+            } else {
+                setIsActive(false);
+            }
+        } else {
+            loadAnnouncementBar();
+        }
+    }, [previewData]);
 
     const loadAnnouncementBar = async () => {
         try {
@@ -59,18 +77,18 @@ const AnnouncementBar: React.FC = () => {
 
     useEffect(() => {
         if (announcements.length === 0 || !isActive) return;
-        
+
         const interval = setInterval(() => {
             setCurrentIndex((prev) => (prev + 1) % announcements.length);
         }, rotationInterval);
-        
+
         return () => clearInterval(interval);
     }, [announcements.length, rotationInterval, isActive]);
 
     if (!isVisible || !isActive || announcements.length === 0) return null;
 
     return (
-        <div 
+        <div
             className="text-xs md:text-sm py-2 px-4 relative z-[60]"
             style={{ backgroundColor, color: textColor }}
         >
