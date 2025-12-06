@@ -71,17 +71,17 @@ const TimeSale: React.FC = () => {
 
                     {/* Product Preview */}
                     <div className="flex-1 w-full max-w-lg">
-                        <div className="bg-white/10 backdrop-blur-sm p-6 rounded-xl border border-white/10 flex items-center gap-6">
-                            <div className="w-32 h-32 bg-gray-800 rounded-lg overflow-hidden flex-shrink-0">
+                        <div className="bg-white/10 backdrop-blur-sm p-4 md:p-6 rounded-xl border border-white/10 flex items-center gap-4 md:gap-6">
+                            <div className="w-24 h-24 md:w-32 md:h-32 bg-gray-800 rounded-lg overflow-hidden flex-shrink-0">
                                 <img src="https://images.unsplash.com/photo-1602173574767-37ac01994b2a?auto=format&fit=crop&q=80&w=300" alt="Sale Item" className="w-full h-full object-cover" />
                             </div>
-                            <div>
-                                <h3 className="text-xl font-medium mb-2">Midnight Collection Set</h3>
-                                <div className="flex items-center gap-3 mb-4">
-                                    <span className="text-gray-400 line-through">₩250,000</span>
-                                    <span className="text-2xl font-bold text-white">₩175,000</span>
+                            <div className="min-w-0 flex-1">
+                                <h3 className="text-lg md:text-xl font-medium mb-2 truncate">Midnight Collection Set</h3>
+                                <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-4">
+                                    <span className="text-sm md:text-base text-gray-400 line-through">₩250,000</span>
+                                    <span className="text-xl md:text-2xl font-bold text-white">₩175,000</span>
                                 </div>
-                                <Link to="/shop" className="inline-block bg-white text-black px-6 py-2 rounded font-medium text-sm hover:bg-gray-200 transition">
+                                <Link to="/shop" className="inline-block bg-white text-black px-4 py-2 md:px-6 md:py-2 rounded font-medium text-xs md:text-sm hover:bg-gray-200 transition">
                                     Shop Now
                                 </Link>
                             </div>

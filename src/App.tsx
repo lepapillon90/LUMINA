@@ -53,7 +53,7 @@ const Layout: React.FC = () => {
   const isAdmin = location.pathname.startsWith('/admin');
 
   return (
-    <div className="flex flex-col min-h-screen text-primary">
+    <div className="flex flex-col min-h-screen text-primary overflow-x-hidden">
       <ScrollToTop />
       {!isAdmin && <Navbar />}
       <main className="flex-grow">
