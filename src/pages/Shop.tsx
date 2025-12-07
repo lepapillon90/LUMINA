@@ -6,11 +6,13 @@ import SEO from '../components/common/SEO';
 import Loading from '../components/common/Loading';
 import Fuse from 'fuse.js';
 import SearchBar from '../components/common/SearchBar';
-import QuickViewModal from '../components/features/products/QuickViewModal';
 import { useLocation } from 'react-router-dom';
 import { Filter } from 'lucide-react';
 import { getCache, CACHE_KEYS } from '../utils/cache';
 import { FadeInUp, StaggerFadeIn } from '../components/common/AnimatedElements';
+
+import { getHomepageTimeSale } from '../services/homepageService';
+import { HomepageTimeSale } from '../types';
 
 const Shop: React.FC = () => {
   const [category, setCategory] = useState<'all' | 'earring' | 'necklace' | 'ring' | 'bracelet'>('all');
@@ -24,6 +26,8 @@ const Shop: React.FC = () => {
     const cached = getCache<Product[]>(CACHE_KEYS.PRODUCTS);
     return !cached || cached.length === 0;
   });
+  const [timeSaleData, setTimeSaleData] = useState<HomepageTimeSale | null>(null);
+
   const location = useLocation();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
@@ -38,8 +42,6 @@ const Shop: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'newest' | 'popularity' | 'priceLow' | 'priceHigh' | 'reviews'>('newest');
 
-  // Quick View
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     if (location.state?.category) {
@@ -48,19 +50,22 @@ const Shop: React.FC = () => {
   }, [location.state]);
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       try {
-        // getProducts now has built-in caching
-        const data = await getProducts();
-        setProducts(data);
+        const [productsData, timeSale] = await Promise.all([
+          getProducts(),
+          getHomepageTimeSale()
+        ]);
+        setProducts(productsData);
+        setTimeSaleData(timeSale);
       } catch (error) {
-        console.error("Failed to fetch products:", error);
+        console.error("Failed to fetch data:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProducts();
+    fetchData();
   }, []);
 
   const fuse = useMemo(() => new Fuse(products, {
@@ -297,7 +302,7 @@ const Shop: React.FC = () => {
                 <div key={product.id} className="product-card">
                   <ProductCard
                     product={product}
-                    onQuickView={setSelectedProduct}
+                    timeSale={timeSaleData}
                   />
                 </div>
               ))}
@@ -327,13 +332,6 @@ const Shop: React.FC = () => {
         </div>
       </div>
 
-      {/* Quick View Modal */}
-      {selectedProduct && (
-        <QuickViewModal
-          product={selectedProduct}
-          onClose={() => setSelectedProduct(null)}
-        />
-      )}
     </div>
   );
 };

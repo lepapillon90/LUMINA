@@ -103,10 +103,18 @@ const fetchTimeSaleFromFirebase = async (): Promise<HomepageTimeSale | null> => 
         if (docSnap.exists()) {
             const data = { id: docSnap.id, ...docSnap.data() } as HomepageTimeSale;
 
+            // Convert Firestore Timestamp to Date for countdownEndTime
+            if (data.countdownEndTime && (data.countdownEndTime as any).toDate) {
+                data.countdownEndTime = (data.countdownEndTime as any).toDate();
+            } else if (data.countdownEndTime && (data.countdownEndTime as any).seconds) {
+                // Firestore Timestamp의 seconds 속성이 있는 경우
+                data.countdownEndTime = new Date((data.countdownEndTime as any).seconds * 1000);
+            }
+
             // 종료일이 지난 경우 자동 비활성화
             if (data.isActive && data.endDate) {
                 const endDate = new Date(data.endDate);
-                endDate.setHours(23, 59, 59, 999); // 종료일 자정까지 유효
+                endDate.setHours(0, 0, 0, 0); // 종료일 00:00에 종료
                 const now = new Date();
 
                 if (now > endDate) {

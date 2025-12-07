@@ -1,17 +1,17 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Product } from '../../../types';
-import { Heart, ShoppingBag, Eye } from 'lucide-react';
+import { Product, HomepageTimeSale } from '../../../types';
+import { Heart, ShoppingBag, Clock } from 'lucide-react';
 import { useAuth, useCart } from '../../../contexts';
 import { useGlobalModal } from '../../../contexts/GlobalModalContext';
 import OptimizedImage from '../../common/OptimizedImage';
 
 interface ProductCardProps {
     product: Product;
-    onQuickView?: (product: Product) => void;
+    timeSale?: HomepageTimeSale | null;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product, timeSale }) => {
     const { user, toggleWishlist } = useAuth();
     const { addToCart } = useCart();
     const { showAlert } = useGlobalModal();
@@ -38,13 +38,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
         await showAlert("장바구니에 담겼습니다.", "장바구니");
     };
 
-    const handleQuickView = (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (onQuickView) {
-            onQuickView(product);
-        }
-    };
 
     return (
         <div className="group relative">
@@ -64,6 +57,19 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
                         {product.isNew && (
                             <div className="bg-black text-white text-[10px] font-bold px-2 py-1">
                                 NEW
+                            </div>
+                        )}
+                        {/* Time Sale Badge */}
+                        {timeSale && timeSale.isActive && timeSale.productIds?.some(id => String(id) === String(product.id)) && (
+                            <div
+                                className="text-white text-[10px] font-bold px-2 py-1 flex items-center gap-1 animate-pulse"
+                                style={{
+                                    backgroundColor: timeSale.badgeStyle?.backgroundColor || '#DC2626',
+                                    color: timeSale.badgeStyle?.color || '#FFFFFF'
+                                }}
+                            >
+                                <Clock size={10} />
+                                TIME SALE
                             </div>
                         )}
                         {product.stock !== undefined && product.stock > 0 && product.stock <= 5 && (
@@ -96,21 +102,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
                             <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} />
                         </button>
 
-                        {/* Quick View Button */}
-                        {onQuickView && (
-                            <button
-                                onClick={handleQuickView}
-                                className="p-2.5 rounded-full shadow-md transition-all duration-300 bg-white/90 text-gray-600 hover:bg-black hover:text-white"
-                                title="미리보기"
-                            >
-                                <Eye className="w-5 h-5" />
-                            </button>
-                        )}
-
                         {/* Cart Button */}
                         <button
                             onClick={handleAddToCart}
-                            className="p-2.5 rounded-full shadow-md transition-all duration-300 bg-white/90 text-gray-600 hover:bg-black hover:text-white"
+                            className="p-2.5 rounded-full shadow-sm transition-all duration-300 bg-white/90 text-gray-600 hover:bg-black hover:text-white"
                             title="장바구니 담기"
                         >
                             <ShoppingBag className="w-5 h-5" />
@@ -123,9 +118,22 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
                     <h3 className="text-sm text-gray-900 font-medium group-hover:text-gray-600 transition truncate px-2">
                         {product.name}
                     </h3>
-                    <p className="mt-1 text-sm font-serif text-gray-900">
-                        ₩{product.price.toLocaleString()}
-                    </p>
+
+                    {/* Price Display */}
+                    {timeSale && timeSale.isActive && timeSale.productIds?.some(id => String(id) === String(product.id)) ? (
+                        <div className="mt-1 flex items-center justify-center gap-2">
+                            <span className="text-sm font-serif text-gray-400 line-through">
+                                ₩{product.price.toLocaleString()}
+                            </span>
+                            <span className="text-sm font-serif text-red-600 font-bold">
+                                ₩{Math.floor(product.price * (1 - timeSale.discountPercentage / 100)).toLocaleString()}
+                            </span>
+                        </div>
+                    ) : (
+                        <p className="mt-1 text-sm font-serif text-gray-900">
+                            ₩{product.price.toLocaleString()}
+                        </p>
+                    )}
                 </div>
             </Link>
         </div>

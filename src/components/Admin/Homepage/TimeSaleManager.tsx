@@ -26,14 +26,14 @@ const TimeSaleManager: React.FC<TimeSaleManagerProps> = ({ user }) => {
     const [filterNewOnly, setFilterNewOnly] = useState(false);
 
     const [timeSale, setTimeSale] = useState<Partial<HomepageTimeSale>>({
-        title: 'Flash Sale: 24 Hours Only',
-        description: '오늘 자정까지만 진행되는 특별한 혜택. 엄선된 베스트셀러 아이템을 최대 30% 할인된 가격으로 만나보세요.',
-        discountPercentage: 30,
+        title: '',
+        description: '',
+        discountPercentage: 0,
         productIds: [],
         countdownEndTime: null,
         backgroundColor: '#000000',
         textColor: '#FFFFFF',
-        isActive: true,
+        isActive: false,
         startDate: new Date().toISOString().split('T')[0],
         endDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         titleStyle: { fontSize: '2.25rem', color: '#FFFFFF', fontWeight: '700', letterSpacing: 'normal' },
@@ -103,12 +103,12 @@ const TimeSaleManager: React.FC<TimeSaleManagerProps> = ({ user }) => {
 
         setSaving(true);
         try {
-            // Set countdown end time to end of endDate
+            // Set countdown end time to start of endDate (00:00:00)
             const endDate = new Date(timeSale.endDate);
-            endDate.setHours(23, 59, 59, 999);
+            endDate.setHours(0, 0, 0, 0);
 
             const timeSaleData: Omit<HomepageTimeSale, 'id'> = {
-                title: timeSale.title || 'Flash Sale: 24 Hours Only',
+                title: timeSale.title || '',
                 titleStyle: timeSale.titleStyle,
                 description: timeSale.description || '',
                 descriptionStyle: timeSale.descriptionStyle,
@@ -141,36 +141,22 @@ const TimeSaleManager: React.FC<TimeSaleManagerProps> = ({ user }) => {
     const toggleProduct = (productId: number | string) => {
         const id = Number(productId);
         const currentIds = timeSale.productIds || [];
+
+        // [MY_LOG] 타임세일은 상품 하나만 선택 가능 (기존 선택 해제 후 새 선택)
         if (currentIds.includes(id)) {
             setTimeSale({
                 ...timeSale,
-                productIds: currentIds.filter(pid => pid !== id)
+                productIds: []
             });
         } else {
             setTimeSale({
                 ...timeSale,
-                productIds: [...currentIds, id]
+                productIds: [id]
             });
         }
     };
 
-    // Select all filtered products
-    const selectAllFiltered = () => {
-        const currentIds = timeSale.productIds || [];
-        const filteredIds = filteredProducts.map(p => Number(p.id));
-        const newIds = new Set([...currentIds, ...filteredIds]);
-        setTimeSale({ ...timeSale, productIds: Array.from(newIds) });
-    };
-
-    // Deselect all filtered products
-    const deselectAllFiltered = () => {
-        const currentIds = timeSale.productIds || [];
-        const filteredIds = new Set(filteredProducts.map(p => Number(p.id)));
-        setTimeSale({
-            ...timeSale,
-            productIds: currentIds.filter(id => !filteredIds.has(id))
-        });
-    };
+    // [MY_LOG] 단일 선택 모드로 변경되어 전체 선택/해제 기능 제거
 
     if (loading) {
         return (
@@ -233,8 +219,7 @@ const TimeSaleManager: React.FC<TimeSaleManagerProps> = ({ user }) => {
                                 value={timeSale.title || ''}
                                 onChange={(e) => setTimeSale({ ...timeSale, title: e.target.value })}
                                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                                placeholder="Flash Sale: 24 Hours Only"
-                                required
+                                placeholder="타임세일 제목을 입력하세요"
                             />
                             <div className="mt-2">
                                 <TextStyleControl
@@ -252,7 +237,7 @@ const TimeSaleManager: React.FC<TimeSaleManagerProps> = ({ user }) => {
                                 onChange={(e) => setTimeSale({ ...timeSale, description: e.target.value })}
                                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                                 rows={3}
-                                placeholder="오늘 자정까지만 진행되는 특별한 혜택..."
+                                placeholder="타임세일 설명을 입력하세요"
                             />
                             <div className="mt-2">
                                 <TextStyleControl
@@ -388,23 +373,7 @@ const TimeSaleManager: React.FC<TimeSaleManagerProps> = ({ user }) => {
                                     </label>
                                 </div>
 
-                                {/* Quick Actions */}
-                                <div className="flex gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={selectAllFiltered}
-                                        className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition"
-                                    >
-                                        필터 결과 전체 선택 ({filteredProducts.length})
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={deselectAllFiltered}
-                                        className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition"
-                                    >
-                                        필터 결과 선택 해제
-                                    </button>
-                                </div>
+                                {/* Quick Actions - Removed for single product restriction */}
                             </div>
 
                             {/* Product List */}
@@ -498,7 +467,7 @@ const TimeSaleManager: React.FC<TimeSaleManagerProps> = ({ user }) => {
                 onClose={() => setIsPreviewOpen(false)}
                 title="타임세일 섹션"
             >
-                <TimeSale previewData={previewData} />
+                <TimeSale previewData={previewData} product={selectedProducts[0]} />
             </PreviewModal>
         </div>
     );

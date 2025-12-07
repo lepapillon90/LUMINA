@@ -10,7 +10,7 @@ import PurchaseNotification from '../components/features/home/PurchaseNotificati
 import MagazineSection from '../components/features/home/MagazineSection';
 import TimeSale from '../components/features/home/TimeSale';
 import InstagramFeed from '../components/features/home/InstagramFeed';
-import { ChevronLeft, ChevronRight, Heart, ShoppingBag } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Heart, ShoppingBag, Clock } from 'lucide-react';
 import SEO from '../components/common/SEO';
 import OptimizedImage from '../components/common/OptimizedImage';
 
@@ -130,10 +130,27 @@ const Home: React.FC = () => {
                           className="w-full h-full object-cover"
                         />
                       </div>
-                      {/* NEW Badge */}
-                      <div className="absolute top-2 left-2 bg-black text-white text-[10px] font-bold px-2 py-1 z-10">
-                        NEW
+                      {/* Badges Container */}
+                      <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
+                        {/* NEW Badge */}
+                        <div className="bg-black text-white text-[10px] font-bold px-2 py-1">
+                          NEW
+                        </div>
+                        {/* Time Sale Badge */}
+                        {timeSaleData && timeSaleData.isActive && timeSaleData.productIds?.some(id => String(id) === String(product.id)) && (
+                          <div
+                            className="text-white text-[10px] font-bold px-2 py-1 flex items-center gap-1 animate-pulse"
+                            style={{
+                              backgroundColor: timeSaleData.badgeStyle?.backgroundColor || '#DC2626',
+                              color: timeSaleData.badgeStyle?.color || '#FFFFFF'
+                            }}
+                          >
+                            <Clock size={10} />
+                            TIME SALE
+                          </div>
+                        )}
                       </div>
+
                       {/* Action Buttons */}
                       <div className="absolute top-2 right-2 flex flex-col gap-2 z-10">
                         {/* Wishlist Button */}
@@ -171,9 +188,21 @@ const Home: React.FC = () => {
                       <h3 className="text-sm text-gray-900 font-medium group-hover:text-gray-600 transition truncate">
                         {product.name}
                       </h3>
-                      <p className="mt-1 text-sm font-serif text-gray-900">
-                        ₩{product.price.toLocaleString()}
-                      </p>
+                      {/* Price Display */}
+                      {timeSaleData && timeSaleData.isActive && timeSaleData.productIds?.some(id => String(id) === String(product.id)) ? (
+                        <div className="mt-1 flex items-center gap-2">
+                          <span className="text-sm font-serif text-gray-400 line-through">
+                            ₩{product.price.toLocaleString()}
+                          </span>
+                          <span className="text-sm font-serif text-red-600 font-bold">
+                            ₩{Math.floor(product.price * (1 - timeSaleData.discountPercentage / 100)).toLocaleString()}
+                          </span>
+                        </div>
+                      ) : (
+                        <p className="mt-1 text-sm font-serif text-gray-900">
+                          ₩{product.price.toLocaleString()}
+                        </p>
+                      )}
                     </div>
                   </Link>
                 </FadeInUp>

@@ -12,9 +12,21 @@ export const getStylistAdvice = async (userMessage: string, context: string): Pr
     console.log("[MY_LOG] Gemini API 호출 시작 - API Key 존재:", !!apiKey);
     
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ 
-      model: 'gemini-1.5-flash-latest',
-      systemInstruction: `당신은 악세서리 브랜드 '루미나(LUMINA)'의 AI 퍼스널 스타일리스트 '루미'입니다.
+    
+    // 사용 가능한 모델 목록을 순서대로 시도
+    // 최신 모델부터 시도 (v1 API 사용)
+    const modelNames = [
+      'gemini-1.5-flash',      // 가장 일반적인 모델
+      'gemini-1.5-pro',        // Pro 버전
+      'gemini-pro',            // 기본 Pro 모델
+      'gemini-2.0-flash-exp',  // 실험적 최신 모델
+      'models/gemini-1.5-flash', // models/ 접두사 포함
+      'models/gemini-1.5-pro',   // models/ 접두사 포함
+    ];
+    
+    const finalModelNames = modelNames;
+    
+    const systemInstruction = `당신은 악세서리 브랜드 '루미나(LUMINA)'의 AI 퍼스널 스타일리스트 '루미'입니다.
         
         [역할]
         - 당신의 말투는 우아하고, 친절하며, 세련된 한국어를 사용합니다 (비즈니스 캐주얼 존댓말).
@@ -26,18 +38,43 @@ export const getStylistAdvice = async (userMessage: string, context: string): Pr
         - 고객이 '금'이나 '골드'를 찾으면 '소재: 14k Gold' 또는 '태그: Gold'가 포함된 상품을 우선 추천하세요.
         - 구체적인 상품 추천 시, 상품명을 정확하게 언급해주세요 (예: "고객님께는 '엘레강스 펄 이어링'이 잘 어울리실 것 같아요.").
 
-        답변은 300자 이내로 읽기 편하게 작성하고, 이모지를 적절히(💎, ✨ 등) 사용하여 감성을 더해주세요.`
-    });
+        답변은 300자 이내로 읽기 편하게 작성하고, 이모지를 적절히(💎, ✨ 등) 사용하여 감성을 더해주세요.`;
 
     const prompt = `Context about the shop products:\n${context}\n\nUser says: ${userMessage}`;
     
-    console.log("[MY_LOG] Gemini API generateContent 호출 중...");
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    // 모델을 순서대로 시도
+    let lastError: any = null;
+    for (const modelName of finalModelNames) {
+      try {
+        // 모델 이름에서 'models/' 접두사 제거 (있는 경우)
+        const cleanModelName = modelName.replace(/^models\//, '');
+        console.log(`[MY_LOG] Gemini API 모델 시도: ${cleanModelName}`);
+        
+        const model = genAI.getGenerativeModel({ 
+          model: cleanModelName,
+          systemInstruction: systemInstruction
+        });
+        
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+        
+        console.log(`[MY_LOG] Gemini API 응답 성공 (모델: ${cleanModelName})`);
+        return text || "스타일링을 생각하는 중이에요. 잠시 후 다시 물어봐주시겠어요?";
+      } catch (modelError: any) {
+        console.warn(`[MY_LOG] 모델 ${modelName} 실패:`, modelError?.message);
+        lastError = modelError;
+        // 404 오류가 아니면 즉시 중단 (권한 문제 등)
+        if (modelError?.status !== 404 && modelError?.status !== 400) {
+          throw modelError;
+        }
+        // 404/400 오류면 다음 모델 시도
+        continue;
+      }
+    }
     
-    console.log("[MY_LOG] Gemini API 응답 성공");
-    return text || "스타일링을 생각하는 중이에요. 잠시 후 다시 물어봐주시겠어요?";
+    // 모든 모델이 실패한 경우
+    throw lastError || new Error('모든 모델 시도 실패');
   } catch (error: any) {
     console.error("[MY_LOG] Gemini Error 상세:", {
       message: error?.message,

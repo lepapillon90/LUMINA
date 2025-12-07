@@ -3,15 +3,69 @@ import { useParams, Link } from 'react-router-dom';
 import { getProductById, getProductsByCategory } from '../services/productService';
 import { Product } from '../types';
 import { useCart, useAuth, useGlobalModal } from '../contexts';
-import { ChevronRight, Star, Truck, ShieldCheck, Heart, Ruler } from 'lucide-react';
-import SEO from '../components/common/SEO';
+import { getHomepageTimeSale } from '../services/homepageService';
+import { HomepageTimeSale } from '../types';
+import { ChevronRight, Star, Truck, ShieldCheck, Heart, Ruler, Clock } from 'lucide-react';
 import Loading from '../components/common/Loading';
-import ReactGA from 'react-ga4';
+import SEO from '../components/common/SEO';
 import ConfirmModal from '../components/common/ConfirmModal';
+import RestockModal from '../components/features/products/RestockModal';
+import ReactGA from 'react-ga4';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 
-import RestockModal from '../components/features/products/RestockModal';
+// Simple Countdown Component
+const CountdownTimer = ({ targetDate }: { targetDate: Date | string | any }) => {
+    const [timeLeft, setTimeLeft] = useState('');
+
+    useEffect(() => {
+        const updateTimer = () => {
+            // targetDate를 Date 객체로 변환
+            let endTime: Date;
+            
+            if (targetDate instanceof Date) {
+                endTime = targetDate;
+            } else if (typeof targetDate === 'string') {
+                endTime = new Date(targetDate);
+            } else if (targetDate?.toDate) {
+                // Firestore Timestamp인 경우
+                endTime = targetDate.toDate();
+            } else if (targetDate?.seconds) {
+                // Firestore Timestamp의 seconds 속성이 있는 경우
+                endTime = new Date(targetDate.seconds * 1000);
+            } else {
+                endTime = new Date(targetDate);
+            }
+
+            const now = new Date();
+            const diff = endTime.getTime() - now.getTime();
+
+            if (diff <= 0) {
+                setTimeLeft('종료됨');
+                return;
+            }
+
+            // 시간 계산 (24시간 이상도 표시)
+            const totalHours = Math.floor(diff / (1000 * 60 * 60));
+            const hours = totalHours % 24;
+            const days = Math.floor(totalHours / 24);
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            if (days > 0) {
+                setTimeLeft(`${days}일 ${hours}시간 ${minutes}분 ${seconds}초`);
+            } else {
+                setTimeLeft(`${hours}시간 ${minutes}분 ${seconds}초`);
+            }
+        };
+
+        updateTimer();
+        const interval = setInterval(updateTimer, 1000);
+        return () => clearInterval(interval);
+    }, [targetDate]);
+
+    return <span>{timeLeft}</span>;
+};
 
 const ProductDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -29,17 +83,30 @@ const ProductDetail: React.FC = () => {
     const { addToCart } = useCart();
     const { user, toggleWishlist } = useAuth();
     const { showConfirm, showAlert } = useGlobalModal();
+    const [timeSale, setTimeSale] = useState<HomepageTimeSale | null>(null);
+
+    useEffect(() => {
+        const fetchTimeSale = async () => {
+            try {
+                const data = await getHomepageTimeSale();
+                setTimeSale(data);
+            } catch (error) {
+                console.error("Failed to fetch time sale:", error);
+            }
+        };
+        fetchTimeSale();
+    }, []);
 
     const isWishlisted = product && user?.wishlist?.includes(product.id);
 
     // [MY_LOG] HTML 내용에서 텍스트의 띄어쓰기 처리 (엔터, 스페이스바 자동 처리)
     const normalizeDescriptionSpacing = (html: string): string => {
         if (!html) return html;
-        
+
         // HTML 태그를 임시로 보호하면서 텍스트만 처리
         const tempMarkers: { [key: string]: string } = {};
         let markerIndex = 0;
-        
+
         // HTML 태그를 임시 마커로 교체
         let processed = html.replace(/<[^>]+>/g, (match) => {
             const marker = `__HTML_TAG_${markerIndex}__`;
@@ -47,45 +114,45 @@ const ProductDetail: React.FC = () => {
             markerIndex++;
             return marker;
         });
-        
+
         // 텍스트 부분의 띄어쓰기 처리
         // 1. 탭을 공백으로 변환 (탭은 공백 4개로 처리)
         processed = processed.replace(/\t/g, '    ');
-        
+
         // 2. 연속된 공백은 CSS의 white-space: pre-wrap으로 처리하므로 유지
         // 단, 5개 이상의 연속 공백은 정리 (실수로 입력된 경우)
         processed = processed.replace(/[ ]{5,}/g, '    ');
-        
+
         // 3. 줄바꿈은 유지 (CSS로 처리)
         // 줄바꿈 전후의 불필요한 공백만 제거
         processed = processed.replace(/[ ]{2,}\n/g, '\n');
         processed = processed.replace(/\n[ ]{2,}/g, '\n');
-        
+
         // 4. 문장 시작/끝의 과도한 공백만 제거 (1개는 유지)
         processed = processed.replace(/^[ ]{2,}/gm, ' ');
         processed = processed.replace(/[ ]{2,}$/gm, ' ');
-        
+
         // 5. 연속된 줄바꿈은 유지 (CSS로 처리)
         // 단, 4개 이상의 연속 줄바꿈은 최대 3개로 제한
         processed = processed.replace(/\n{4,}/g, '\n\n\n');
-        
+
         // 6. 줄바꿈을 <br> 태그로 변환 (HTML에서 줄바꿈 표시를 위해)
         // 단, 이미 <br>이나 <p> 태그가 있는 경우는 제외하기 위해 마커 복원 후 처리
         Object.keys(tempMarkers).forEach(marker => {
             processed = processed.replace(marker, tempMarkers[marker]);
         });
-        
+
         // 7. HTML 태그 사이의 줄바꿈과 공백 정리
         // 태그 사이의 공백/줄바꿈 제거 (가독성을 위해)
         processed = processed.replace(/>\s+</g, '><');
         // 단, </p><p> 같은 경우는 줄바꿈 유지
         processed = processed.replace(/<\/p>\s*<p/g, '</p>\n<p');
         processed = processed.replace(/<\/div>\s*<div/g, '</div>\n<div');
-        
+
         // 8. 텍스트 노드 내의 줄바꿈을 <br>로 변환
         // 태그가 아닌 부분의 줄바꿈을 <br>로 변환
         processed = processed.replace(/([^>])\n([^<])/g, '$1<br>$2');
-        
+
         return processed;
     };
 
@@ -431,7 +498,71 @@ const ProductDetail: React.FC = () => {
                             );
                         })()}
 
-                        <p className="text-2xl font-medium text-gray-900 mb-8">₩{product.price.toLocaleString()}</p>
+                        {/* Time Sale Badge & Pricing */}
+                        {(() => {
+                            // 종료 시간 계산: endDate를 우선 사용 (종료일 00:00:00에 종료)
+                            let endTime: Date;
+                            if (timeSale?.endDate) {
+                                // endDate가 있으면 해당 날짜의 시작 시간(00:00:00)으로 설정 (종료일 00:00에 종료)
+                                endTime = new Date(timeSale.endDate);
+                                endTime.setHours(0, 0, 0, 0);
+                            } else if (timeSale?.countdownEndTime) {
+                                // endDate가 없으면 countdownEndTime 사용 (하위 호환성)
+                                const countdownTime = timeSale.countdownEndTime;
+                                if (countdownTime instanceof Date) {
+                                    endTime = countdownTime;
+                                } else if (typeof countdownTime === 'string') {
+                                    endTime = new Date(countdownTime);
+                                } else if (countdownTime?.toDate) {
+                                    endTime = countdownTime.toDate();
+                                } else if (countdownTime?.seconds) {
+                                    endTime = new Date(countdownTime.seconds * 1000);
+                                } else {
+                                    endTime = new Date(countdownTime);
+                                }
+                            } else {
+                                endTime = new Date(0); // 과거 날짜로 설정하여 타임세일 비활성화
+                            }
+
+                            const isTimeSale = timeSale && product && timeSale.isActive &&
+                                timeSale.productIds?.some(id => String(id) === String(product.id)) &&
+                                endTime > new Date();
+
+                            if (isTimeSale && timeSale) {
+                                const discountedPrice = Math.floor(product.price * (1 - timeSale.discountPercentage / 100));
+                                return (
+                                    <div className="mb-8">
+                                        <div
+                                            className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-3 animate-pulse"
+                                            style={{
+                                                backgroundColor: timeSale.badgeStyle?.backgroundColor || '#DC2626',
+                                                color: timeSale.badgeStyle?.color || '#FFFFFF',
+                                                fontSize: '0.875rem',
+                                                fontWeight: 'bold'
+                                            }}
+                                        >
+                                            <Clock size={14} />
+                                            TIME SALE {timeSale.discountPercentage}% OFF
+                                        </div>
+                                        <div className="flex items-end gap-3">
+                                            <p className="text-3xl md:text-4xl font-serif text-red-600 font-bold">
+                                                ₩{discountedPrice.toLocaleString()}
+                                            </p>
+                                            <p className="text-xl text-gray-400 line-through mb-1">
+                                                ₩{product.price.toLocaleString()}
+                                            </p>
+                                        </div>
+                                        <p className="text-sm text-red-500 mt-1">
+                                            남은 시간: <CountdownTimer targetDate={endTime} />
+                                        </p>
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <p className="text-2xl font-medium text-gray-900 mb-8">₩{product.price.toLocaleString()}</p>
+                            );
+                        })()}
 
                         {/* Short Description */}
                         {product.shortDescription ? (
@@ -464,7 +595,7 @@ const ProductDetail: React.FC = () => {
                             {(() => {
                                 // [MY_LOG] sizeColorStock에서 사이즈 추출 또는 product.sizes 사용
                                 let allSizes: string[] = [];
-                                
+
                                 if (product.sizeColorStock && product.sizeColorStock.length > 0) {
                                     // sizeColorStock에서 고유한 사이즈 추출
                                     allSizes = Array.from(new Set(product.sizeColorStock.map(item => item.size).filter(s => s)));
@@ -474,7 +605,7 @@ const ProductDetail: React.FC = () => {
 
                                 // 재고가 있는 사이즈만 필터링
                                 let availableSizes = allSizes;
-                                
+
                                 if (product.sizeColorStock && product.sizeColorStock.length > 0) {
                                     if (selectedColor) {
                                         // 색상이 선택된 경우, 해당 색상과 조합된 사이즈 중 재고가 있는 것만
@@ -523,11 +654,10 @@ const ProductDetail: React.FC = () => {
                                                 <button
                                                     key={size}
                                                     onClick={() => setSelectedSize(size)}
-                                                    className={`min-w-[3rem] px-3 py-2 text-sm border transition ${
-                                                        selectedSize === size
-                                                            ? 'border-black bg-black text-white'
-                                                            : 'border-gray-200 text-gray-600 hover:border-gray-400'
-                                                    }`}
+                                                    className={`min-w-[3rem] px-3 py-2 text-sm border transition ${selectedSize === size
+                                                        ? 'border-black bg-black text-white'
+                                                        : 'border-gray-200 text-gray-600 hover:border-gray-400'
+                                                        }`}
                                                 >
                                                     {size}
                                                 </button>
@@ -541,7 +671,7 @@ const ProductDetail: React.FC = () => {
                             {(() => {
                                 // [MY_LOG] sizeColorStock에서 색상 추출 또는 product.colors 사용
                                 let allColors: string[] = [];
-                                
+
                                 if (product.sizeColorStock && product.sizeColorStock.length > 0) {
                                     // sizeColorStock에서 고유한 색상 추출
                                     allColors = Array.from(new Set(product.sizeColorStock.map(item => item.color).filter(c => c)));
@@ -551,7 +681,7 @@ const ProductDetail: React.FC = () => {
 
                                 // 재고가 있는 색상만 필터링
                                 let availableColors = allColors;
-                                
+
                                 if (product.sizeColorStock && product.sizeColorStock.length > 0) {
                                     if (selectedSize) {
                                         // 사이즈가 선택된 경우, 해당 사이즈와 조합된 색상 중 재고가 있는 것만
@@ -598,11 +728,10 @@ const ProductDetail: React.FC = () => {
                                                 <button
                                                     key={color}
                                                     onClick={() => setSelectedColor(color)}
-                                                    className={`px-4 py-2 text-sm border transition ${
-                                                        selectedColor === color
-                                                            ? 'border-black bg-black text-white'
-                                                            : 'border-gray-200 text-gray-600 hover:border-gray-400'
-                                                    }`}
+                                                    className={`px-4 py-2 text-sm border transition ${selectedColor === color
+                                                        ? 'border-black bg-black text-white'
+                                                        : 'border-gray-200 text-gray-600 hover:border-gray-400'
+                                                        }`}
                                                 >
                                                     {color}
                                                 </button>
@@ -618,15 +747,14 @@ const ProductDetail: React.FC = () => {
                                     const variantStock = product.sizeColorStock.find(
                                         item => item.size === selectedSize && item.color === selectedColor
                                     )?.quantity || 0;
-                                    
+
                                     if (variantStock > 0) {
                                         return (
                                             <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-md">
                                                 <div className="flex items-center justify-between">
                                                     <span className="text-sm font-medium text-gray-700">현재 선택 옵션 재고</span>
-                                                    <span className={`text-sm font-bold ${
-                                                        variantStock <= 3 ? 'text-red-600' : 'text-gray-900'
-                                                    }`}>
+                                                    <span className={`text-sm font-bold ${variantStock <= 3 ? 'text-red-600' : 'text-gray-900'
+                                                        }`}>
                                                         {variantStock}개
                                                     </span>
                                                 </div>
@@ -641,9 +769,8 @@ const ProductDetail: React.FC = () => {
                                         <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-md">
                                             <div className="flex items-center justify-between">
                                                 <span className="text-sm font-medium text-gray-700">전체 재고</span>
-                                                <span className={`text-sm font-bold ${
-                                                    totalStock <= 5 ? 'text-red-600' : 'text-gray-900'
-                                                }`}>
+                                                <span className={`text-sm font-bold ${totalStock <= 5 ? 'text-red-600' : 'text-gray-900'
+                                                    }`}>
                                                     {totalStock}개
                                                 </span>
                                             </div>
